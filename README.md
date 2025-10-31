@@ -17,6 +17,13 @@ RFID 이력 추적 시스템은 제조업의 핵심 자산인 원재료 코일�
 
 
 # 설치 방법
+## Front 실행방법
+아래 코드 실행시, localhost:3000으로 확인 가능
+```
+cd front
+npm i
+npm run dev
+```
 
 # 문제 해결 방법
 
