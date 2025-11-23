@@ -3,6 +3,7 @@ import {
   Radio, 
   Users,
   ArrowLeftRight,
+  FilePlus,
 } from 'lucide-react';
 import { cn } from './ui/utils';
 
@@ -24,6 +25,12 @@ const navigationGroups = [
   //   // items: [
   //   // ]
   // },
+  {
+    title: '데이터 입력',
+    items: [
+      { id: 'create-data', label: '데이터 입력', icon: FilePlus }
+    ]
+  },
   {
     title: '추적성 검색',
     items: [

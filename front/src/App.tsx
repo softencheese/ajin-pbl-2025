@@ -3,6 +3,7 @@ import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
 import { ProductionMonitorTable } from './components/ProductionMonitorTable';
 import { TraceabilitySearch } from './components/TraceabilitySearch';
+import { CreateData } from './components/CreateData';
 
 export default function App() {
   const [activeView, setActiveView] = useState('dashboard');
@@ -25,11 +26,21 @@ export default function App() {
             <ProductionMonitorTable />
           </div>
         )}
+
+        {activeView === 'create-data' && (
+          <div className="p-8 space-y-6">
+            <div>
+              <h2 className="text-foreground">입력 페이지</h2>
+              <p className="text-muted-foreground mt-1">필요한 데이터 추가 입력</p>
+            </div>
+            <CreateData />
+          </div>
+        )}
         
         {activeView === 'traceability-search' && (
           <div className="p-8 space-y-6">
             <div>
-              <h2>양방향 추적 검색</h2>
+              <h2 className="text-foreground">양방향 추적 검색</h2>
               <p className="text-muted-foreground mt-1">부품에서 코일로, 또는 코일에서 부품으로 완전한 추적성 제공</p>
             </div>
             <div className="max-w-5xl">
