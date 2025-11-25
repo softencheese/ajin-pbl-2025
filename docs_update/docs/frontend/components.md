@@ -3,7 +3,7 @@
 ## 개요
 React + TypeScript 기반 프론트엔드 애플리케이션의 주요 컴포넌트와 구조를 설명합니다.
 
-**기술 스택**: React 18 + Vite + TypeScript + Ant Design
+**기술 스택**: Next.js (React 18 + Vite + TypeScript)
 
 ---
 
@@ -315,7 +315,7 @@ export function useCreatePallet() {
 ```typescript
 // components/Layout/MainLayout.tsx
 import React from 'react';
-import { Layout, Menu } from 'antd';
+import { Layout, Menu } from 'antd'; //다른 라이브러리로 수정예정
 import { Link, Outlet } from 'react-router-dom';
 import {
   DashboardOutlined,
@@ -382,7 +382,7 @@ export function MainLayout() {
 ```typescript
 // components/PalletCard/PalletCard.tsx
 import React from 'react';
-import { Card, Tag, Descriptions } from 'antd';
+import { Card, Tag, Descriptions } from 'antd'; //다른 라이브러리로 수정예정
 import type { Pallet } from '../../types/pallet';
 
 interface PalletCardProps {
@@ -426,7 +426,7 @@ export function PalletCard({ pallet, onClick }: PalletCardProps) {
 ```typescript
 // pages/Monitoring/MonitoringPage.tsx
 import React, { useEffect, useState } from 'react';
-import { Card, Table, Tag, Tabs, Badge } from 'antd';
+import { Card, Table, Tag, Tabs, Badge } from 'antd'; //다른 라이브러리로 수정예정
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { usePallets } from '../../hooks/usePallets';
 import type { Pallet } from '../../types/pallet';

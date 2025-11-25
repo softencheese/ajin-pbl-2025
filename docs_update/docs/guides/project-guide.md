@@ -216,6 +216,7 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 **필수 패키지**:
 ```bash
 npm install react react-dom react-router-dom @tanstack/react-query zustand axios antd socket.io-client
+// antd대신 다른 라이브러리로 수정예정
 ```
 
 **디렉토리 구조**:

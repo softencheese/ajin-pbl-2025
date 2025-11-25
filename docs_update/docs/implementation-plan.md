@@ -66,6 +66,7 @@
 - `react-router-dom` - 라우팅
 - `axios` - HTTP 클라이언트
 - `antd` (Ant Design) - UI 컴포넌트
+  - antd 대신 tailwindcss 사용 (다른 라이브러리도 고려중)
 - `recharts` - 차트 라이브러리
 - `socket.io-client` - 실시간 통신 (WebSocket)
 - `dayjs` - 날짜 처리
@@ -856,7 +857,6 @@ CMD ["npm", "run", "dev", "--", "--host"]
     "@tanstack/react-query": "^5.8.4",
     "zustand": "^4.4.7",
     "axios": "^1.6.2",
-    "antd": "^5.11.5",
     "recharts": "^2.10.3",
     "socket.io-client": "^4.6.0",
     "dayjs": "^1.11.10"

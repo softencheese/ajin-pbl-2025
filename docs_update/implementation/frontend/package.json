@@ -15,7 +15,7 @@
     "@tanstack/react-query": "^5.8.4",
     "axios": "^1.6.2",
     "zustand": "^4.4.7",
-    "antd": "^5.11.5",
+    "antd": "^5.11.5", 
     "dayjs": "^1.11.10",
     "recharts": "^2.10.3",
     "socket.io-client": "^4.6.0"
