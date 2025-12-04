@@ -3,7 +3,7 @@
 ## 개요
 Raspberry Pi 기반 임베디드 시스템과 RFID 리더기 통신 인터페이스를 정의합니다.
 
-**플랫폼**: Raspberry Pi 5
+**플랫폼**: Raspberry Pi 4 Model B
 **언어**: C/C++
 **OS**: Raspberry Pi OS (Debian 기반)
 
@@ -76,6 +76,7 @@ int rfid_serial_init(const char *port, int baudrate) {
 ```c
 #define READER_IP "192.168.1.100"
 #define READER_PORT 9001
+#define LOGICAL_PORT_NAME "READER_01"  // API 서버에 등록된 논리적 이름
 
 int rfid_tcp_connect(const char *ip, int port) {
     int sockfd;
@@ -641,9 +642,9 @@ int main(int argc, char *argv[]) {
                     printf("Tag scanned: %s\n", epc.epc);
                     
                     // API 전송 시도
-                    if (api_send_scan(epc.epc, SERIAL_PORT) != 0) {
+                    if (api_send_scan(epc.epc, LOGICAL_PORT_NAME) != 0) {
                         // 실패 - 큐에 저장
-                        queue_enqueue(epc.epc, SERIAL_PORT, get_timestamp_ms());
+                        queue_enqueue(epc.epc, LOGICAL_PORT_NAME, get_timestamp_ms());
                     }
                 }
             }

@@ -195,11 +195,13 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 #### 목록 조회
 - **GET** `/reader-locations`
 
-#### 등록
+#### 등록 (수동)
+> **Note**: 일반적으로 리더기는 Heartbeat 수신 시 자동 등록됩니다. 이 엔드포인트는 수동 등록이 필요한 경우에만 사용합니다.
+
 - **POST** `/reader-locations`
 ```json
 {
-  "port_name": "COM3",
+  "port_name": "READER_01",
   "process_id": 2,
   "location_type": "IN",
   "description": "프레스 1500T 투입구 리더기",

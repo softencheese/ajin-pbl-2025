@@ -92,9 +92,9 @@ INSERT INTO processes VALUES
 ```sql
 CREATE TABLE rfid_reader_locations (
   id INT PRIMARY KEY AUTO_INCREMENT,
-  port_name VARCHAR(50) UNIQUE NOT NULL COMMENT '포트 이름 (COM3, 192.168.1.100:9001)',
-  process_id INT NOT NULL COMMENT '공정 ID',
-  location_type ENUM('IN', 'OUT', 'HOLD', 'DEFECT', 'FINISH', 'RETURN') NOT NULL COMMENT '위치 타입',
+  port_name VARCHAR(50) UNIQUE NOT NULL COMMENT '포트 이름 (COM3, READER_01 등)',
+  process_id INT COMMENT '공정 ID (미등록 시 NULL)',
+  location_type ENUM('IN', 'OUT', 'HOLD', 'DEFECT', 'FINISH', 'RETURN') COMMENT '위치 타입 (미등록 시 NULL)',
   description VARCHAR(200) COMMENT '리더기 설명',
   is_active BOOLEAN DEFAULT TRUE COMMENT '활성 여부',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -138,6 +138,7 @@
 
 **처리**:
 - 리더기 상태 로그 기록
+- **자동 등록**: `port_name`이 DB에 없으면 새 레코드 생성 (process_id=NULL)
 - 실시간 모니터링 화면에 업데이트 (WebSocket)
 
 **응답**:
@@ -202,18 +203,16 @@
 ```
 
 #### 2.2.4 RFID 리더기 위치 관리
-- `GET /api/v1/reader-locations` - 리더기 위치 목록
-- `POST /api/v1/reader-locations` - 리더기 등록
-- `PUT /api/v1/reader-locations/:id` - 리더기 수정
+- `GET /api/v1/reader-locations` - 리더기 위치 목록 (미등록 포함)
+- `PUT /api/v1/reader-locations/:id/register` - 리더기 등록 (공정 매핑)
+- `PUT /api/v1/reader-locations/:id` - 리더기 정보 수정
 
-**등록 요청**:
+**등록(매핑) 요청**:
 ```json
 {
-  "port_name": "COM3",
   "process_id": 2,
   "location_type": "IN",
-  "description": "프레스 1500T 투입구 리더기",
-  "is_active": true
+  "description": "프레스 1500T 투입구 리더기"
 }
 ```
 
