@@ -67,22 +67,22 @@ openssl rand -hex 32
 
 ```bash
 # 호스트 볼륨 디렉토리 생성
-mkdir -p data/mysql
-mkdir -p data/backups
-mkdir -p logs/api
+mkdir -p implementation/data/mysql
+mkdir -p implementation/data/backups
+mkdir -p implementation/logs/api
 
 # 권한 설정 (MySQL이 쓸 수 있도록)
-sudo chown -R 999:999 data/mysql  # MySQL 컨테이너 UID
+sudo chown -R 999:999 implementation/data/mysql  # MySQL 컨테이너 UID
 ```
 
 ### 3. 데이터베이스 스키마 준비
 
 ```bash
 # 기존 스키마 파일 복사
-cp temp/DB/Ajin_DB.sql database/init/01-schema.sql
+cp temp/DB/Ajin_DB.sql implementation/database/init/01-schema.sql
 
 # 또는 직접 생성
-nano database/init/01-schema.sql
+nano implementation/database/init/01-schema.sql
 ```
 
 ## 시스템 실행
@@ -147,7 +147,7 @@ Docker를 사용하지 않고 로컬에서 직접 실행하는 방법:
 ### API 서버 (FastAPI)
 
 ```bash
-cd api
+cd implementation/api
 
 # 가상 환경 생성
 python3 -m venv venv
@@ -170,7 +170,7 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ### 프론트엔드 (React)
 
 ```bash
-cd frontend
+cd implementation/frontend
 
 # 의존성 설치
 npm install
@@ -217,14 +217,14 @@ docker exec -it ajin-db /bin/bash
 
 ```bash
 # 백업 생성
-docker exec ajin-db mysqldump -u root -p${MYSQL_ROOT_PASSWORD} ajin_rfid > ./data/backups/backup_$(date +%Y%m%d).sql
+docker exec ajin-db mysqldump -u root -p${MYSQL_ROOT_PASSWORD} ajin_rfid > ./implementation/data/backups/backup_$(date +%Y%m%d).sql
 
 # 복구
-docker exec -i ajin-db mysql -u root -p${MYSQL_ROOT_PASSWORD} ajin_rfid < ./data/backups/backup_20251117.sql
+docker exec -i ajin-db mysql -u root -p${MYSQL_ROOT_PASSWORD} ajin_rfid < ./implementation/data/backups/backup_20251117.sql
 
 # 데이터베이스 재생성 (주의!)
 docker exec -it ajin-db mysql -u root -p -e "DROP DATABASE IF EXISTS ajin_rfid; CREATE DATABASE ajin_rfid;"
-docker exec -i ajin-db mysql -u root -p ajin_rfid < database/init/01-schema.sql
+docker exec -i ajin-db mysql -u root -p ajin_rfid < implementation/database/init/01-schema.sql
 ```
 
 ### Git
@@ -282,7 +282,7 @@ docker-compose restart db
 
 # DB 초기화 (주의: 데이터 손실)
 docker-compose down
-sudo rm -rf data/mysql/*
+sudo rm -rf implementation/data/mysql/*
 docker-compose up -d
 ```
 
@@ -293,11 +293,11 @@ docker-compose up -d
 **해결**:
 ```bash
 # 데이터 디렉토리 권한 수정
-sudo chown -R $USER:$USER data/
-sudo chmod -R 755 data/
+sudo chown -R $USER:$USER implementation/data/
+sudo chmod -R 755 implementation/data/
 
 # MySQL 특정 권한
-sudo chown -R 999:999 data/mysql
+sudo chown -R 999:999 implementation/data/mysql
 ```
 
 ### 4. API 서버 500 에러
@@ -335,10 +335,10 @@ docker-compose up -d frontend
 
 ## 다음 단계
 
-1. **API 개발**: `api/app/routers/` 디렉토리에서 라우터 구현
-2. **프론트엔드 개발**: `frontend/src/pages/` 디렉토리에서 페이지 구현
-3. **임베디드 개발**: `embedded/src/` 디렉토리에서 C/C++ 코드 작성
-4. **데이터베이스**: `database/migrations/` 디렉토리에서 스키마 변경 관리
+1. **API 개발**: `implementation/api/app/routers/` 디렉토리에서 라우터 구현
+2. **프론트엔드 개발**: `implementation/frontend/src/pages/` 디렉토리에서 페이지 구현
+3. **임베디드 개발**: `implementation/embedded/src/` 디렉토리에서 C/C++ 코드 작성
+4. **데이터베이스**: `implementation/database/migrations/` 디렉토리에서 스키마 변경 관리
 
 ## 참고 자료
 

@@ -48,7 +48,7 @@ cp .env.example .env
 nano .env  # 비밀번호 변경
 
 # 데이터베이스 스키마 준비
-cp temp/DB/Ajin_DB.sql database/init/01-schema.sql
+cp temp/DB/Ajin_DB.sql implementation/database/init/01-schema.sql
 ```
 
 ### 2. Docker로 전체 시스템 실행
@@ -68,19 +68,19 @@ docker-compose logs -f
 ### 3. 로컬 개발 모드
 ```bash
 # API 개발
-cd api
+cd implementation/api
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 uvicorn main:app --reload
 
 # Frontend 개발
-cd frontend
+cd implementation/frontend
 npm install
 npm run dev
 
 # Embedded 개발 (Raspberry Pi)
-cd embedded
+cd implementation/embedded
 mkdir build && cd build
 cmake ..
 make
@@ -96,8 +96,8 @@ make
 1. Docker Compose 환경 설정
 2. MySQL 스키마 생성
 3. FastAPI 기본 구조 생성
-   - `api/app/models/` - SQLAlchemy 모델
-   - `api/app/routers/` - 기본 라우터
+   - `implementation/api/app/models/` - SQLAlchemy 모델
+   - `implementation/api/app/routers/` - 기본 라우터
 4. React 기본 구조 생성
    - 레이아웃 컴포넌트
    - 라우팅 설정
@@ -194,7 +194,7 @@ pip install fastapi uvicorn sqlalchemy pymysql pydantic python-jose passlib
 
 **디렉토리 구조**:
 ```
-api/
+implementation/api/
 ├── app/
 │   ├── models/      # SQLAlchemy 모델
 │   ├── routers/     # API 라우터
@@ -221,7 +221,7 @@ npm install react react-dom react-router-dom @tanstack/react-query zustand axios
 
 **디렉토리 구조**:
 ```
-frontend/src/
+implementation/frontend/src/
 ├── api/           # API 클라이언트
 ├── components/    # 재사용 컴포넌트
 ├── pages/         # 페이지
@@ -327,13 +327,13 @@ int rfid_reader_init(const char *port, int baudrate);
 
 ### API 테스트
 ```bash
-cd api
+cd implementation/api
 pytest tests/
 ```
 
 ### 프론트엔드 테스트
 ```bash
-cd frontend
+cd implementation/frontend
 npm run test
 ```
 

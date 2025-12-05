@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  db:
+    image: mysql:8.0
+    container_name: ajin_rfid_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-ajin_rfid}
+      MYSQL_USER: ${MYSQL_USER:-ajin_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-ajin_password}
+      TZ: Asia/Seoul
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./implementation/data/mysql:/var/lib/mysql              # 데이터 영구 보존
+      - ./implementation/database/init:/docker-entrypoint-initdb.d  # 초기화 SQL
+    networks:
+      - ajin_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpassword}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # FastAPI Server
+  api:
+    build:
+      context: ./implementation/api
+      dockerfile: Dockerfile
+    container_name: ajin_rfid_api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: mysql+pymysql://${MYSQL_USER:-ajin_user}:${MYSQL_PASSWORD:-ajin_password}@db:3306/${MYSQL_DATABASE:-ajin_rfid}
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+      CORS_ORIGINS: http://localhost:5173,http://localhost:3000
+      TZ: Asia/Seoul
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./implementation/api:/app
+      - ./implementation/logs:/app/logs
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - ajin_network
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./implementation/frontend
+      dockerfile: Dockerfile
+    container_name: ajin_rfid_frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://localhost:8000
+      TZ: Asia/Seoul
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./implementation/frontend:/app
+      - /app/node_modules
+    depends_on:
+      - api
+    networks:
+      - ajin_network
+    command: npm run dev -- --host 0.0.0.0
+
+networks:
+  ajin_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
