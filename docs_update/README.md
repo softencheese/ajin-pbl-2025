@@ -53,14 +53,14 @@ docker-compose restart api
 
 ```bash
 # API 개발
-cd src/api
+cd implementation/api
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 uvicorn main:app --reload
 
 # 프론트엔드 개발
-cd src/frontend
+cd implementation/frontend
 npm install
 npm run dev
 ```
@@ -69,7 +69,7 @@ npm run dev
 
 ```
 Ajin_Pbl/
-├── src/                          # 구현 코드 (모든 소스 코드)
+├── implementation/               # 구현 코드 (모든 소스 코드)
 │   ├── api/                      # FastAPI 서버
 │   │   ├── main.py               # 서버 엔트리포인트
 │   │   ├── requirements.txt      # Python 의존성
@@ -153,11 +153,11 @@ docker exec -i ajin-db mysql -u root -p${MYSQL_ROOT_PASSWORD} ajin_rfid < ./data
 
 ```bash
 # API 테스트
-cd src/api
+cd implementation/api
 pytest tests/
 
 # 프론트엔드 테스트
-cd src/frontend
+cd implementation/frontend
 npm run test
 ```
 
