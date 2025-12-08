@@ -18,6 +18,16 @@ Raspberry Pi (C/C++) ──► FastAPI (Python) ──► MySQL
 - **데이터베이스**: MySQL 8.0
 - **컨테이너**: Docker + Docker Compose
 
+## 주요 API 기능
+
+현재 구현된 API는 다음 기능을 제공합니다:
+
+- **자재/부품/팔레트 관리**: 원자재, 가공 부품, 팔레트의 생성 및 상태 관리
+- **공정 관리**: 조립, 도장 등 제조 공정 단계 관리
+- **RFID 추적**: RFID 리더를 통한 팔레트 위치 및 이동 자동 추적
+- **생산 이력(Traceability)**: 최종 제품에서 원자재까지의 역방향 추적 지원
+- **대시보드**: 실시간 시스템 현황 및 통계 데이터 조회
+
 ## 빠른 시작
 
 ### 1. 환경 설정
@@ -53,14 +63,14 @@ docker-compose restart api
 
 ```bash
 # API 개발
-cd src/api
+cd implementation/api
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 uvicorn main:app --reload
 
 # 프론트엔드 개발
-cd src/frontend
+cd implementation/frontend
 npm install
 npm run dev
 ```
@@ -69,7 +79,7 @@ npm run dev
 
 ```
 Ajin_Pbl/
-├── src/                          # 구현 코드 (모든 소스 코드)
+├── implementation/               # 구현 코드 (모든 소스 코드)
 │   ├── api/                      # FastAPI 서버
 │   │   ├── main.py               # 서버 엔트리포인트
 │   │   ├── requirements.txt      # Python 의존성
@@ -153,11 +163,11 @@ docker exec -i ajin-db mysql -u root -p${MYSQL_ROOT_PASSWORD} ajin_rfid < ./data
 
 ```bash
 # API 테스트
-cd src/api
+cd implementation/api
 pytest tests/
 
 # 프론트엔드 테스트
-cd src/frontend
+cd implementation/frontend
 npm run test
 ```
 

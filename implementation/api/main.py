@@ -1,0 +1,72 @@
+"""
+AJIN RFID 물류 추적 시스템 - FastAPI 서버
+"""
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.database import engine, Base
+from app.routers import (
+    rfid_router, 
+    pallets_router, 
+    trace_router,
+    materials_router,
+    parts_router,
+    processes_router,
+    reader_locations_router,
+    lots_router,
+    assembly_lots_router,
+    rfid_tags_router,
+    dashboard_router
+)
+from app.config import settings
+
+# 데이터베이스 테이블 생성 (개발용)
+# 프로덕션에서는 Alembic 마이그레이션을 사용하는 것이 좋습니다.
+Base.metadata.create_all(bind=engine)
+
+app = FastAPI(
+    title="AJIN RFID Tracking API",
+    description="RFID 기반 물류 추적 시스템 API",
+    version="1.0.0"
+)
+
+# CORS 설정
+origins = settings.CORS_ORIGINS.split(",")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# 라우터 등록
+app.include_router(rfid_router, prefix="/api/v1/rfid", tags=["RFID"])
+app.include_router(pallets_router, prefix="/api/v1/pallets", tags=["Pallets"])
+app.include_router(trace_router, prefix="/api/v1/trace", tags=["Traceability"])
+app.include_router(materials_router, prefix="/api/v1/materials", tags=["Materials"])
+app.include_router(parts_router, prefix="/api/v1/parts", tags=["Parts"])
+app.include_router(processes_router, prefix="/api/v1/processes", tags=["Processes"])
+app.include_router(reader_locations_router, prefix="/api/v1/reader-locations", tags=["Reader Locations"])
+app.include_router(lots_router, prefix="/api/v1/lots", tags=["Lots"])
+app.include_router(assembly_lots_router, prefix="/api/v1/assembly-lots", tags=["Assembly Lots"])
+app.include_router(rfid_tags_router, prefix="/api/v1/rfid-tags", tags=["RFID Tags"])
+app.include_router(dashboard_router, prefix="/api/v1/dashboard", tags=["Dashboard"])
+
+@app.get("/")
+async def root():
+    return {"message": "AJIN RFID Tracking API"}
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True
+    )

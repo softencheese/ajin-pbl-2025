@@ -10,6 +10,7 @@ CREATE TABLE raw_materials (
     receipt_date DATE COMMENT '입고일자',
     qc_passed BOOLEAN DEFAULT FALSE COMMENT 'QC 합격 여부',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_coil_number (coil_number)
 ) COMMENT '원자재 마스터 - 코일 번호로 추적';
 
@@ -23,6 +24,7 @@ CREATE TABLE parts (
     is_assembly BOOLEAN DEFAULT FALSE COMMENT '조립품 여부 (TRUE: 조립품, FALSE: 중간품)',
     is_final_product BOOLEAN DEFAULT FALSE COMMENT '최종 완제품 여부',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_part_number (part_number),
     INDEX idx_vehicle_model (vehicle_model),
     INDEX idx_assembly (is_assembly),
@@ -36,7 +38,8 @@ CREATE TABLE processes (
     process_name VARCHAR(50) NOT NULL COMMENT '공정명 (샤링, 프레스, 조립, 출하)',
     process_order INT NOT NULL COMMENT '공정 순서',
     production_line VARCHAR(50) COMMENT '생산 라인 (400T, 1500T)',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) COMMENT '공정 마스터';
 
 -- 4. LOT (작업전표 정보 - 중간품 전용)
@@ -52,6 +55,7 @@ CREATE TABLE lots (
     worker_name VARCHAR(50) COMMENT '작업자 (최영일, 전재민)',
     qc_passed BOOLEAN DEFAULT FALSE COMMENT 'QC 합격 여부',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (part_id) REFERENCES parts(id),
     FOREIGN KEY (process_id) REFERENCES processes(id),
     FOREIGN KEY (material_id) REFERENCES raw_materials(id),
@@ -73,7 +77,6 @@ CREATE TABLE pallets (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (lot_id) REFERENCES lots(id),
-    FOREIGN KEY (assembly_lot_id) REFERENCES assembly_lots(id),
     FOREIGN KEY (current_process_id) REFERENCES processes(id),
     CHECK (status IN ('Generated', 'Empty', 'Stock', 'Consuming', 'Producing', 'Finished', 'Deregistered', 'Hold', 'Defect')),
     CHECK (
@@ -99,13 +102,15 @@ CREATE TABLE pallet_histories (
     event_type VARCHAR(50) NOT NULL COMMENT '이벤트 유형 (TAG_SCAN, STATUS_CHANGE)',
     event_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '이벤트 발생 시간',
     worker_name VARCHAR(50) COMMENT '작업자',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (pallet_id) REFERENCES pallets(id),
     FOREIGN KEY (lot_id) REFERENCES lots(id),
-    FOREIGN KEY (assembly_lot_id) REFERENCES assembly_lots(id),
     FOREIGN KEY (process_id) REFERENCES processes(id),
     INDEX idx_pallet_time (pallet_id, event_time),
     INDEX idx_event_time (event_time)
 ) COMMENT '팔레트 이력 - 모든 상태 변경 및 이동 기록';
+
 
 -- 7. 조립품 LOT (반제품/완제품)
 CREATE TABLE assembly_lots (
@@ -118,6 +123,7 @@ CREATE TABLE assembly_lots (
     worker_name VARCHAR(50) COMMENT '작업자',
     qc_passed BOOLEAN DEFAULT FALSE COMMENT 'QC 합격 여부',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (part_id) REFERENCES parts(id),
     INDEX idx_assembly_level (assembly_level),
     INDEX idx_assembly_date (assembly_date)
@@ -133,6 +139,7 @@ CREATE TABLE assembly_components (
     required_quantity_per_unit INT NOT NULL COMMENT '조립품 1개당 필요한 구성품 수량',
     total_consumed_quantity INT NOT NULL COMMENT '실제 총 소비 수량 (조립품수량 * 단위수량)',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (assembly_lot_id) REFERENCES assembly_lots(id),
     FOREIGN KEY (component_lot_id) REFERENCES lots(id),
     FOREIGN KEY (component_assembly_id) REFERENCES assembly_lots(id),
@@ -146,12 +153,17 @@ CREATE TABLE assembly_components (
     INDEX idx_component_asm (component_assembly_id)
 ) COMMENT '조립품 구성 요소 - 단위당 소비량 및 총 소비량 관리';
 
+-- FK 추가 (테이블 순서 의존성으로 나중에 추가)
+ALTER TABLE pallets ADD CONSTRAINT fk_pallets_assembly_lot FOREIGN KEY (assembly_lot_id) REFERENCES assembly_lots(id);
+ALTER TABLE pallet_histories ADD CONSTRAINT fk_pallet_histories_assembly_lot FOREIGN KEY (assembly_lot_id) REFERENCES assembly_lots(id);
+
 -- 8. RFID 태그 (태그 자체 관리)
 CREATE TABLE rfid_tags (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     epc VARCHAR(100) NOT NULL UNIQUE COMMENT 'RFID EPC 코드',
     status VARCHAR(20) DEFAULT 'AVAILABLE' COMMENT '상태 (AVAILABLE, IN_USE, DAMAGED)',
     current_pallet_id BIGINT COMMENT '현재 연결된 팔레트 ID',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (current_pallet_id) REFERENCES pallets(id),
     CHECK (status IN ('AVAILABLE', 'IN_USE', 'DAMAGED'))
@@ -160,11 +172,12 @@ CREATE TABLE rfid_tags (
 -- 9. RFID 리더기 위치 마스터
 CREATE TABLE rfid_reader_locations (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    port_name VARCHAR(100) NOT NULL UNIQUE COMMENT '리더기 포트 식별자 (예: COM3, 192.168.1.100:9001)',
-    process_id BIGINT NOT NULL COMMENT '연결된 공정 ID',
-    location_type VARCHAR(20) NOT NULL COMMENT '위치 유형 (IN, OUT, HOLD, DEFECT, FINISH)',
+    port_name VARCHAR(100) NOT NULL UNIQUE COMMENT '리더기 포트 식별자 (예: COM3, READER_01 등)',
+    process_id BIGINT COMMENT '연결된 공정 ID (미등록 시 NULL)',
+    location_type VARCHAR(20) COMMENT '위치 유형 (IN, OUT, HOLD, DEFECT, FINISH)',
     description VARCHAR(255) COMMENT '설명 (예: 프레스 1500T 투입구 리더기)',
     is_active BOOLEAN DEFAULT TRUE COMMENT '활성 상태',
+    last_scan_time TIMESTAMP NULL COMMENT '마지막 스캔 시간 (대시보드 조회용)',
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
