@@ -36,7 +36,7 @@ services:
       DATABASE_URL: mysql+pymysql://${MYSQL_USER:-ajin_user}:${MYSQL_PASSWORD:-ajin_password}@db:3306/${MYSQL_DATABASE:-ajin_rfid}
       API_HOST: 0.0.0.0
       API_PORT: 8000
-      CORS_ORIGINS: http://localhost:5173,http://localhost:3000
+      CORS_ORIGINS: "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173"
       TZ: Asia/Seoul
     ports:
       - "8000:8000"
