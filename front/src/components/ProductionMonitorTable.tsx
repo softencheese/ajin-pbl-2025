@@ -33,7 +33,7 @@ const productionData = [
     partId: 'PART-2024-10003',
     partName: '루프 패널',
     carModel: '쏘나타 세단',
-    processName: '쉐어링',
+    processName: '샤링',
     processCode: 'SHAR-01',
     status: '대기',
     line: 'C 라인',

@@ -33,7 +33,7 @@ export default function App() {
         {activeView === 'process-status' && (
           <div className="p-8">
             <h2>공정별 현황</h2>
-            <p className="text-muted-foreground mt-2">쉐어링, 프레싱, 조립 등 각 공정의 상세 현황</p>
+            <p className="text-muted-foreground mt-2">샤링, 프레싱, 조립 등 각 공정의 상세 현황</p>
             <div className="mt-8 bg-[#151520] border border-border rounded-lg p-12 text-center text-muted-foreground">
               공정별 상세 현황 - 개발 예정
             </div>

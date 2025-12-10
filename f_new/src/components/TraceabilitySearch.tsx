@@ -14,7 +14,7 @@ const mockBackwardTrace = {
   history: [
     { level: '최종 제품', id: 'PART-2024-10001', name: '프론트 도어 패널', process: '조립 완료', timestamp: '2025-10-27 14:32' },
     { level: '중간 부품', id: 'PART-2024-09856', name: '도어 외판', process: '프레싱', timestamp: '2025-10-27 12:15' },
-    { level: '중간 부품', id: 'PART-2024-09123', name: '블랭크 재단', process: '쉐어링', timestamp: '2025-10-27 09:30' },
+    { level: '중간 부품', id: 'PART-2024-09123', name: '블랭크 재단', process: '샤링', timestamp: '2025-10-27 09:30' },
     { level: '원자재', id: 'COIL-2024-A1234', name: 'SPCC 1.0T 코일', process: '입고', timestamp: '2025-10-20 09:15' },
   ]
 };
