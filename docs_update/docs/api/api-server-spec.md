@@ -154,17 +154,17 @@
 ### 2.2 마스터 데이터 관리
 
 #### 2.2.1 원자재 관리
-- `GET /api/v1/materials` - 원자재 목록
-- `GET /api/v1/materials/:id` - 원자재 상세
-- `POST /api/v1/materials` - 원자재 등록
-- `PUT /api/v1/materials/:id` - 원자재 수정
-- `DELETE /api/v1/materials/:id` - 원자재 삭제 (사용 이력 없는 경우만)
+- `GET /api/v1/items` - 품목 목록
+- `GET /api/v1/items/:id` - 품목 상세
+- `POST /api/v1/items` - 품목 등록
+- `PUT /api/v1/items/:id` - 품목 수정
+- `DELETE /api/v1/items/:id` - 품목 삭제 (사용 이력 없는 경우만)
 
 **등록 요청**:
 ```json
 {
-  "coil_number": "C059461B",
-  "material_name": "SPHC 1.6T",
+  "item_code": "C059461B",
+  "item_name": "SPHC 1.6T",
   "supplier": "포스코",
   "receipt_date": "2025-10-15",
   "qc_passed": true
@@ -172,8 +172,8 @@
 ```
 
 #### 2.2.2 품번 관리
-- `GET /api/v1/parts` - 품번 목록
-- `POST /api/v1/parts` - 품번 등록
+- `GET /api/v1/items` - 품번 목록
+- `POST /api/v1/items` - 품번 등록
 
 **등록 요청**:
 ```json
@@ -249,9 +249,9 @@
 ```json
 {
   "lot_no": "LOT-20251017-001",
-  "part_id": 10,
+  "item_id": 10,
   "process_id": 1,
-  "material_id": 5,
+  "item_id": 5,
   "quantity": 400,
   "production_date": "2025-10-17",
   "worker_name": "최영일",
@@ -260,8 +260,8 @@
 ```
 
 **검증**:
-- `material_id` 필수 (원자재 연결)
-- `part_id`가 중간품인지 확인 (`is_assembly = FALSE`)
+- `item_id` 필수 (원자재 연결)
+- `item_id`가 중간품인지 확인 (`is_assembly = FALSE`)
 - `lot_no` 중복 체크
 
 **응답**:
@@ -271,7 +271,7 @@
   "lot": {
     "id": 123,
     "lot_no": "LOT-20251017-001",
-    "assembly_level": 0
+    "depth": 0
   }
 }
 ```
@@ -283,7 +283,7 @@
 ```json
 {
   "lot_no": "ASM-20251018-001",
-  "part_id": 20,
+  "item_id": 20,
   "assembly_date": "2025-10-18",
   "quantity": 100,
   "worker_name": "전재민",
@@ -292,7 +292,7 @@
 ```
 
 **검증**:
-- `part_id`가 조립품인지 확인 (`is_assembly = TRUE`)
+- `item_id`가 조립품인지 확인 (`is_assembly = TRUE`)
 - `lot_no` 중복 체크
 
 **응답**:
@@ -302,7 +302,7 @@
   "assembly_lot": {
     "id": 45,
     "lot_no": "ASM-20251018-001",
-    "assembly_level": 0
+    "depth": 0
   }
 }
 ```
@@ -321,7 +321,7 @@
 ```
 
 **처리**:
-- 트리거로 `assembly_level` 자동 계산
+- 트리거로 `depth` 자동 계산
 - 구성 요소의 최대 레벨 + 1
 
 **응답**:
@@ -333,7 +333,7 @@
     "assembly_lot_id": 45,
     "component_lot_id": 123
   },
-  "updated_assembly_level": 1
+  "updated_depth": 1
 }
 ```
 
@@ -342,17 +342,17 @@
 ### 2.4 추적성 조회
 
 #### 2.4.1 정방향 추적 (원자재 → 제품)
-**엔드포인트**: `GET /api/v1/trace/forward?coil_number=C059461B`
+**엔드포인트**: `GET /api/v1/trace/forward?item_code=C059461B`
 
 **쿼리 파라미터**:
-- `coil_number` (필수): 코일 번호
+- `item_code` (필수): 코일 번호
 - `include_assemblies` (선택, 기본 true): 조립품까지 포함
 
 **응답**:
 ```json
 {
-  "coil_number": "C059461B",
-  "material_name": "SPHC 1.6T",
+  "item_code": "C059461B",
+  "item_name": "SPHC 1.6T",
   "supplier": "포스코",
   "receipt_date": "2025-10-15",
   "qc_passed": true,
@@ -381,7 +381,7 @@
           "assembly_lot_no": "ASM-20251018-001",
           "assembly_part_number": "76211-GI000",
           "assembly_part_name": "ASSY-DOOR",
-          "assembly_level": 2,
+          "depth": 2,
           "is_final_product": true,
           "quantity_used": 200
         }
@@ -406,7 +406,7 @@
   "part_number": "76211-GI000",
   "part_name": "ASSY-DOOR",
   "vehicle_model": "JX1",
-  "assembly_level": 2,
+  "depth": 2,
   "is_final_product": true,
   "components": [
     {
@@ -416,8 +416,8 @@
       "component_part_name": "PNL-FR DR INR, LH",
       "quantity_used": 200,
       "raw_material": {
-        "coil_number": "C059461B",
-        "material_name": "SPHC 1.6T",
+        "item_code": "C059461B",
+        "item_name": "SPHC 1.6T",
         "supplier": "포스코",
         "receipt_date": "2025-10-15",
         "qc_passed": true
@@ -428,13 +428,13 @@
       "component_assembly_lot_no": "ASM-20251017-002",
       "component_part_number": "71413-T6000S",
       "component_part_name": "PNL-FR DR INR, RH",
-      "assembly_level": 1,
+      "depth": 1,
       "quantity_used": 200,
       "sub_components": [
         {
           "component_lot_no": "LOT-20251016-005",
           "raw_material": {
-            "coil_number": "C059462A",
+            "item_code": "C059462A",
             "supplier": "포스코"
           }
         }
@@ -582,14 +582,14 @@
 ## 4. 검증 로직
 
 ### 4.1 FIFO 검증
-**함수**: `check_fifo(part_id, production_date)`
+**함수**: `check_fifo(item_id, production_date)`
 
 **SQL 쿼리**:
 ```sql
 SELECT COUNT(*) AS older_count
 FROM pallets p
 JOIN lots l ON p.lot_id = l.id
-WHERE l.part_id = :part_id
+WHERE l.item_id = :item_id
   AND l.production_date < :production_date
   AND p.status = 'Stock';
 ```
@@ -605,7 +605,7 @@ function checkFIFO(partId, productionDate) {
     SELECT lot_no, production_date, pallet_no
     FROM pallets p
     JOIN lots l ON p.lot_id = l.id
-    WHERE l.part_id = ? AND l.production_date < ? AND p.status = 'Stock'
+    WHERE l.item_id = ? AND l.production_date < ? AND p.status = 'Stock'
     ORDER BY l.production_date LIMIT 1
   `, [partId, productionDate]);
   
@@ -633,18 +633,18 @@ function checkFIFO(partId, productionDate) {
 ```javascript
 function validatePartNumber(palletId, processId) {
   const pallet = db.query(`
-    SELECT l.part_id, pt.part_number, pt.part_name
+    SELECT l.item_id, pt.part_number, pt.part_name
     FROM pallets p
     LEFT JOIN lots l ON p.lot_id = l.id
-    LEFT JOIN assembly_lots al ON p.assembly_lot_id = al.id
-    JOIN parts pt ON COALESCE(l.part_id, al.part_id) = pt.id
+    LEFT JOIN lots al ON p.assembly_lot_id = al.id
+    JOIN parts pt ON COALESCE(l.item_id, al.item_id) = pt.id
     WHERE p.id = ?
   `, [palletId]);
   
   // 공정별 허용 품번 조회 (예시: 별도 테이블 또는 설정)
   const allowedParts = getAllowedPartsForProcess(processId);
   
-  if (!allowedParts.includes(pallet.part_id)) {
+  if (!allowedParts.includes(pallet.item_id)) {
     throw new ValidationError({
       type: 'WRONG_PART',
       message: '품번 불일치 - 투입 불가',
@@ -665,8 +665,8 @@ function validatePartNumber(palletId, processId) {
 SELECT pt.is_final_product
 FROM pallets p
 LEFT JOIN lots l ON p.lot_id = l.id
-LEFT JOIN assembly_lots al ON p.assembly_lot_id = al.id
-JOIN parts pt ON COALESCE(l.part_id, al.part_id) = pt.id
+LEFT JOIN lots al ON p.assembly_lot_id = al.id
+JOIN parts pt ON COALESCE(l.item_id, al.item_id) = pt.id
 WHERE p.id = :pallet_id;
 ```
 
@@ -682,7 +682,7 @@ WHERE p.id = :pallet_id;
 - `pallets.rfid_epc` (UNIQUE)
 - `pallets.status`
 - `lots.production_date`
-- `lots.part_id, process_id` (복합)
+- `lots.item_id, process_id` (복합)
 - `pallet_histories.pallet_id, event_time` (복합)
 
 ### 5.2 캐싱 (Redis)

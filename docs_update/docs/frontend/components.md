@@ -208,7 +208,7 @@ export interface Lot {
     process_name: string;
   };
   material: {
-    coil_number: string;
+    item_code: string;
   };
 }
 ```
@@ -622,7 +622,7 @@ VITE_API_URL=http://localhost:8000
 - 검색 및 필터링 (QC 합격/불합격)
 
 **주요 필드**:
-- `coil_number`: 코일 번호 (필수, 중복 불가)
+- `item_code`: 코일 번호 (필수, 중복 불가)
 - `material_name`: 재질명 (예: SPHC 1.6T)
 - `supplier`: 공급업체
 - `receipt_date`: 입고일자

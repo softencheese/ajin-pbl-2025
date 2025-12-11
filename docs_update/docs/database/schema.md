@@ -128,6 +128,7 @@ CREATE TABLE rfid_reader_locations (
 CREATE TABLE lots (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   lot_number VARCHAR(50) UNIQUE NOT NULL COMMENT 'LOT 번호 (시스템 자동 생성, 고유)',
+  barcode VARCHAR(100) COMMENT '실물 바코드 번호 (라벨 스캔용)',
   item_id BIGINT NOT NULL COMMENT '품목 ID',
   quantity INT NOT NULL COMMENT '현재 수량',
   initial_quantity INT NOT NULL COMMENT '초기 수량',
@@ -200,6 +201,7 @@ CREATE TABLE lot_genealogy (
   process_id BIGINT NOT NULL COMMENT '발생 공정 ID',
   quantity_consumed INT NOT NULL COMMENT '투입 수량',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (input_lot_id) REFERENCES lots(id),
   FOREIGN KEY (output_lot_id) REFERENCES lots(id),
   FOREIGN KEY (process_id) REFERENCES processes(id),
@@ -309,6 +311,7 @@ CREATE TABLE pallet_histories (
   worker_name VARCHAR(50) COMMENT '작업자',
   notes TEXT COMMENT '비고 (FIFO 위반 등)',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (pallet_id) REFERENCES pallets(id),
   FOREIGN KEY (lot_id) REFERENCES lots(id),
   FOREIGN KEY (process_id) REFERENCES processes(id),

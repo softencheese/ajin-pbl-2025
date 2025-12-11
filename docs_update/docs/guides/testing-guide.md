@@ -112,7 +112,7 @@ RFID 리더기가 어느 공정의 어떤 위치(투입/배출)에 있는지 정
 더 완벽한 테스트를 위해서는 다음 데이터도 순서대로 생성해보세요.
 
 1. **원자재 등록**: `POST /api/v1/materials`
-2. **품번 등록**: `POST /api/v1/parts`
+2. **품번 등록**: `POST /api/v1/items`
 3. **LOT 생성**: `POST /api/v1/lots`
 4. **팔레트에 LOT 연결**: `PUT /api/v1/pallets/{id}/link-lot`
 5. **스캔 테스트**: 위와 동일하게 스캔 수행 시, 이제 LOT 정보까지 포함된 응답이 오는지 확인

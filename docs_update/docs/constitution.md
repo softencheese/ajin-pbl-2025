@@ -72,9 +72,9 @@
 
 ### VII. 데이터 무결성
 **필수 제약**:
-- 팔레트는 중간품 LOT 또는 조립품 LOT 중 **하나와만 연결** (상호 배타적)
-- 모든 중간품 LOT는 원자재(`raw_materials.material_id`) 연결 필수
-- 조립 레벨은 트리거로 자동 계산 (최대 구성요소 레벨 + 1)
+- 팔레트는 하나의 LOT만 연결 (`lot_id` 단일 FK)
+- 모든 LOT는 `items.id`와 연결 필수
+- LOT 간 추적은 `lot_genealogy` 테이블로 관리
 - RFID EPC 코드는 시스템 전체에서 유일 (UNIQUE 제약)
 
 **불변 로그**:
