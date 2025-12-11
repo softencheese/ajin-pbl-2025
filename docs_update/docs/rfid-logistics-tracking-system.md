@@ -728,7 +728,7 @@ API: 원래 타임스탬프로 이력 기록
 ## 7. 관련 문서
 
 ### 7.1 헌법 및 아키텍처
-- **헌법**: `.specify/memory/constitution.md`
+- **헌법**: `docs/constitution.md`
 - **팔레트 상태 기계**: `docs/pallet-state-machine.md`
 - **DB 아키텍처**: `docs/database-architecture.md`
 - **개발 워크플로우**: `docs/development-workflow.md`

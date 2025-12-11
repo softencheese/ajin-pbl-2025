@@ -7,8 +7,9 @@
 - [x] `docs/` 폴더에 문서 정리 및 카테고리화
 
 ### 📝 문서 작성
-- [x] 시스템 명세서 (`.specify/specs/rfid-logistics-tracking-system.md`)
-- [x] 구현 계획서 (`.specify/plans/implementation-plan.md`)
+- [x] 시스템 명세서 (`docs/rfid-logistics-tracking-system.md`)
+- [x] 구현 계획서 (`docs/implementation-plan.md`)
+- [x] 시스템 헌법 (`docs/constitution.md`)
 - [x] 설계 가이드 (`docs/guides/design-guide.md`)
 - [x] 프로젝트 가이드 (`docs/guides/project-guide.md`)
 - [x] API 엔드포인트 명세 (`docs/api/endpoints.md`)

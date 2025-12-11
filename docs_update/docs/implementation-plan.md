@@ -3,7 +3,7 @@
 ## 문서 정보
 - **버전**: 1.0.0
 - **작성일**: 2025-11-17
-- **기반 명세**: `.specify/specs/rfid-logistics-tracking-system.md`
+- **기반 명세**: `docs/rfid-logistics-tracking-system.md`
 - **목적**: 기술 스택 선정 및 구체적 구현 계획 수립
 
 ---
@@ -66,7 +66,6 @@
 - `react-router-dom` - 라우팅
 - `axios` - HTTP 클라이언트
 - `antd` (Ant Design) - UI 컴포넌트
-  - antd 대신 tailwindcss 사용 (다른 라이브러리도 고려중)
 - `recharts` - 차트 라이브러리
 - `socket.io-client` - 실시간 통신 (WebSocket)
 - `dayjs` - 날짜 처리
@@ -857,6 +856,7 @@ CMD ["npm", "run", "dev", "--", "--host"]
     "@tanstack/react-query": "^5.8.4",
     "zustand": "^4.4.7",
     "axios": "^1.6.2",
+    "antd": "^5.11.5",
     "recharts": "^2.10.3",
     "socket.io-client": "^4.6.0",
     "dayjs": "^1.11.10"
@@ -1325,12 +1325,12 @@ echo "Backup completed: ${BACKUP_DIR}/ajin_rfid_${DATE}.sql"
 
 ## 11. 관련 문서
 
-- **명세서**: `.specify/specs/rfid-logistics-tracking-system.md`
+- **명세서**: `docs/rfid-logistics-tracking-system.md`
 - **임베디드 상세**: `docs/embedded-system-spec.md`
 - **API 상세**: `docs/api-server-spec.md`
 - **웹 상세**: `docs/web-app-spec.md`
 - **DB 스키마**: `temp/DB/Ajin_DB.sql`
-- **헌법**: `.specify/memory/constitution.md`
+- **헌법**: `docs/constitution.md`
 
 ---
 

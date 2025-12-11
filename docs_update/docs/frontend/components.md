@@ -803,4 +803,4 @@ VITE_API_URL=http://localhost:8000
 ## 참고 문서
 - 웹 애플리케이션 상세 명세: `web-app-spec.md`
 - API 엔드포인트: `../api/endpoints.md`
-- 시스템 명세: `../.specify/specs/rfid-logistics-tracking-system.md`
+- 시스템 명세: `../docs/rfid-logistics-tracking-system.md`

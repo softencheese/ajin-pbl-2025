@@ -461,10 +461,10 @@
 
 ---
 
-### 2.5 모니터링
+### 2.5 모니터링 (Dashboard)
 
 #### 2.5.1 재고 현황
-**엔드포인트**: `GET /api/v1/inventory/stock`
+**엔드포인트**: `GET /api/v1/dashboard/inventory/stock`
 
 **쿼리 파라미터**:
 - `part_number` (선택): 품번 필터
@@ -492,7 +492,7 @@
 ```
 
 #### 2.5.2 공정 현황
-**엔드포인트**: `GET /api/v1/monitoring/processes`
+**엔드포인트**: `GET /api/v1/dashboard/process-status`
 
 **응답**:
 ```json
@@ -516,7 +516,7 @@
 ```
 
 #### 2.5.3 리더기 상태
-**엔드포인트**: `GET /api/v1/monitoring/readers`
+**엔드포인트**: `GET /api/v1/dashboard/readers`
 
 **응답**:
 ```json
@@ -533,7 +533,7 @@
     },
     {
       "id": 2,
-      "port_name": "192.168.1.101:9001",
+      "port_name": "READER_01",
       "process_name": "조립",
       "location_type": "OUT",
       "status": "DISCONNECTED",
@@ -716,7 +716,7 @@ WHERE p.id = :pallet_id;
 ---
 
 ## 7. 관련 문서
-- **시스템 명세**: `.specify/specs/rfid-logistics-tracking-system.md`
+- **시스템 명세**: `docs/rfid-logistics-tracking-system.md`
 - **임베디드 명세**: `docs/embedded-system-spec.md`
 - **웹 앱 명세**: `docs/web-app-spec.md`
 - **DB 아키텍처**: `docs/database-architecture.md`

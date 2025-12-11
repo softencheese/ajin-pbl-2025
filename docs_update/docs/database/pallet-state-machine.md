@@ -206,5 +206,5 @@ Producing → Defect (생산 중 불량)
 ---
 
 ## 참고
-- 헌법 문서: `.specify/memory/constitution.md`
-- DB 아키텍처: `docs/database-architecture.md`
+- 헌법 문서: `docs/constitution.md`
+- DB 아키텍처: `docs/database/database-architecture.md`

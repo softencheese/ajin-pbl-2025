@@ -563,4 +563,4 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 
 ## 참고 문서
 - API 서버 상세 명세: `api-server-spec.md`
-- 시스템 명세: `../.specify/specs/rfid-logistics-tracking-system.md`
+- 시스템 명세: `../docs/rfid-logistics-tracking-system.md`

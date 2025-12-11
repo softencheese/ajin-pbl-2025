@@ -102,30 +102,33 @@
 
 ## 데이터 아키텍처 핵심
 
-### 10개 핵심 테이블
-**마스터 (4개)**:
-- `raw_materials`: 코일 번호 기반 원자재 추적
-- `parts`: 품번 정보 (`is_final_product`로 완제품 구분)
-- `processes`: 공정 정보 (샤링, 프레스, 조립, 출하)
-- `rfid_reader_locations`: 리더기-공정-위치 매핑 (IN/OUT/HOLD/DEFECT/FINISH)
+### 핵심 개념: 품목(Item)과 LOT의 분리
+- **품목(Item)**: "무엇인가?" - 제품의 종류/규격 정의 (원자재코드, 품번)
+- **LOT**: "어떤 것인가?" - 실물 인스턴스 추적 (시스템 생성 고유 번호)
+- **원자재 코드는 품번과 동일한 개념** (동일 코드로 여러 번 입고 가능)
+- **LOT 번호는 시스템 자동 생성** (입고/생산 시마다 새로 발행)
 
-**생산 (3개)**:
-- `lots`: 중간품 LOT (원자재 연결, `assembly_level = 0`)
-- `assembly_lots`: 조립품 LOT (반제품/완제품, 자동 레벨 계산)
-- `assembly_components`: 조립품 구성 요소 추적
+### 8개 핵심 테이블
+**마스터 (3개)**:
+- `items`: 통합 품목 마스터 (RAW:원자재, WIP:재공품, PRODUCT:완제품)
+- `processes`: 공정 정보 (입고, 샤링, 프레스, 조립, 출하)
+- `rfid_reader_locations`: 리더기-공정-위치 매핑 (IN/OUT/HOLD/DEFECT/FINISH/RETURN)
+
+**LOT 관리 (2개)**:
+- `lots`: 통합 LOT 관리 (원자재~완제품 모두 포함, `lot_number`는 시스템 생성 고유값)
+- `lot_genealogy`: LOT 족보 (투입-산출 관계, 추적성 핵심)
 
 **RFID (3개)**:
-- `pallets`: 팔레트 상태 관리 (9가지 상태, LOT 연결)
+- `pallets`: 팔레트 상태 관리 (9가지 상태, 단일 `lot_id` 연결)
 - `pallet_histories`: 불변 이력 로그
 - `rfid_tags`: RFID 태그 관리
 
-### 6개 추적성 뷰
+### 5개 추적성 뷰
 - `v_pallet_status`: 팔레트 현황
 - `v_stock_inventory`: 재고 현황 (FIFO용)
-- `v_pallet_trace`: 공정 이력 추적
-- `v_assembly_trace`: 조립 추적 (완제품 → 구성품)
-- `v_material_forward_trace`: 원자재 정방향 추적 (코일 → 제품)
-- `v_product_backward_trace`: 제품 역방향 추적 (제품 → 코일)
+- `v_lot_forward_trace`: 정방향 추적 (원자재 → 완제품)
+- `v_lot_backward_trace`: 역방향 추적 (완제품 → 원자재)
+- `v_lot_full_genealogy`: LOT 전체 족보 조회
 
 ---
 

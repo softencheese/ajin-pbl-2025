@@ -591,6 +591,6 @@ socket.on('pallet_status_changed', (data) => {
 ---
 
 ## 11. 관련 문서
-- **시스템 명세**: `.specify/specs/rfid-logistics-tracking-system.md`
+- **시스템 명세**: `docs/rfid-logistics-tracking-system.md`
 - **API 서버 명세**: `docs/api-server-spec.md`
 - **임베디드 명세**: `docs/embedded-system-spec.md`

@@ -16,7 +16,7 @@ AJIN RFID 물류 추적 시스템의 아키텍처 설계 원칙과 주요 설계
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐     │
 │  │ RFID     │  │ RFID     │  │ RFID     │  │ RFID     │     │
 │  │ Reader 1 │  │ Reader 2 │  │ Reader 3 │  │ Reader N │     │
-│  │ (샤링)   │  │ (프레스) │  │ (조립)   │  │ (출하)   │     │
+│  │ (샤링)    │  │ (프레스)  │  │ (조립)    │  │ (출하)    │     │
 │  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘     │
 └───────┼─────────────┼─────────────┼─────────────┼───────────┘
         │             │             │             │
@@ -512,8 +512,8 @@ class WrongPartValidation(ValidationStrategy):
 
 ## 참고 문서
 
-- 시스템 명세: `../.specify/specs/rfid-logistics-tracking-system.md`
-- 구현 계획: `../.specify/plans/implementation-plan.md`
+- 시스템 명세: `../docs/rfid-logistics-tracking-system.md`
+- 구현 계획: `../docs/implementation-plan.md`
 - DB 스키마: `../database/schema.md`
 - 상태 기계: `../database/pallet-state-machine.md`
 - API 엔드포인트: `../api/endpoints.md`
