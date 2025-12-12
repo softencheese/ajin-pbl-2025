@@ -7,7 +7,7 @@ from datetime import date, datetime, timedelta
 from app.database import get_db
 from app.models.pallet import Pallet, PalletHistory
 from app.models.lot import Lot
-from app.models.assembly import AssemblyLot
+from app.models.item import Item
 from app.models.process import Process
 from app.models.rfid import RFIDReaderLocation
 from app.schemas.dashboard import (
@@ -135,7 +135,7 @@ async def get_reader_status(db: Session = Depends(get_db)):
 
 @router.get("/inventory/stock", response_model=StockInventoryResponse)
 async def get_stock_inventory(
-    part_number: Optional[str] = None,
+    item_code: Optional[str] = Query(None, alias="part_number"), # 호환성 유지 위해 alias 사용
     process_id: Optional[int] = None,
     sort: str = Query("production_date", description="정렬 기준"),
     db: Session = Depends(get_db)
@@ -158,24 +158,28 @@ async def get_stock_inventory(
     pallets = query.all()
     
     # 품번별로 그룹화
-    stock_by_part = {}
+    stock_by_item = {}
     
     for pallet in pallets:
         if not pallet.lot:
             continue
         
-        part = pallet.lot.part
-        if part_number and part.part_number != part_number:
+        # Lot -> Item
+        item = pallet.lot.item
+        if not item:
+            continue
+
+        if item_code and item.item_code != item_code:
             continue
         
-        key = (part.part_number, pallet.current_process_id)
+        key = (item.item_code, pallet.current_process_id)
         
-        if key not in stock_by_part:
+        if key not in stock_by_item:
             process_name = pallet.current_process.process_name if pallet.current_process else None
-            stock_by_part[key] = {
-                "part_number": part.part_number,
-                "part_name": part.part_name,
-                "vehicle_model": part.vehicle_model,
+            stock_by_item[key] = {
+                "item_code": item.item_code,
+                "item_name": item.item_name,
+                "vehicle_model": item.vehicle_model,
                 "process_name": process_name,
                 "production_line": pallet.current_process.production_line if pallet.current_process else None,
                 "lots": []
@@ -192,8 +196,8 @@ async def get_stock_inventory(
         else:
             urgency = "normal"
         
-        stock_by_part[key]["lots"].append({
-            "lot_no": pallet.lot.lot_no,
+        stock_by_item[key]["lots"].append({
+            "lot_no": pallet.lot.lot_number,
             "pallet_no": pallet.pallet_no,
             "production_date": pallet.lot.production_date,
             "days_old": days_old,
@@ -203,7 +207,7 @@ async def get_stock_inventory(
     
     # 각 품번의 LOT를 생산일자순 정렬
     stock_items = []
-    for key, data in stock_by_part.items():
+    for key, data in stock_by_item.items():
         data["lots"].sort(key=lambda x: x["production_date"])
         # LotStock 모델로 변환
         data["lots"] = [LotStock(**lot) for lot in data["lots"]]

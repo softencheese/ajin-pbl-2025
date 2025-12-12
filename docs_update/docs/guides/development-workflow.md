@@ -186,6 +186,6 @@
 ---
 
 ## 참고
-- 헌법 문서: `.specify/memory/constitution.md`
+- 헌법 문서: `docs/constitution.md`
 - DB 아키텍처: `docs/database-architecture.md`
 - 팔레트 상태 기계: `docs/pallet-state-machine.md`

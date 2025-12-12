@@ -3,7 +3,7 @@
 ## 문서 정보
 - **버전**: 1.0.0
 - **작성일**: 2025-11-17
-- **기반 명세**: `.specify/specs/rfid-logistics-tracking-system.md`
+- **기반 명세**: `docs/rfid-logistics-tracking-system.md`
 - **목적**: 기술 스택 선정 및 구체적 구현 계획 수립
 
 ---
@@ -66,7 +66,6 @@
 - `react-router-dom` - 라우팅
 - `axios` - HTTP 클라이언트
 - `antd` (Ant Design) - UI 컴포넌트
-  - antd 대신 tailwindcss 사용 (다른 라이브러리도 고려중)
 - `recharts` - 차트 라이브러리
 - `socket.io-client` - 실시간 통신 (WebSocket)
 - `dayjs` - 날짜 처리
@@ -630,7 +629,7 @@ app.add_middleware(
 # 라우터 등록
 app.include_router(rfid.router, prefix="/api/v1/rfid", tags=["RFID"])
 app.include_router(materials.router, prefix="/api/v1/materials", tags=["Materials"])
-app.include_router(parts.router, prefix="/api/v1/parts", tags=["Parts"])
+app.include_router(items.router, prefix="/api/v1/items", tags=["Items"])
 app.include_router(processes.router, prefix="/api/v1/processes", tags=["Processes"])
 app.include_router(lots.router, prefix="/api/v1/lots", tags=["Lots"])
 app.include_router(pallets.router, prefix="/api/v1/pallets", tags=["Pallets"])
@@ -732,7 +731,7 @@ class RFIDService:
             
             # 조립품 구성 요소 기록 (필요 시)
             if next_status == "Finished" and pallet.assembly_lot_id:
-                self._record_assembly_components(pallet)
+                self._record_lot_genealogy(pallet)
             
             self.db.commit()
             
@@ -762,7 +761,7 @@ class RFIDService:
             self.db.rollback()
             raise e
     
-    def _record_assembly_components(self, pallet: Pallet):
+    def _record_lot_genealogy(self, pallet: Pallet):
         # 조립품 구성 요소 자동 기록 로직
         # 최근 Consuming 상태였던 팔레트들을 구성 요소로 기록
         pass
@@ -857,6 +856,7 @@ CMD ["npm", "run", "dev", "--", "--host"]
     "@tanstack/react-query": "^5.8.4",
     "zustand": "^4.4.7",
     "axios": "^1.6.2",
+    "antd": "^5.11.5",
     "recharts": "^2.10.3",
     "socket.io-client": "^4.6.0",
     "dayjs": "^1.11.10"
@@ -1069,16 +1069,16 @@ CREATE DATABASE IF NOT EXISTS ajin_rfid CHARACTER SET utf8mb4 COLLATE utf8mb4_un
 USE ajin_rfid;
 
 -- 원자재 테이블
-CREATE TABLE raw_materials (
+CREATE TABLE items (
   id INT PRIMARY KEY AUTO_INCREMENT,
-  coil_number VARCHAR(50) UNIQUE NOT NULL COMMENT '코일 번호 (추적 키)',
+  item_code VARCHAR(50) UNIQUE NOT NULL COMMENT '코일 번호 (추적 키)',
   material_name VARCHAR(100) NOT NULL COMMENT '재질명',
   supplier VARCHAR(100) COMMENT '공급업체',
   receipt_date DATE COMMENT '입고일자',
   qc_passed BOOLEAN DEFAULT FALSE COMMENT 'QC 합격 여부',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  INDEX idx_coil_number (coil_number)
+  INDEX idx_item_code (item_code)
 ) COMMENT '원자재(코일) 마스터';
 
 -- ... (나머지 테이블은 temp/DB/Ajin_DB.sql 참조)
@@ -1325,12 +1325,12 @@ echo "Backup completed: ${BACKUP_DIR}/ajin_rfid_${DATE}.sql"
 
 ## 11. 관련 문서
 
-- **명세서**: `.specify/specs/rfid-logistics-tracking-system.md`
+- **명세서**: `docs/rfid-logistics-tracking-system.md`
 - **임베디드 상세**: `docs/embedded-system-spec.md`
 - **API 상세**: `docs/api-server-spec.md`
 - **웹 상세**: `docs/web-app-spec.md`
 - **DB 스키마**: `temp/DB/Ajin_DB.sql`
-- **헌법**: `.specify/memory/constitution.md`
+- **헌법**: `docs/constitution.md`
 
 ---
 

@@ -20,7 +20,7 @@ class TraceResponse(BaseSchema):
     """팔레트 이력 응답"""
     pallet_no: str
     lot_no: Optional[str] = None
-    part_number: Optional[str] = None
+    item_code: Optional[str] = None
     histories: List[TraceHistoryItem] = []
 
 
@@ -32,68 +32,66 @@ class PalletSummary(BaseSchema):
     current_process: Optional[str] = None
 
 
-class AssemblyUsage(BaseSchema):
-    """조립품 사용 정보"""
-    assembly_lot_no: str
-    assembly_part_number: str
-    assembly_part_name: Optional[str] = None
-    assembly_level: int
-    is_final_product: bool
-    quantity_used: int
+class ChildLotUsage(BaseSchema):
+    """자식 LOT (생성된 LOT) 정보"""
+    child_lot_no: str
+    child_item_code: str
+    child_item_name: Optional[str] = None
+    quantity_consumed: int
 
 
 class ProducedLot(BaseSchema):
     """생산된 LOT 정보"""
     lot_no: str
-    part_number: str
-    part_name: Optional[str] = None
+    item_code: str
+    item_name: Optional[str] = None
     quantity: int
     production_date: date
     qc_passed: bool
     pallets: List[PalletSummary] = []
-    used_in_assemblies: List[AssemblyUsage] = []
+    child_lots: List[ChildLotUsage] = []
 
 
 class ForwardTraceResponse(BaseSchema):
     """정방향 추적 응답"""
-    coil_number: str
-    material_name: str
-    supplier: Optional[str] = None
-    receipt_date: Optional[date] = None
+    root_lot_no: str
+    item_code: str
+    item_name: str
+    item_type: str
+    supplier: Optional[str] = None # 원자재인 경우
+    production_date: Optional[date] = None
     qc_passed: bool
     produced_lots: List[ProducedLot] = []
 
 
 # 역방향 추적 (제품 → 원자재)
-class ComponentInfo(BaseSchema):
-    """구성 요소 정보"""
+class ParentLotInfo(BaseSchema):
+    """부모 LOT (투입된 LOT) 정보"""
     lot_no: str
-    part_number: str
-    part_name: Optional[str] = None
-    coil_number: Optional[str] = None
-    quantity_used: Optional[int] = None
+    item_code: str
+    item_name: Optional[str] = None
+    quantity_consumed: int
+    supplier: Optional[str] = None # 원자재인 경우
 
 
 class ProductInfo(BaseSchema):
     """제품 정보"""
     lot_no: str
-    part_number: str
-    part_name: Optional[str] = None
-    is_assembly: bool = False
-    assembly_level: int = 0
+    item_code: str
+    item_name: Optional[str] = None
+    item_type: str
 
 
 class BackwardTraceResponse(BaseSchema):
     """역방향 추적 응답"""
     product: ProductInfo
-    components: List[ComponentInfo] = []
-    raw_materials: List[dict] = []  # 원자재 정보
+    parent_lots: List[ParentLotInfo] = []
 
 
 # 드릴다운 검색
 class DrillDownResponse(BaseSchema):
     """드릴다운 검색 응답"""
-    search_type: str = Field(..., description="검색 타입 (PALLET, LOT, PART, COIL)")
+    search_type: str = Field(..., description="검색 타입 (PALLET, LOT, ITEM)")
     search_value: str
     forward_trace: Optional[ForwardTraceResponse] = None
     backward_trace: Optional[BackwardTraceResponse] = None

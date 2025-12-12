@@ -745,4 +745,4 @@ WantedBy=multi-user.target
 ## 참고 문서
 - 임베디드 시스템 상세 명세: `embedded-system-spec.md`
 - API 엔드포인트: `../api/endpoints.md`
-- 시스템 명세: `../.specify/specs/rfid-logistics-tracking-system.md`
+- 시스템 명세: `../docs/rfid-logistics-tracking-system.md`

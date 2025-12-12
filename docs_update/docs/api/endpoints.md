@@ -36,8 +36,8 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
     "pallet_no": "PLT-2025-001",
     "previous_status": "Stock",
     "current_status": "Consuming",
-    "lot_no": "LOT-20251017-001",
-    "part_number": "71412-T6000S"
+    "lot_number": "SH-231211-001",
+    "item_code": "71412-T6000S"
   },
   "feedback": {
     "pattern": "SUCCESS",
@@ -55,7 +55,7 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
     "type": "FIFO_VIOLATION",
     "message": "더 오래된 재고가 있습니다",
     "oldest_stock": {
-      "lot_no": "LOT-20251015-003",
+      "lot_number": "SH-231209-001",
       "days_old": 2
     }
   },
@@ -74,8 +74,8 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
   "error": {
     "type": "WRONG_PART",
     "message": "품번 불일치 - 투입 불가",
-    "expected_part": "71412-T6000S",
-    "actual_part": "76211-GI000"
+    "expected_item": "71412-T6000S",
+    "actual_item": "76211-GI000"
   },
   "feedback": {
     "pattern": "ERROR",
@@ -114,57 +114,48 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 
 ## 2. 마스터 데이터 관리
 
-### 2.1 원자재 (Raw Materials)
+### 2.1 품목 (Items) - 통합 품목 마스터
+
+> **Note**: 기존 `원자재(materials)`와 `품번(parts)`이 `품목(items)`으로 통합되었습니다.
 
 #### 목록 조회
-- **GET** `/materials`
-- **Query Parameters**: `page`, `per_page`, `search`
+- **GET** `/items`
+- **Query Parameters**: 
+  - `page`, `per_page`: 페이지네이션
+  - `search`: 품목코드/품명 검색
+  - `item_type`: `RAW` (원자재), `WIP` (재공품), `PRODUCT` (완제품) 필터
 
 #### 상세 조회
-- **GET** `/materials/{id}`
+- **GET** `/items/{id}`
 
 #### 등록
-- **POST** `/materials`
+- **POST** `/items`
 ```json
 {
-  "coil_number": "C059461B",
-  "material_name": "SPHC 1.6T",
-  "supplier": "포스코",
-  "receipt_date": "2025-10-15",
-  "qc_passed": true
+  "item_code": "STEEL-SPCC",
+  "item_name": "SPCC 냉연강판",
+  "item_type": "RAW",
+  "unit": "EA",
+  "spec": "1.2t x 1219mm",
+  "vehicle_model": null,
+  "default_supplier": "포스코"
 }
 ```
+
+**item_type 구분**:
+- `RAW`: 원자재 (코일, 철판 등)
+- `WIP`: 재공품/중간품 (샤링품, 프레스품 등)
+- `PRODUCT`: 완제품 (조립 완료 제품)
 
 #### 수정
-- **PUT** `/materials/{id}`
+- **PUT** `/items/{id}`
 
 #### 삭제
-- **DELETE** `/materials/{id}` (사용 이력 없는 경우만)
+- **DELETE** `/items/{id}` (사용 이력 없는 경우만)
 
 ---
 
-### 2.2 품번 (Parts)
-
-#### 목록 조회
-- **GET** `/parts`
-- **Query Parameters**: `page`, `per_page`, `search`, `is_assembly`, `is_final_product`
-
-#### 등록
-- **POST** `/parts`
-```json
-{
-  "part_number": "71412-T6000S",
-  "part_name": "PNL-FR DR INR, LH",
-  "part_spec": "LH, 1.6T",
-  "vehicle_model": "JX1",
-  "is_assembly": false,
-  "is_final_product": false
-}
-```
-
----
-
-### 2.3 공정 (Processes)
+### 2.2 공정 (Processes)
 
 #### 목록 조회
 - **GET** `/processes`
@@ -190,13 +181,13 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 
 ---
 
-### 2.4 RFID 리더기 위치 (Reader Locations)
+### 2.3 RFID 리더기 위치 (Reader Locations)
 
 #### 목록 조회
 - **GET** `/reader-locations`
 
 #### 등록 (수동)
-> **Note**: 일반적으로 리더기는 Heartbeat 수신 시 자동 등록됩니다. 이 엔드포인트는 수동 등록이 필요한 경우에만 사용합니다.
+> **Note**: 일반적으로 리더기는 Heartbeat 수신 시 자동 등록됩니다.
 
 - **POST** `/reader-locations`
 ```json
@@ -214,38 +205,19 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 
 ---
 
-### 2.5 RFID 태그 (RFID Tags)
+### ~~2.4 RFID 태그 (RFID Tags)~~ - **삭제됨**
 
-#### 목록 조회
-- **GET** `/rfid-tags`
-- **Query Parameters**: `status` (AVAILABLE, IN_USE, DAMAGED)
+> **Note**: `rfid_tags` 테이블이 `pallets`에 통합되었습니다.  
+> 태그 상태는 `pallets.tag_status` 필드로 관리합니다.
 
-#### 상세 조회
-- **GET** `/rfid-tags/{id}`
-
-#### 등록
-- **POST** `/rfid-tags`
-```json
-{
-  "epc": "E2801170000002036B3D8CCD"
-}
-```
-
-#### 상태 변경
-- **PUT** `/rfid-tags/{id}/status`
-```json
-{
-  "status": "DAMAGED",
-  "reason": "물리적 손상"
-}
-```
-
-#### 팔레트 연결 해제
-- **POST** `/rfid-tags/{id}/detach`
+기존 RFID 태그 API 대신 **Pallets API**를 사용하세요:
+- 태그 등록 → `POST /pallets` (rfid_epc 포함)
+- 태그 상태 조회 → `GET /pallets/{id}` (tag_status 필드 확인)
+- 태그 상태 변경 → `PUT /pallets/{id}/tag-status`
 
 ---
 
-### 2.6 팔레트 (Pallets)
+### 2.5 팔레트 (Pallets)
 
 #### 목록 조회
 - **GET** `/pallets`
@@ -280,107 +252,221 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 }
 ```
 
----
+#### 태그 상태 변경
+> **Note**: 기존 `/rfid-tags/{id}/status` 대체
 
-## 3. 생산 관리
-
-### 3.1 중간품 LOT
-
-#### 생성
-- **POST** `/lots`
+- **PUT** `/pallets/{id}/tag-status`
 ```json
 {
-  "lot_no": "LOT-20251017-001",
-  "part_id": 10,
-  "process_id": 1,
-  "material_id": 5,
-  "quantity": 400,
-  "production_date": "2025-10-17",
-  "worker_name": "최영일"
+  "tag_status": "DAMAGED",
+  "reason": "물리적 손상"
 }
 ```
 
-#### 목록 조회
+**tag_status 값**:
+- `AVAILABLE`: 사용 가능
+- `IN_USE`: 사용 중
+- `DAMAGED`: 손상됨
+
+---
+
+## 3. LOT 관리 (통합)
+
+> **Note**: 기존 `중간품 LOT`와 `조립품 LOT`가 하나의 `LOT` 테이블로 통합되었습니다.
+
+### 3.1 LOT 목록 조회
 - **GET** `/lots`
-- **Query Parameters**: `part_id`, `process_id`, `date_from`, `date_to`
+- **Query Parameters**: 
+  - `item_id`: 품목 ID 필터
+  - `item_type`: RAW, WIP, PRODUCT 필터
+  - `process_id`: 공정 ID 필터
+  - `status`: LOT 상태 필터 (WAIT, PROCESS, STOCK, CONSUMED, SHIPPED, HOLD, DEFECT)
+  - `date_from`, `date_to`: 생산일 범위
 
----
-
-### 3.2 조립품 LOT
-
-#### 생성
-- **POST** `/assembly-lots`
-```json
-{
-  "lot_no": "ASM-20251018-001",
-  "part_id": 20,
-  "assembly_date": "2025-10-18",
-  "quantity": 100,
-  "worker_name": "전재민"
-}
-```
-
-#### 구성 요소 추가
-- **POST** `/assembly-lots/{id}/components`
-```json
-{
-  "component_lot_id": 123,
-  "quantity": 100
-}
-```
-
----
-
-## 4. 추적성 조회
-
-### 4.1 정방향 추적 (코일 → 제품)
-**엔드포인트**: `GET /trace/forward`
-
-**Query Parameters**: `coil_number`
+### 3.2 LOT 상세 조회
+- **GET** `/lots/{id}`
 
 **응답**:
 ```json
 {
-  "coil": {
-    "coil_number": "C059461B",
-    "material_name": "SPHC 1.6T"
+  "id": 1,
+  "lot_number": "IN-231211-001",
+  "barcode": "251018226687",
+  "item": {
+    "id": 5,
+    "item_code": "STEEL-SPCC",
+    "item_name": "SPCC 냉연강판",
+    "item_type": "RAW"
   },
-  "intermediate_lots": [
+  "quantity": 100,
+  "initial_quantity": 100,
+  "status": "STOCK",
+  "production_date": "2023-12-11",
+  "supplier": "포스코",
+  "worker_name": "홍길동",
+  "qc_passed": true
+}
+```
+
+### 3.3 원자재 입고 (LOT 생성)
+- **POST** `/lots/receiving`
+
+**설명**: 원자재 입고 시 LOT 생성 (RFID 불필요, 수동 등록)
+
+```json
+{
+  "item_id": 5,
+  "quantity": 100,
+  "production_date": "2023-12-11",
+  "supplier": "포스코",
+  "barcode": "251018226687",
+  "notes": "비고"
+}
+```
+
+**응답**:
+```json
+{
+  "id": 1,
+  "lot_number": "IN-231211-001",
+  "barcode": "251018226687",
+  "item_code": "STEEL-SPCC",
+  "status": "STOCK"
+}
+```
+
+### 3.4 생산 LOT 생성
+- **POST** `/lots`
+
+**설명**: 샤링, 프레스, 조립 등 생산 공정에서 새 LOT 생성 + 투입 LOT 연결
+
+```json
+{
+  "item_id": 10,
+  "process_id": 2,
+  "quantity": 400,
+  "production_date": "2023-12-11",
+  "worker_name": "최영일",
+  "input_lots": [
     {
-      "lot_no": "LOT-20251017-001",
-      "part_number": "71412-T6000S",
-      "quantity": 400
+      "lot_id": 1,
+      "quantity_consumed": 100
     }
   ],
-  "assembly_lots": [
-    {
-      "lot_no": "ASM-20251018-001",
-      "part_number": "ASSY-DOOR",
-      "quantity": 100
-    }
-  ]
+  "barcode": "SH-BARCODE-001"
 }
 ```
-
----
-
-### 4.2 역방향 추적 (제품 → 코일)
-**엔드포인트**: `GET /trace/backward`
-
-**Query Parameters**: `lot_no` or `assembly_lot_no`
 
 **응답**:
 ```json
 {
-  "product": {
-    "lot_no": "ASM-20251018-001",
-    "part_number": "ASSY-DOOR"
-  },
-  "components": [
+  "id": 2,
+  "id": 2,
+  "lot_number": "SH-231211-001",
+  "barcode": "SH-BARCODE-001",
+  "item_code": "71412-T6000S",
+  "status": "STOCK",
+  "genealogy": [
     {
-      "lot_no": "LOT-20251017-001",
-      "part_number": "71412-T6000S",
-      "coil_number": "C059461B"
+      "input_lot_number": "IN-231211-001",
+      "quantity_consumed": 100
+    }
+  ]
+}
+```
+
+### 3.5 LOT 상태 변경
+- **PUT** `/lots/{id}/status`
+```json
+{
+  "status": "CONSUMED",
+  "notes": "전량 소비"
+}
+```
+
+---
+
+## 4. LOT 족보 (Genealogy)
+
+### 4.1 족보 조회 (특정 LOT)
+- **GET** `/lot-genealogy/{lot_id}`
+
+**응답**:
+```json
+{
+  "lot": {
+    "id": 2,
+    "lot_number": "SH-231211-001",
+    "item_code": "71412-T6000S"
+  },
+  "parents": [
+    {
+      "lot_number": "IN-231211-001",
+      "item_code": "STEEL-SPCC",
+      "item_type": "RAW",
+      "quantity_consumed": 100
+    }
+  ],
+  "children": [
+    {
+      "lot_number": "PR-231211-001",
+      "item_code": "71412-T6000S-PR",
+      "item_type": "WIP",
+      "quantity_consumed": 400
+    }
+  ]
+}
+```
+
+### 4.2 족보 수동 추가
+- **POST** `/lot-genealogy`
+```json
+{
+  "input_lot_id": 1,
+  "output_lot_id": 2,
+  "process_id": 2,
+  "quantity_consumed": 100
+}
+```
+
+---
+
+## 5. 추적성 조회
+
+### 5.1 정방향 추적 (원자재 → 완제품)
+**엔드포인트**: `GET /trace/forward`
+
+**Query Parameters**: `lot_number` 또는 `lot_id`
+
+**응답**:
+```json
+{
+  "root_lot": {
+    "lot_number": "IN-231211-001",
+    "item_code": "STEEL-SPCC",
+    "item_type": "RAW"
+  },
+  "trace_path": [
+    {
+      "depth": 1,
+      "lot_number": "SH-231211-001",
+      "item_code": "71412-T6000S",
+      "item_type": "WIP",
+      "process_name": "샤링"
+    },
+    {
+      "depth": 2,
+      "lot_number": "PR-231211-001",
+      "item_code": "71412-T6000S-PR",
+      "item_type": "WIP",
+      "process_name": "프레스"
+    },
+    {
+      "depth": 3,
+      "lot_number": "AS-231211-001",
+      "item_code": "ASSY-DOOR",
+      "item_type": "PRODUCT",
+      "process_name": "조립"
     }
   ]
 }
@@ -388,18 +474,56 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 
 ---
 
-### 4.3 드릴다운 검색
-**엔드포인트**: `GET /trace/drill-down`
+### 5.2 역방향 추적 (완제품 → 원자재)
+**엔드포인트**: `GET /trace/backward`
 
-**Query Parameters**: `search` (품번, LOT, 코일, 팔레트 번호)
+**Query Parameters**: `lot_number` 또는 `lot_id`
+
+**응답**:
+```json
+{
+  "leaf_lot": {
+    "lot_number": "AS-231211-001",
+    "item_code": "ASSY-DOOR",
+    "item_type": "PRODUCT"
+  },
+  "trace_path": [
+    {
+      "depth": 1,
+      "lot_number": "PR-231211-001",
+      "item_code": "71412-T6000S-PR",
+      "item_type": "WIP"
+    },
+    {
+      "depth": 2,
+      "lot_number": "SH-231211-001",
+      "item_code": "71412-T6000S",
+      "item_type": "WIP"
+    },
+    {
+      "depth": 3,
+      "lot_number": "IN-231211-001",
+      "item_code": "STEEL-SPCC",
+      "item_type": "RAW"
+    }
+  ]
+}
+```
+
+---
+
+### 5.3 드릴다운 검색
+**엔드포인트**: `GET /trace/search`
+
+**Query Parameters**: `q` (품목코드, LOT번호, 팔레트 번호)
 
 **응답**: 검색어 유형에 따라 정방향/역방향 통합 결과 반환
 
 ---
 
-## 5. 모니터링 및 통계
+## 6. 모니터링 및 통계
 
-### 5.1 대시보드 요약
+### 6.1 대시보드 요약
 - **GET** `/dashboard/summary`
 
 **응답**:
@@ -415,22 +539,24 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 }
 ```
 
-### 5.2 공정별 현황
+### 6.2 공정별 현황
 - **GET** `/dashboard/process-status`
 
-### 5.3 재고 현황 (FIFO 포함)
+### 6.3 재고 현황 (FIFO 포함)
 - **GET** `/inventory/stock`
 
 **응답**:
 ```json
 [
   {
-    "part_number": "71412-T6000S",
+    "item_code": "71412-T6000S",
+    "item_name": "PNL-FR DR INR, LH",
+    "item_type": "WIP",
     "process_name": "프레스",
     "lots": [
       {
-        "lot_no": "LOT-20251015-003",
-        "production_date": "2025-10-15",
+        "lot_number": "PR-231209-001",
+        "production_date": "2023-12-09",
         "days_old": 5,
         "quantity": 400,
         "status": "urgent"
@@ -442,9 +568,9 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 
 ---
 
-## 6. 인증 (Authentication)
+## 7. 인증 (Authentication)
 
-### 6.1 로그인
+### 7.1 로그인
 - **POST** `/auth/login`
 ```json
 {
@@ -461,7 +587,7 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 }
 ```
 
-### 6.2 토큰 갱신
+### 7.2 토큰 갱신
 - **POST** `/auth/refresh`
 
 ---
@@ -563,4 +689,5 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 
 ## 참고 문서
 - API 서버 상세 명세: `api-server-spec.md`
-- 시스템 명세: `../.specify/specs/rfid-logistics-tracking-system.md`
+- 시스템 명세: `../rfid-logistics-tracking-system.md`
+- DB 스키마: `../database/schema.md`

@@ -78,10 +78,10 @@ sudo chown -R 999:999 implementation/data/mysql  # MySQL 컨테이너 UID
 ### 3. 데이터베이스 스키마 준비
 
 ```bash
-# 기존 스키마 파일 복사
-cp temp/DB/Ajin_DB.sql implementation/database/init/01-schema.sql
+# 스키마 파일 확인
+ls -l implementation/database/init/01-schema.sql
 
-# 또는 직접 생성
+# 필요한 경우 편집
 nano implementation/database/init/01-schema.sql
 ```
 
@@ -147,7 +147,7 @@ Docker를 사용하지 않고 로컬에서 직접 실행하는 방법:
 ### API 서버 (FastAPI)
 
 ```bash
-cd implementation/api
+cd api
 
 # 가상 환경 생성
 python3 -m venv venv
@@ -170,7 +170,7 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ### 프론트엔드 (React)
 
 ```bash
-cd implementation/frontend
+cd frontend
 
 # 의존성 설치
 npm install
@@ -224,7 +224,7 @@ docker exec -i ajin-db mysql -u root -p${MYSQL_ROOT_PASSWORD} ajin_rfid < ./impl
 
 # 데이터베이스 재생성 (주의!)
 docker exec -it ajin-db mysql -u root -p -e "DROP DATABASE IF EXISTS ajin_rfid; CREATE DATABASE ajin_rfid;"
-docker exec -i ajin-db mysql -u root -p ajin_rfid < implementation/database/init/01-schema.sql
+docker exec -i ajin-db mysql -u root -p ajin_rfid < database/init/01-schema.sql
 ```
 
 ### Git
@@ -337,12 +337,12 @@ docker-compose up -d frontend
 
 1. **API 개발**: `implementation/api/app/routers/` 디렉토리에서 라우터 구현
 2. **프론트엔드 개발**: `implementation/frontend/src/pages/` 디렉토리에서 페이지 구현
-3. **임베디드 개발**: `implementation/embedded/src/` 디렉토리에서 C/C++ 코드 작성
-4. **데이터베이스**: `implementation/database/migrations/` 디렉토리에서 스키마 변경 관리
+3. **임베디드 개발**: `implementation/embedded/` 디렉토리에서 C/C++ 코드 작성
+4. **데이터베이스**: `implementation/database/` 디렉토리에서 스키마 변경 관리
 
 ## 참고 자료
 
-- **구현 계획**: `.specify/plans/implementation-plan.md`
+- **구현 계획**: `docs/implementation-plan.md`
 - **API 문서**: http://localhost:8000/docs
 - **FastAPI 공식 문서**: https://fastapi.tiangolo.com/
 - **React 공식 문서**: https://react.dev/
@@ -351,5 +351,5 @@ docker-compose up -d frontend
 ## 도움이 필요하신가요?
 
 - 프로젝트 구조: `README.md`
-- 구현 상세: `.specify/plans/implementation-plan.md`
-- 시스템 명세: `.specify/specs/rfid-logistics-tracking-system.md`
+- 구현 상세: `docs/implementation-plan.md`
+- 시스템 명세: `docs/rfid-logistics-tracking-system.md`

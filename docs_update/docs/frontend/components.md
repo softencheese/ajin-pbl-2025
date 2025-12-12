@@ -1,4 +1,4 @@
-# 프론트엔드 컴포넌트 가이드
+ㅇ# 프론트엔드 컴포넌트 가이드
 
 ## 개요
 React + TypeScript 기반 프론트엔드 애플리케이션의 주요 컴포넌트와 구조를 설명합니다.
@@ -208,7 +208,7 @@ export interface Lot {
     process_name: string;
   };
   material: {
-    coil_number: string;
+    item_code: string;
   };
 }
 ```
@@ -622,7 +622,7 @@ VITE_API_URL=http://localhost:8000
 - 검색 및 필터링 (QC 합격/불합격)
 
 **주요 필드**:
-- `coil_number`: 코일 번호 (필수, 중복 불가)
+- `item_code`: 코일 번호 (필수, 중복 불가)
 - `material_name`: 재질명 (예: SPHC 1.6T)
 - `supplier`: 공급업체
 - `receipt_date`: 입고일자
@@ -742,43 +742,25 @@ VITE_API_URL=http://localhost:8000
 ### 9.6 팔레트 관리 페이지 (`PalletsPage.tsx`)
 
 **기능**:
-- 팔레트 목록 조회 (상태별 필터링)
-- 팔레트 번호, RFID EPC, 상태, 연결된 LOT, 현재 공정 표시
+- 팔레트 목록 조회 (상태별, 태그 상태별 필터링)
+- 팔레트 번호, RFID EPC, 상태, 태그 상태, 연결된 LOT, 현재 공정 표시
 - 신규 팔레트 생성 (팔레트 번호 + RFID 태그 매칭)
 - 팔레트-LOT 연결/해제
 - 팔레트 상태 강제 변경 (관리자 권한)
 - 팔레트 이력 조회 (모달)
+- **RFID 태그 상태 변경** (정상, 손상 등)
 
 **주요 필드**:
 - `pallet_no`: 팔레트 번호 (필수, 중복 불가)
 - `rfid_epc`: RFID EPC 코드 (필수, 중복 불가)
-- `status`: 상태 (자동 변경, 관리자만 수동 변경 가능)
-- `lot_id` 또는 `assembly_lot_id`: 연결된 LOT (둘 중 하나만 가능)
+- `status`: 팔레트 상태 (9가지)
+- `tag_status`: RFID 태그 상태 (AVAILABLE, IN_USE, DAMAGED)
+- `lot_id` 또는 `assembly_lot_id`: 연결된 LOT
 
 **상태 관리**:
-- 9가지 상태: Generated, Empty, Stock, Consuming, Producing, Finished, Deregistered, Hold, Defect
-- 일반적으로 RFID 스캔으로 자동 전이
-- 관리자는 Hold, Defect 등 예외 상태로 수동 변경 가능
-
----
-
-### 9.7 RFID 태그 관리 페이지 (`RfidTagsPage.tsx`)
-
-**기능**:
-- RFID 태그 목록 조회
-- EPC, 상태, 연결된 팔레트 표시
-- 신규 태그 등록
-- 태그 상태 변경 (사용 가능, 사용 중, 손상)
-- 태그-팔레트 연결 해제
-
-**주요 필드**:
-- `epc`: EPC 코드 (필수, 중복 불가)
-- `status`: 상태 (AVAILABLE, IN_USE, DAMAGED)
-- `current_pallet_id`: 현재 연결된 팔레트
-
-**비즈니스 규칙**:
-- 사용 중(IN_USE) 태그는 해제 전까지 다른 팔레트에 할당 불가
-- 손상(DAMAGED) 태그는 사용 불가
+- **팔레트 상태**: Generated, Empty, Stock, Consuming, Producing, Finished, Deregistered, Hold, Defect
+- **태그 상태**: AVAILABLE(정상), IN_USE(사용중), DAMAGED(손상)
+- 일반적으로 RFID 스캔으로 자동 전이되나, 관리자는 수동 변경 가능
 
 ---
 
@@ -803,4 +785,4 @@ VITE_API_URL=http://localhost:8000
 ## 참고 문서
 - 웹 애플리케이션 상세 명세: `web-app-spec.md`
 - API 엔드포인트: `../api/endpoints.md`
-- 시스템 명세: `../.specify/specs/rfid-logistics-tracking-system.md`
+- 시스템 명세: `../docs/rfid-logistics-tracking-system.md`

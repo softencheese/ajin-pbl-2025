@@ -8,13 +8,12 @@ from app.routers import (
     rfid_router, 
     pallets_router, 
     trace_router,
-    materials_router,
-    parts_router,
+    items_router,
     processes_router,
     reader_locations_router,
     lots_router,
-    assembly_lots_router,
-    rfid_tags_router,
+    lot_genealogy_router,
+    # rfid_tags_router 삭제됨 - pallets로 통합
     dashboard_router
 )
 from app.config import settings
@@ -44,13 +43,12 @@ app.add_middleware(
 app.include_router(rfid_router, prefix="/api/v1/rfid", tags=["RFID"])
 app.include_router(pallets_router, prefix="/api/v1/pallets", tags=["Pallets"])
 app.include_router(trace_router, prefix="/api/v1/trace", tags=["Traceability"])
-app.include_router(materials_router, prefix="/api/v1/materials", tags=["Materials"])
-app.include_router(parts_router, prefix="/api/v1/parts", tags=["Parts"])
+app.include_router(items_router, prefix="/api/v1/items", tags=["Items"])
 app.include_router(processes_router, prefix="/api/v1/processes", tags=["Processes"])
 app.include_router(reader_locations_router, prefix="/api/v1/reader-locations", tags=["Reader Locations"])
 app.include_router(lots_router, prefix="/api/v1/lots", tags=["Lots"])
-app.include_router(assembly_lots_router, prefix="/api/v1/assembly-lots", tags=["Assembly Lots"])
-app.include_router(rfid_tags_router, prefix="/api/v1/rfid-tags", tags=["RFID Tags"])
+app.include_router(lot_genealogy_router, prefix="/api/v1/lot-genealogy", tags=["Lot Genealogy"])
+# rfid_tags_router 삭제됨 - pallets로 통합 (pallets.tag_status 사용)
 app.include_router(dashboard_router, prefix="/api/v1/dashboard", tags=["Dashboard"])
 
 @app.get("/")

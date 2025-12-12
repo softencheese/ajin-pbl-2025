@@ -30,41 +30,33 @@ async def get_pallet_trace(pallet_no: str, db: Session = Depends(get_db)):
 
 @router.get("/forward", response_model=ForwardTraceResponse)
 async def forward_trace(
-    coil_number: str = Query(..., description="코일 번호"),
-    include_assemblies: bool = Query(True, description="조립품까지 포함"),
+    lot_number: str = Query(..., description="투입 LOT 번호 (원자재 등)"),
     db: Session = Depends(get_db)
 ):
     """
-    정방향 추적 (원자재 → 제품)
+    정방향 추적 (투입 LOT → 산출 LOT)
     
-    특정 코일에서 생산된 모든 중간품과 조립품을 추적합니다.
+    특정 LOT에서 생산된 모든 자식 LOT를 추적합니다.
     """
     service = TraceService(db)
-    result = service.forward_trace(coil_number, include_assemblies)
+    result = service.forward_trace(lot_number)
     if not result:
-        raise HTTPException(status_code=404, detail="Coil not found")
+        raise HTTPException(status_code=404, detail="Lot not found")
     return result
 
 
 @router.get("/backward", response_model=BackwardTraceResponse)
 async def backward_trace(
-    lot_no: Optional[str] = Query(None, description="LOT 번호"),
-    assembly_lot_no: Optional[str] = Query(None, description="조립품 LOT 번호"),
+    lot_number: str = Query(..., description="산출 LOT 번호 (완제품 등)"),
     db: Session = Depends(get_db)
 ):
     """
-    역방향 추적 (제품 → 원자재)
+    역방향 추적 (산출 LOT → 투입 LOT)
     
-    특정 제품을 구성하는 모든 원자재와 구성품을 추적합니다.
+    특정 LOT를 구성하는 모든 부모 LOT를 추적합니다.
     """
-    if not lot_no and not assembly_lot_no:
-        raise HTTPException(
-            status_code=400, 
-            detail="Either lot_no or assembly_lot_no is required"
-        )
-    
     service = TraceService(db)
-    result = service.backward_trace(lot_no, assembly_lot_no)
+    result = service.backward_trace(lot_number)
     if not result:
         raise HTTPException(status_code=404, detail="Lot not found")
     return result
@@ -72,13 +64,13 @@ async def backward_trace(
 
 @router.get("/drill-down", response_model=DrillDownResponse)
 async def drill_down_search(
-    search: str = Query(..., description="검색어 (품번, LOT, 코일, 팔레트 번호)"),
+    search: str = Query(..., description="검색어 (품번, LOT, 아이템코드, 팔레트 번호)"),
     db: Session = Depends(get_db)
 ):
     """
     드릴다운 검색
     
-    품번, LOT, 코일, 팔레트 번호 등으로 통합 검색하여
+    품번, LOT, 아이템코드, 팔레트 번호 등으로 통합 검색하여
     정방향/역방향 추적 결과를 함께 반환합니다.
     """
     service = TraceService(db)

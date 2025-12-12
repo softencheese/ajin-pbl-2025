@@ -221,7 +221,7 @@ API 응답 수신
      UPDATE pallets SET status = '새상태', ...
      INSERT INTO pallet_histories (...)
      IF 조립 완료 THEN
-       INSERT INTO assembly_components (...)
+       INSERT INTO lot_genealogy (...)
      END IF
    COMMIT
     ↓
@@ -264,7 +264,7 @@ API 응답 수신
 
 #### 2.2.3 추적성 조회
 
-**정방향 추적** (GET /api/v1/trace/forward?coil_number=C059461B):
+**정방향 추적** (GET /api/v1/trace/forward?item_code=C059461B):
 ```
 원자재 (코일 번호)
   └─ 생산된 중간품 LOT
@@ -330,27 +330,22 @@ process_order 업데이트
 
 #### 2.3.2 마스터 데이터 등록
 ```
-[원자재 등록]
-코일 번호, 공급업체, 입고일자, QC 상태
-  → raw_materials 테이블
-
-[품번 등록]
-품번, 품명, 차종, 조립품 여부, 완제품 여부
-  → parts 테이블
+[품목 등록]
+품목코드, 품명, 품목유형(RAW/WIP/PRODUCT), 규격, 차종
+  → items 테이블
 
 [LOT 등록]
-중간품 LOT:
-  - LOT 번호, 품번, 공정, 원자재(필수), 수량, 생산일자
+원자재 입고 LOT:
+  - 품목(item_id), 수량, 입고일, 공급사
+  → lots 테이블 (시스템이 LOT 번호 자동 생성)
+  
+생산 LOT (샤링/프레스/조립):
+  - 품목(item_id), 공정, 수량, 생산일자
   → lots 테이블
   
-조립품 LOT:
-  - LOT 번호, 품번, 조립일자, 수량
-  → assembly_lots 테이블
-  
-구성 요소 추가:
-  - 조립품 LOT + 중간품 LOT/하위 조립품
-  → assembly_components 테이블
-  → 트리거로 assembly_level 자동 계산
+LOT 족보 자동 기록:
+  - 투입 LOT → 산출 LOT 관계
+  → lot_genealogy 테이블
 
 [팔레트 등록]
 팔레트 번호 + RFID EPC
@@ -358,7 +353,7 @@ process_order 업데이트
   
 LOT 연결:
   팔레트 선택 → LOT 검색 → 연결
-  → pallets.lot_id or assembly_lot_id 업데이트
+  → pallets.lot_id 업데이트
 ```
 
 #### 2.3.3 실시간 모니터링
@@ -445,23 +440,23 @@ WebSocket 또는 SSE로 1초마다 업데이트
 
 ### 2.4 데이터베이스
 
-**핵심 테이블 (10개)**:
-- **마스터 (4개)**: raw_materials, parts, processes, rfid_reader_locations
-- **생산 (3개)**: lots, assembly_lots, assembly_components
-- **RFID (3개)**: pallets, pallet_histories, rfid_tags
+**핵심 테이블 (7개)**:
+- **마스터 (3개)**: items, processes, rfid_reader_locations
+- **LOT 관리 (2개)**: lots, lot_genealogy
+- **RFID (2개)**: pallets (태그 통합), pallet_histories
 
-**추적성 뷰 (6개)**:
+**추적성 뷰 (5개)**:
 - v_pallet_status: 팔레트 현황
 - v_stock_inventory: 재고 현황 (FIFO용)
-- v_pallet_trace: 공정 이력
-- v_assembly_trace: 조립 추적
-- v_material_forward_trace: 정방향 (코일 → 제품)
-- v_product_backward_trace: 역방향 (제품 → 코일)
+- v_lot_forward_trace: 정방향 (원자재 → 완제품)
+- v_lot_backward_trace: 역방향 (완제품 → 원자재)
+- v_lot_full_genealogy: 전체 족보
 
 **무결성 규칙**:
-- 팔레트는 중간품 LOT 또는 조립품 LOT 중 하나와만 연결
-- 모든 중간품 LOT는 원자재 연결 필수
-- 추적 키(코일, LOT, 팔레트, EPC) 절대 삭제/재사용 금지
+- 팔레트는 하나의 LOT와만 연결 (`lot_id` 단일 FK)
+- 모든 LOT는 품목(`items.id`) 연결 필수
+- LOT 간 추적은 `lot_genealogy` 테이블로 관리
+- 추적 키(LOT, 팔레트, EPC) 절대 삭제/재사용 금지
 - pallet_histories 절대 삭제 금지 (불변 로그)
 
 ---
@@ -533,8 +528,8 @@ WebSocket 또는 SSE로 1초마다 업데이트
 5-3) 만차 팔레트 조립 OUT 리더기 재태깅
    API: 완제품 검증 (is_final_product = TRUE)
    API: Producing → Finished
-   API: assembly_components 자동 기록
-   트리거: assembly_level 자동 계산
+   API: lot_genealogy 자동 기록
+   트리거: depth 자동 계산
    웹: 완제품 등록
 
 [Step 6: RETURN 리더기 - 출하 후]
@@ -671,7 +666,7 @@ API: 원래 타임스탬프로 이력 기록
 - [ ] 임베디드: RFID 스캔 → API 연동
 - [ ] API: 스캔 처리, 상태 전이, 기본 검증
 - [ ] 웹: 리더기 매핑, 팔레트 등록, 기본 모니터링
-- [ ] DB: 10개 핵심 테이블 생성
+- [ ] DB: 7개 핵심 테이블 생성
 
 **검증**: 샤링 → 프레스 단일 공정 흐름 동작
 
@@ -728,7 +723,7 @@ API: 원래 타임스탬프로 이력 기록
 ## 7. 관련 문서
 
 ### 7.1 헌법 및 아키텍처
-- **헌법**: `.specify/memory/constitution.md`
+- **헌법**: `docs/constitution.md`
 - **팔레트 상태 기계**: `docs/pallet-state-machine.md`
 - **DB 아키텍처**: `docs/database-architecture.md`
 - **개발 워크플로우**: `docs/development-workflow.md`

@@ -8,8 +8,8 @@ AJIN RFID 물류 추적 시스템 개발을 위한 전체 가이드입니다.
 ## 📚 문서 구조
 
 ### 핵심 명세 문서
-1. **`.specify/specs/rfid-logistics-tracking-system.md`** - 시스템 전체 명세 (Specify)
-2. **`.specify/plans/implementation-plan.md`** - 구현 계획 (Plan)
+1. **`docs/rfid-logistics-tracking-system.md`** - 시스템 전체 명세 (Specify)
+2. **`docs/implementation-plan.md`** - 구현 계획 (Plan)
 
 ### API 문서
 - `docs/api/api-server-spec.md` - API 서버 상세 명세
@@ -48,7 +48,7 @@ cp .env.example .env
 nano .env  # 비밀번호 변경
 
 # 데이터베이스 스키마 준비
-cp temp/DB/Ajin_DB.sql implementation/database/init/01-schema.sql
+cp temp/DB/Ajin_DB.sql database/init/01-schema.sql
 ```
 
 ### 2. Docker로 전체 시스템 실행
@@ -68,19 +68,19 @@ docker-compose logs -f
 ### 3. 로컬 개발 모드
 ```bash
 # API 개발
-cd implementation/api
+cd api
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 uvicorn main:app --reload
 
 # Frontend 개발
-cd implementation/frontend
+cd frontend
 npm install
 npm run dev
 
 # Embedded 개발 (Raspberry Pi)
-cd implementation/embedded
+cd embedded
 mkdir build && cd build
 cmake ..
 make
@@ -96,14 +96,14 @@ make
 1. Docker Compose 환경 설정
 2. MySQL 스키마 생성
 3. FastAPI 기본 구조 생성
-   - `implementation/api/app/models/` - SQLAlchemy 모델
-   - `implementation/api/app/routers/` - 기본 라우터
+   - `api/app/models/` - SQLAlchemy 모델
+   - `api/app/routers/` - 기본 라우터
 4. React 기본 구조 생성
    - 레이아웃 컴포넌트
    - 라우팅 설정
 
 **참고 문서**:
-- `.specify/plans/implementation-plan.md` (섹션 2: 프로젝트 구조)
+- `docs/implementation-plan.md` (섹션 2: 프로젝트 구조)
 - `docs/database/schema.md`
 
 **Week 3-4: 핵심 RFID 기능**
@@ -194,7 +194,7 @@ pip install fastapi uvicorn sqlalchemy pymysql pydantic python-jose passlib
 
 **디렉토리 구조**:
 ```
-implementation/api/
+api/
 ├── app/
 │   ├── models/      # SQLAlchemy 모델
 │   ├── routers/     # API 라우터
@@ -216,12 +216,11 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 **필수 패키지**:
 ```bash
 npm install react react-dom react-router-dom @tanstack/react-query zustand axios antd socket.io-client
-// antd대신 다른 라이브러리로 수정예정
 ```
 
 **디렉토리 구조**:
 ```
-implementation/frontend/src/
+fronten./implementation/
 ├── api/           # API 클라이언트
 ├── components/    # 재사용 컴포넌트
 ├── pages/         # 페이지
@@ -327,13 +326,13 @@ int rfid_reader_init(const char *port, int baudrate);
 
 ### API 테스트
 ```bash
-cd implementation/api
+cd api
 pytest tests/
 ```
 
 ### 프론트엔드 테스트
 ```bash
-cd implementation/frontend
+cd frontend
 npm run test
 ```
 
@@ -443,8 +442,8 @@ docker exec -it ajin-db mysql -u root -p
 ## 📞 도움말
 
 ### 문서 위치
-- 시스템 명세: `.specify/specs/rfid-logistics-tracking-system.md`
-- 구현 계획: `.specify/plans/implementation-plan.md`
+- 시스템 명세: `docs/rfid-logistics-tracking-system.md`
+- 구현 계획: `docs/implementation-plan.md`
 - API 문서: http://localhost:8000/docs (Swagger UI)
 
 ### 디버깅 도구

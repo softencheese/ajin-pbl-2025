@@ -1,11 +1,10 @@
 from app.routers.rfid import router as rfid_router
 from app.routers.pallets import router as pallets_router
 from app.routers.trace import router as trace_router
-from app.routers.materials import router as materials_router
-from app.routers.parts import router as parts_router
+from app.routers.items import router as items_router
 from app.routers.processes import router as processes_router
 from app.routers.reader_locations import router as reader_locations_router
 from app.routers.lots import router as lots_router
-from app.routers.assembly_lots import router as assembly_lots_router
-from app.routers.rfid_tags import router as rfid_tags_router
+from app.routers.lot_genealogy import router as lot_genealogy_router
+# rfid_tags_router 삭제됨 - pallets로 통합
 from app.routers.dashboard import router as dashboard_router

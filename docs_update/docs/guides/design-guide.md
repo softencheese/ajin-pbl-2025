@@ -16,7 +16,7 @@ AJIN RFID 물류 추적 시스템의 아키텍처 설계 원칙과 주요 설계
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐     │
 │  │ RFID     │  │ RFID     │  │ RFID     │  │ RFID     │     │
 │  │ Reader 1 │  │ Reader 2 │  │ Reader 3 │  │ Reader N │     │
-│  │ (샤링)   │  │ (프레스) │  │ (조립)   │  │ (출하)   │     │
+│  │ (샤링)    │  │ (프레스)  │  │ (조립)    │  │ (출하)    │     │
 │  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘     │
 └───────┼─────────────┼─────────────┼─────────────┼───────────┘
         │             │             │             │
@@ -81,7 +81,7 @@ AJIN RFID 물류 추적 시스템의 아키텍처 설계 원칙과 주요 설계
 **원칙**: 추적성을 위한 데이터는 절대 삭제하지 않는다.
 
 **적용**:
-- `coil_number`, `lot_no`, `pallet_no`: 추적 키로 절대 삭제/재사용 금지
+- `item_code`, `lot_no`, `pallet_no`: 추적 키로 절대 삭제/재사용 금지
 - `pallet_histories`: 불변 로그, 절대 삭제 금지
 - Soft Delete: `is_active`, `deregistered_at` 필드 사용
 
@@ -203,18 +203,18 @@ elif validation_result.is_warning:
 
 **정방향 (Forward)**:
 ```
-raw_materials.coil_number
+items.item_code
   → lots.material_id
-  → assembly_components.component_lot_id
-  → assembly_lots.id
+  → lot_genealogy.component_lot_id
+  → lots.id
 ```
 
 **역방향 (Backward)**:
 ```
-assembly_lots.id
-  → assembly_components.assembly_lot_id
+lots.id
+  → lot_genealogy.assembly_lot_id
   → lots.id
-  → raw_materials.id (coil_number)
+  → items.id (item_code)
 ```
 
 **View 사용**:
@@ -264,12 +264,12 @@ CREATE TABLE pallets (
 **해결**:
 ```sql
 -- 트리거로 자동 계산
-CREATE TRIGGER trg_calculate_assembly_level
-AFTER INSERT ON assembly_components
+CREATE TRIGGER trg_calculate_depth
+AFTER INSERT ON lot_genealogy
 FOR EACH ROW
 BEGIN
-  UPDATE assembly_lots
-  SET assembly_level = (
+  UPDATE lots
+  SET depth = (
     SELECT MAX(level) + 1
     FROM components
   )
@@ -288,7 +288,7 @@ END;
 **적용**:
 ```sql
 -- 추적 키
-CREATE UNIQUE INDEX idx_coil_number ON raw_materials(coil_number);
+CREATE UNIQUE INDEX idx_item_code ON items(item_code);
 CREATE UNIQUE INDEX idx_lot_no ON lots(lot_no);
 CREATE UNIQUE INDEX idx_pallet_no ON pallets(pallet_no);
 
@@ -512,8 +512,8 @@ class WrongPartValidation(ValidationStrategy):
 
 ## 참고 문서
 
-- 시스템 명세: `../.specify/specs/rfid-logistics-tracking-system.md`
-- 구현 계획: `../.specify/plans/implementation-plan.md`
+- 시스템 명세: `../docs/rfid-logistics-tracking-system.md`
+- 구현 계획: `../docs/implementation-plan.md`
 - DB 스키마: `../database/schema.md`
 - 상태 기계: `../database/pallet-state-machine.md`
 - API 엔드포인트: `../api/endpoints.md`
