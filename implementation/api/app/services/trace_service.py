@@ -3,18 +3,18 @@ from sqlalchemy.orm import Session
 from typing import Optional, List
 from app.models.pallet import Pallet, PalletHistory
 from app.models.lot import Lot
-from app.models.assembly import AssemblyLot, AssemblyComponent
-from app.models.material import RawMaterial
+from app.models.item import Item
+from app.models.lot_genealogy import LotGenealogy
 from app.schemas.trace import (
     TraceResponse, 
     TraceHistoryItem,
     ForwardTraceResponse,
     ProducedLot,
     PalletSummary,
-    AssemblyUsage,
+    ChildLotUsage,
     BackwardTraceResponse,
     ProductInfo,
-    ComponentInfo,
+    ParentLotInfo,
     DrillDownResponse
 )
 
@@ -36,199 +36,150 @@ class TraceService:
         trace_items = []
         for h in histories:
             trace_items.append(TraceHistoryItem(
-                event_time=h.event_time,
+                event_time=h.scan_time, # There is another possible error here. PalletHistory model has scan_time, TraceService access event_time.
                 event_type=h.event_type,
                 process_name=h.process.process_name if h.process else None,
                 location_type=h.location_type,
                 previous_status=h.previous_status,
-                current_status=h.current_status,
+                current_status=h.new_status,
                 worker_name=h.worker_name
             ))
             
         lot_no = None
-        part_number = None
+        item_code = None
+        
         if pallet.lot:
-            lot_no = pallet.lot.lot_no
-            part_number = pallet.lot.part.part_number
-        elif pallet.assembly_lot:
-            lot_no = pallet.assembly_lot.lot_no
-            part_number = pallet.assembly_lot.part.part_number
+            lot_no = pallet.lot.lot_number
+            if pallet.lot.item:
+                item_code = pallet.lot.item.item_code
 
         return TraceResponse(
             pallet_no=pallet.pallet_no,
             lot_no=lot_no,
-            part_number=part_number,
+            item_code=item_code,
             histories=trace_items
         )
 
     def forward_trace(
         self, 
-        coil_number: str, 
-        include_assemblies: bool = True
+        lot_no: str
     ) -> Optional[ForwardTraceResponse]:
-        """정방향 추적 (원자재 → 제품)"""
-        material = self.db.query(RawMaterial).filter(
-            RawMaterial.coil_number == coil_number
-        ).first()
+        """정방향 추적 (투입 LOT → 산출 LOT)"""
+        root_lot = self.db.query(Lot).filter(Lot.lot_number == lot_no).first()
         
-        if not material:
+        if not root_lot:
             return None
         
-        # 해당 원자재로 생산된 LOT 조회
-        lots = self.db.query(Lot).filter(Lot.material_id == material.id).all()
+        # 1. 직계 자식 LOT 조회 (1단계만 조회하거나, 재귀적으로 조회해야 함. 여기선 1단계만 예시)
+        # TODO: 필요 시 재귀적 탐색 구현
+        genealogies = self.db.query(LotGenealogy).filter(
+            LotGenealogy.input_lot_id == root_lot.id
+        ).all()
         
-        produced_lots = []
-        for lot in lots:
-            # 팔레트 조회
-            pallets = self.db.query(Pallet).filter(Pallet.lot_id == lot.id).all()
-            pallet_summaries = [
-                PalletSummary(
-                    pallet_no=p.pallet_no,
-                    status=p.status,
-                    current_process=p.current_process.process_name if p.current_process else None
-                ) for p in pallets
-            ]
-            
-            # 조립품 사용 정보 조회
-            assembly_usages = []
-            if include_assemblies:
-                components = self.db.query(AssemblyComponent).filter(
-                    AssemblyComponent.component_lot_id == lot.id
-                ).all()
-                
-                for comp in components:
-                    if comp.assembly_lot:
-                        assembly_usages.append(AssemblyUsage(
-                            assembly_lot_no=comp.assembly_lot.lot_no,
-                            assembly_part_number=comp.assembly_lot.part.part_number,
-                            assembly_part_name=comp.assembly_lot.part.part_name,
-                            assembly_level=comp.assembly_lot.assembly_level,
-                            is_final_product=comp.assembly_lot.part.is_final_product,
-                            quantity_used=comp.total_consumed_quantity
-                        ))
-            
-            produced_lots.append(ProducedLot(
-                lot_no=lot.lot_no,
-                part_number=lot.part.part_number,
-                part_name=lot.part.part_name,
-                quantity=lot.quantity,
-                production_date=lot.production_date,
-                qc_passed=lot.qc_passed,
-                pallets=pallet_summaries,
-                used_in_assemblies=assembly_usages
-            ))
+        produced_lots_map = {} # lot_id -> ProducedLot
+
+        for gen in genealogies:
+            output_lot = gen.output_lot
+            if output_lot.id not in produced_lots_map:
+                # 팔레트 조회
+                pallets = self.db.query(Pallet).filter(Pallet.lot_id == output_lot.id).all()
+                pallet_summaries = [
+                    PalletSummary(
+                        pallet_no=p.pallet_no,
+                        status=p.status,
+                        current_process=p.current_process.process_name if p.current_process else None
+                    ) for p in pallets
+                ]
+
+                # 이 Output Lot이 또 다른 Lot의 Input이 되었는지 확인 (ChildUsage)
+                child_usages = []
+                child_genes = self.db.query(LotGenealogy).filter(LotGenealogy.input_lot_id == output_lot.id).all()
+                for cg in child_genes:
+                    child_usages.append(ChildLotUsage(
+                        child_lot_no=cg.output_lot.lot_number,
+                        child_item_code=cg.output_lot.item.item_code,
+                        child_item_name=cg.output_lot.item.item_name,
+                        quantity_consumed=cg.quantity_consumed
+                    ))
+
+                produced_lots_map[output_lot.id] = ProducedLot(
+                    lot_no=output_lot.lot_number,
+                    item_code=output_lot.item.item_code,
+                    item_name=output_lot.item.item_name,
+                    quantity=output_lot.quantity,
+                    production_date=output_lot.production_date,
+                    qc_passed=output_lot.qc_passed,
+                    pallets=pallet_summaries,
+                    child_lots=child_usages
+                )
         
         return ForwardTraceResponse(
-            coil_number=material.coil_number,
-            material_name=material.material_name,
-            supplier=material.supplier,
-            receipt_date=material.receipt_date,
-            qc_passed=material.qc_passed,
-            produced_lots=produced_lots
+            root_lot_no=root_lot.lot_number,
+            item_code=root_lot.item.item_code,
+            item_name=root_lot.item.item_name,
+            item_type=root_lot.item.item_type,
+            supplier=None, # Lot 모델에 supplier가 있다면 추가
+            production_date=root_lot.production_date,
+            qc_passed=root_lot.qc_passed,
+            produced_lots=list(produced_lots_map.values())
         )
 
     def backward_trace(
         self, 
-        lot_no: Optional[str] = None, 
-        assembly_lot_no: Optional[str] = None
+        lot_no: str
     ) -> Optional[BackwardTraceResponse]:
-        """역방향 추적 (제품 → 원자재)"""
+        """역방향 추적 (산출 LOT → 투입 LOT)"""
         
-        if assembly_lot_no:
-            # 조립품 LOT 조회
-            assembly_lot = self.db.query(AssemblyLot).filter(
-                AssemblyLot.lot_no == assembly_lot_no
-            ).first()
-            
-            if not assembly_lot:
-                return None
-            
-            product = ProductInfo(
-                lot_no=assembly_lot.lot_no,
-                part_number=assembly_lot.part.part_number,
-                part_name=assembly_lot.part.part_name,
-                is_assembly=True,
-                assembly_level=assembly_lot.assembly_level
-            )
-            
-            # 구성 요소 조회
-            components = []
-            raw_materials = []
-            
-            for comp in assembly_lot.components:
-                if comp.component_lot:
-                    components.append(ComponentInfo(
-                        lot_no=comp.component_lot.lot_no,
-                        part_number=comp.component_lot.part.part_number,
-                        part_name=comp.component_lot.part.part_name,
-                        coil_number=comp.component_lot.material.coil_number if comp.component_lot.material else None,
-                        quantity_used=comp.total_consumed_quantity
-                    ))
-                    
-                    # 원자재 정보 수집
-                    if comp.component_lot.material:
-                        mat = comp.component_lot.material
-                        raw_materials.append({
-                            "coil_number": mat.coil_number,
-                            "material_name": mat.material_name,
-                            "supplier": mat.supplier
-                        })
-            
-            return BackwardTraceResponse(
-                product=product,
-                components=components,
-                raw_materials=raw_materials
-            )
+        target_lot = self.db.query(Lot).filter(Lot.lot_number == lot_no).first()
         
-        elif lot_no:
-            # 중간품 LOT 조회
-            lot = self.db.query(Lot).filter(Lot.lot_no == lot_no).first()
-            
-            if not lot:
-                return None
-            
-            product = ProductInfo(
-                lot_no=lot.lot_no,
-                part_number=lot.part.part_number,
-                part_name=lot.part.part_name,
-                is_assembly=False,
-                assembly_level=0
-            )
-            
-            raw_materials = []
-            if lot.material:
-                raw_materials.append({
-                    "coil_number": lot.material.coil_number,
-                    "material_name": lot.material.material_name,
-                    "supplier": lot.material.supplier
-                })
-            
-            return BackwardTraceResponse(
-                product=product,
-                components=[],
-                raw_materials=raw_materials
-            )
+        if not target_lot:
+            return None
         
-        return None
+        product_info = ProductInfo(
+            lot_no=target_lot.lot_number,
+            item_code=target_lot.item.item_code,
+            item_name=target_lot.item.item_name,
+            item_type=target_lot.item.item_type
+        )
+        
+        # 부모 LOT 조회
+        genealogies = self.db.query(LotGenealogy).filter(
+            LotGenealogy.output_lot_id == target_lot.id
+        ).all()
+        
+        parent_lots = []
+        for gen in genealogies:
+            input_lot = gen.input_lot
+            parent_lots.append(ParentLotInfo(
+                lot_no=input_lot.lot_number,
+                item_code=input_lot.item.item_code,
+                item_name=input_lot.item.item_name,
+                quantity_consumed=gen.quantity_consumed,
+                supplier=None # Lot 모델에 supplier가 있다면 추가
+            ))
+            
+        return BackwardTraceResponse(
+            product=product_info,
+            parent_lots=parent_lots
+        )
 
     def drill_down_search(self, search: str) -> Optional[DrillDownResponse]:
         """드릴다운 검색"""
         search = search.strip()
         
-        # 팔레트 검색
+        # 1. 팔레트 검색
         pallet = self.db.query(Pallet).filter(
             Pallet.pallet_no.contains(search) | 
             Pallet.rfid_epc.contains(search)
         ).first()
         
         if pallet:
-            lot_no = pallet.lot.lot_no if pallet.lot else None
-            assembly_lot_no = pallet.assembly_lot.lot_no if pallet.assembly_lot else None
+            lot_no = pallet.lot.lot_number if pallet.lot else None
             
             return DrillDownResponse(
                 search_type="PALLET",
                 search_value=pallet.pallet_no,
-                backward_trace=self.backward_trace(lot_no, assembly_lot_no) if (lot_no or assembly_lot_no) else None,
+                backward_trace=self.backward_trace(lot_no) if lot_no else None,
                 related_pallets=[PalletSummary(
                     pallet_no=pallet.pallet_no,
                     status=pallet.status,
@@ -236,14 +187,14 @@ class TraceService:
                 )]
             )
         
-        # LOT 검색
-        lot = self.db.query(Lot).filter(Lot.lot_no.contains(search)).first()
+        # 2. LOT 검색
+        lot = self.db.query(Lot).filter(Lot.lot_number.contains(search)).first()
         if lot:
             return DrillDownResponse(
                 search_type="LOT",
-                search_value=lot.lot_no,
-                forward_trace=self.forward_trace(lot.material.coil_number) if lot.material else None,
-                backward_trace=self.backward_trace(lot_no=lot.lot_no),
+                search_value=lot.lot_number,
+                forward_trace=self.forward_trace(lot.lot_number),
+                backward_trace=self.backward_trace(lot.lot_number),
                 related_pallets=[
                     PalletSummary(
                         pallet_no=p.pallet_no,
@@ -253,15 +204,21 @@ class TraceService:
                 ]
             )
         
-        # 코일 검색
-        material = self.db.query(RawMaterial).filter(
-            RawMaterial.coil_number.contains(search)
+        # 3. Item 검색 (기존 Coil 검색 대체)
+        item = self.db.query(Item).filter(
+            Item.item_code.contains(search) | Item.item_name.contains(search)
         ).first()
-        if material:
-            return DrillDownResponse(
-                search_type="COIL",
-                search_value=material.coil_number,
-                forward_trace=self.forward_trace(material.coil_number),
+        
+        if item:
+             # 해당 아이템으로 생성된 LOT들 중 가장 최근 것 하나 찾아서 예시로 보여주거나, 별도 처리
+             # 여기서는 단순히 검색된 아이템 정보만 리턴하거나, 해당 아이템의 최신 LOT를 기반으로 Trace
+             
+             recent_lot = self.db.query(Lot).filter(Lot.item_id == item.id).order_by(Lot.created_at.desc()).first()
+             
+             return DrillDownResponse(
+                search_type="ITEM",
+                search_value=item.item_code,
+                forward_trace=self.forward_trace(recent_lot.lot_number) if recent_lot else None,
                 related_pallets=[]
             )
         

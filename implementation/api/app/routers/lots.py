@@ -2,13 +2,17 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import Optional
-from datetime import date
+from datetime import date, datetime
 from app.database import get_db
 from app.models.lot import Lot
-from app.models.part import Part
-from app.models.material import RawMaterial
+from app.models.item import Item
+from app.models.process import Process
+from app.models.lot_genealogy import LotGenealogy
 from app.schemas.lot import (
     LotCreate,
+    LotReceiving,
+    LotUpdate,
+    LotStatusUpdate,
     LotResponse,
     LotListResponse
 )
@@ -16,23 +20,54 @@ from app.schemas.lot import (
 router = APIRouter()
 
 
+def generate_lot_number(item_type: str, production_date: date, db: Session) -> str:
+    """LOT 번호 자동 생성
+    
+    규칙:
+    - 원자재 입고: IN-YYMMDD-SEQ
+    - 샤링: SH-YYMMDD-SEQ
+    - 프레스: PR-YYMMDD-SEQ
+    - 조립: AS-YYMMDD-SEQ
+    """
+    prefix_map = {
+        "RAW": "IN",
+        "WIP": "PR",  # 기본값, 공정에 따라 변경 가능
+        "PRODUCT": "AS"
+    }
+    prefix = prefix_map.get(item_type, "LT")
+    date_str = production_date.strftime("%y%m%d")
+    
+    # 오늘 생성된 동일 prefix LOT 수 카운트
+    pattern = f"{prefix}-{date_str}-%"
+    count = db.query(Lot).filter(Lot.lot_number.like(pattern)).count()
+    seq = str(count + 1).zfill(3)
+    
+    return f"{prefix}-{date_str}-{seq}"
+
+
 @router.get("", response_model=LotListResponse)
 async def list_lots(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
-    part_id: Optional[int] = None,
+    item_id: Optional[int] = None,
+    item_type: Optional[str] = None,
     process_id: Optional[int] = None,
+    status: Optional[str] = None,
     date_from: Optional[date] = None,
     date_to: Optional[date] = None,
     db: Session = Depends(get_db)
 ):
-    """중간품 LOT 목록 조회"""
+    """LOT 목록 조회"""
     query = db.query(Lot)
     
-    if part_id:
-        query = query.filter(Lot.part_id == part_id)
+    if item_id:
+        query = query.filter(Lot.item_id == item_id)
+    if item_type:
+        query = query.join(Item).filter(Item.item_type == item_type)
     if process_id:
         query = query.filter(Lot.process_id == process_id)
+    if status:
+        query = query.filter(Lot.status == status)
     if date_from:
         query = query.filter(Lot.production_date >= date_from)
     if date_to:
@@ -43,8 +78,40 @@ async def list_lots(
         (page - 1) * per_page
     ).limit(per_page).all()
     
+    # Response 변환
+    lot_responses = []
+    for lot in items:
+        item = db.query(Item).filter(Item.id == lot.item_id).first()
+        process = db.query(Process).filter(Process.id == lot.process_id).first() if lot.process_id else None
+        
+        lot_dict = {
+            "id": lot.id,
+            "lot_number": lot.lot_number,
+            "barcode": lot.barcode,
+            "item_id": lot.item_id,
+            "quantity": lot.quantity,
+            "initial_quantity": lot.initial_quantity,
+            "status": lot.status,
+            "production_date": lot.production_date,
+            "process_id": lot.process_id,
+            "supplier": lot.supplier,
+            "worker_name": lot.worker_name,
+            "qc_passed": lot.qc_passed,
+            "notes": lot.notes,
+            "created_at": lot.created_at,
+            "updated_at": lot.updated_at,
+            "item": {
+                "id": item.id,
+                "item_code": item.item_code,
+                "item_name": item.item_name,
+                "item_type": item.item_type
+            } if item else None,
+            "process_name": process.process_name if process else None
+        }
+        lot_responses.append(LotResponse(**lot_dict))
+    
     return LotListResponse(
-        items=items,
+        items=lot_responses,
         total=total,
         page=page,
         per_page=per_page,
@@ -52,48 +119,202 @@ async def list_lots(
     )
 
 
-@router.get("/{id}", response_model=LotResponse)
-async def get_lot(id: int, db: Session = Depends(get_db)):
+@router.get("/{lot_id}", response_model=LotResponse)
+async def get_lot(lot_id: int, db: Session = Depends(get_db)):
     """LOT 상세 조회"""
-    lot = db.query(Lot).filter(Lot.id == id).first()
+    lot = db.query(Lot).filter(Lot.id == lot_id).first()
     if not lot:
-        raise HTTPException(status_code=404, detail="Lot not found")
-    return lot
+        raise HTTPException(status_code=404, detail="LOT을 찾을 수 없습니다")
+    
+    item = db.query(Item).filter(Item.id == lot.item_id).first()
+    process = db.query(Process).filter(Process.id == lot.process_id).first() if lot.process_id else None
+    
+    return LotResponse(
+        id=lot.id,
+        lot_number=lot.lot_number,
+        barcode=lot.barcode,
+        item_id=lot.item_id,
+        quantity=lot.quantity,
+        initial_quantity=lot.initial_quantity,
+        status=lot.status,
+        production_date=lot.production_date,
+        process_id=lot.process_id,
+        supplier=lot.supplier,
+        worker_name=lot.worker_name,
+        qc_passed=lot.qc_passed,
+        notes=lot.notes,
+        created_at=lot.created_at,
+        updated_at=lot.updated_at,
+        item={
+            "id": item.id,
+            "item_code": item.item_code,
+            "item_name": item.item_name,
+            "item_type": item.item_type
+        } if item else None,
+        process_name=process.process_name if process else None
+    )
 
 
-@router.post("", response_model=LotResponse, status_code=201)
-async def create_lot(data: LotCreate, db: Session = Depends(get_db)):
-    """중간품 LOT 생성"""
-    # LOT 번호 중복 체크
-    existing = db.query(Lot).filter(Lot.lot_no == data.lot_no).first()
-    if existing:
-        raise HTTPException(status_code=409, detail="Lot number already exists")
+@router.post("/receiving", response_model=LotResponse, status_code=201)
+async def create_receiving_lot(data: LotReceiving, db: Session = Depends(get_db)):
+    """원자재 입고 LOT 생성 (RFID 불필요, 수동 등록)"""
+    # 품목 검증 (RAW 타입만 허용)
+    item = db.query(Item).filter(Item.id == data.item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="품목을 찾을 수 없습니다")
+    if item.item_type != "RAW":
+        raise HTTPException(status_code=422, detail="원자재 입고는 RAW 타입 품목만 가능합니다")
     
-    # 품번 검증 (중간품만 허용)
-    part = db.query(Part).filter(Part.id == data.part_id).first()
-    if not part:
-        raise HTTPException(status_code=404, detail="Part not found")
-    if part.is_assembly:
-        raise HTTPException(
-            status_code=422, 
-            detail="Assembly parts should use /assembly-lots endpoint"
-        )
+    # LOT 번호 자동 생성
+    lot_number = generate_lot_number("RAW", data.production_date, db)
     
-    # 원자재 검증 (필수)
-    if not data.material_id:
-        raise HTTPException(status_code=422, detail="Material ID is required")
-    
-    material = db.query(RawMaterial).filter(
-        RawMaterial.id == data.material_id
+    # 입고 공정 찾기 (process_code = 'RECEIVING' 또는 process_order = 0)
+    receiving_process = db.query(Process).filter(
+        (Process.process_code == "RECEIVING") | (Process.process_order == 0)
     ).first()
-    if not material:
-        raise HTTPException(status_code=404, detail="Material not found")
     
-    lot = Lot(**data.model_dump())
-    lot.assembly_level = 0  # 중간품은 항상 0
+    lot = Lot(
+        lot_number=lot_number,
+        item_id=data.item_id,
+        quantity=data.quantity,
+        initial_quantity=data.quantity,
+        status="STOCK",  # 원자재 입고는 바로 STOCK
+        production_date=data.production_date,
+        process_id=receiving_process.id if receiving_process else None,
+        supplier=data.supplier or item.default_supplier,
+        barcode=data.barcode,
+        notes=data.notes
+    )
     
     db.add(lot)
     db.commit()
     db.refresh(lot)
     
-    return lot
+    return LotResponse(
+        id=lot.id,
+        lot_number=lot.lot_number,
+        barcode=lot.barcode,
+        item_id=lot.item_id,
+        quantity=lot.quantity,
+        initial_quantity=lot.initial_quantity,
+        status=lot.status,
+        production_date=lot.production_date,
+        process_id=lot.process_id,
+        supplier=lot.supplier,
+        worker_name=lot.worker_name,
+        qc_passed=lot.qc_passed,
+        notes=lot.notes,
+        created_at=lot.created_at,
+        updated_at=lot.updated_at,
+        item={
+            "id": item.id,
+            "item_code": item.item_code,
+            "item_name": item.item_name,
+            "item_type": item.item_type
+        },
+        process_name=None
+    )
+
+
+@router.post("", response_model=LotResponse, status_code=201)
+async def create_lot(data: LotCreate, db: Session = Depends(get_db)):
+    """생산 LOT 생성 (샤링, 프레스, 조립 등)"""
+    # 품목 검증
+    item = db.query(Item).filter(Item.id == data.item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="품목을 찾을 수 없습니다")
+    
+    # 공정 검증
+    process = db.query(Process).filter(Process.id == data.process_id).first()
+    if not process:
+        raise HTTPException(status_code=404, detail="공정을 찾을 수 없습니다")
+    
+    # LOT 번호 자동 생성
+    lot_number = generate_lot_number(item.item_type, data.production_date, db)
+    
+    lot = Lot(
+        lot_number=lot_number,
+        item_id=data.item_id,
+        quantity=data.quantity,
+        initial_quantity=data.quantity,
+        status="STOCK",
+        production_date=data.production_date,
+        process_id=data.process_id,
+        supplier=data.supplier,
+        worker_name=data.worker_name,
+        qc_passed=data.qc_passed,
+        barcode=data.barcode,
+        notes=data.notes
+    )
+    
+    db.add(lot)
+    db.commit()
+    db.refresh(lot)
+    
+    # 투입 LOT 정보가 있으면 lot_genealogy에 기록
+    if data.input_lots:
+        for input_info in data.input_lots:
+            input_lot = db.query(Lot).filter(Lot.id == input_info.lot_id).first()
+            if not input_lot:
+                raise HTTPException(status_code=404, detail=f"투입 LOT {input_info.lot_id}를 찾을 수 없습니다")
+            
+            genealogy = LotGenealogy(
+                input_lot_id=input_info.lot_id,
+                output_lot_id=lot.id,
+                process_id=data.process_id,
+                quantity_consumed=input_info.quantity_consumed
+            )
+            db.add(genealogy)
+            
+            # 투입 LOT 수량 차감
+            input_lot.quantity -= input_info.quantity_consumed
+            if input_lot.quantity <= 0:
+                input_lot.status = "CONSUMED"
+        
+        db.commit()
+    
+    return LotResponse(
+        id=lot.id,
+        lot_number=lot.lot_number,
+        barcode=lot.barcode,
+        item_id=lot.item_id,
+        quantity=lot.quantity,
+        initial_quantity=lot.initial_quantity,
+        status=lot.status,
+        production_date=lot.production_date,
+        process_id=lot.process_id,
+        supplier=lot.supplier,
+        worker_name=lot.worker_name,
+        qc_passed=lot.qc_passed,
+        notes=lot.notes,
+        created_at=lot.created_at,
+        updated_at=lot.updated_at,
+        item={
+            "id": item.id,
+            "item_code": item.item_code,
+            "item_name": item.item_name,
+            "item_type": item.item_type
+        },
+        process_name=process.process_name
+    )
+
+
+@router.put("/{lot_id}/status")
+async def update_lot_status(lot_id: int, data: LotStatusUpdate, db: Session = Depends(get_db)):
+    """LOT 상태 변경"""
+    lot = db.query(Lot).filter(Lot.id == lot_id).first()
+    if not lot:
+        raise HTTPException(status_code=404, detail="LOT을 찾을 수 없습니다")
+    
+    valid_statuses = ["WAIT", "PROCESS", "STOCK", "CONSUMED", "SHIPPED", "HOLD", "DEFECT"]
+    if data.status not in valid_statuses:
+        raise HTTPException(status_code=400, detail=f"유효하지 않은 상태입니다. 가능한 값: {valid_statuses}")
+    
+    lot.status = data.status
+    if data.notes:
+        lot.notes = data.notes
+    
+    db.commit()
+    db.refresh(lot)
+    
+    return {"success": True, "lot_number": lot.lot_number, "status": lot.status}

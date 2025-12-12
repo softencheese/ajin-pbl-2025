@@ -126,14 +126,13 @@ class RFIDService:
             history = PalletHistory(
                 pallet_id=pallet.id,
                 lot_id=pallet.lot_id,
-                assembly_lot_id=pallet.assembly_lot_id,
                 process_id=location.process_id,
                 location_type=location.location_type,
                 previous_status=previous_status,
-                current_status=next_status,
+                new_status=next_status,
                 event_type="TAG_SCAN",
-                event_time=event.scan_time,
-                worker_name="System"  # TODO: 작업자 식별
+                scan_time=event.scan_time,
+                worker_name="System"
             )
             self.db.add(history)
             
@@ -148,13 +147,11 @@ class RFIDService:
             )
             
             if pallet.lot:
-                pallet_info.lot_no = pallet.lot.lot_no
-                pallet_info.part_number = pallet.lot.part.part_number
-                pallet_info.part_name = pallet.lot.part.part_name
-            elif pallet.assembly_lot:
-                pallet_info.lot_no = pallet.assembly_lot.lot_no
-                pallet_info.part_number = pallet.assembly_lot.part.part_number
-                pallet_info.part_name = pallet.assembly_lot.part.part_name
+                pallet_info.lot_no = pallet.lot.lot_number
+                # part_number, part_name -> item_code, item_name
+                if pallet.lot.item:
+                    pallet_info.part_number = pallet.lot.item.item_code
+                    pallet_info.part_name = pallet.lot.item.item_name
             
             # 피드백 결정
             if fifo_warning:
@@ -193,9 +190,10 @@ class RFIDService:
             return None
         
         # 동일 품번의 더 오래된 Stock 상태 팔레트 조회
+        # Lot.part_id -> Lot.item_id
         older_stock = self.db.query(Pallet).join(Lot).filter(
             Pallet.status == "Stock",
-            Lot.part_id == pallet.lot.part_id,
+            Lot.item_id == pallet.lot.item_id,
             Lot.production_date < pallet.lot.production_date,
             Pallet.id != pallet.id
         ).first()
@@ -206,7 +204,7 @@ class RFIDService:
                 type="FIFO_VIOLATION",
                 message="더 오래된 재고가 있습니다. 확인 후 진행하세요.",
                 oldest_stock={
-                    "lot_no": older_stock.lot.lot_no,
+                    "lot_no": older_stock.lot.lot_number,
                     "production_date": older_stock.lot.production_date.isoformat(),
                     "days_old": days_old
                 }
@@ -216,10 +214,8 @@ class RFIDService:
     
     def _is_final_product(self, pallet: Pallet) -> bool:
         """완제품 여부 확인"""
-        if pallet.lot and pallet.lot.part:
-            return pallet.lot.part.is_final_product
-        if pallet.assembly_lot and pallet.assembly_lot.part:
-            return pallet.assembly_lot.part.is_final_product
+        if pallet.lot and pallet.lot.item:
+            return pallet.lot.item.item_type == "PRODUCT"
         return False
     
     def update_reader_status(self, event: ReaderStatusEvent) -> ReaderStatusResponse:
@@ -245,9 +241,6 @@ class RFIDService:
                 success=True,
                 message=f"Registered new reader: {event.port_name}"
             )
-        
-        # TODO: 리더기 상태 로그 테이블에 기록
-        # TODO: WebSocket으로 실시간 모니터링 화면에 업데이트
         
         return ReaderStatusResponse(
             success=True,

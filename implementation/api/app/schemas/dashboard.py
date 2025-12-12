@@ -58,8 +58,8 @@ class LotStock(BaseSchema):
 
 class StockItem(BaseSchema):
     """품번별 재고 정보"""
-    part_number: str
-    part_name: Optional[str] = None
+    item_code: str
+    item_name: Optional[str] = None
     vehicle_model: Optional[str] = None
     process_name: Optional[str] = None
     production_line: Optional[str] = None

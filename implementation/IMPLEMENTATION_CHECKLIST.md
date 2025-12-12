@@ -26,7 +26,7 @@
 
 ### 🗄️ 데이터베이스
 - [x] DB 스키마 SQL (`implementation/database/init/01-schema.sql`)
-- [x] 10개 테이블 구조 정의
+- [x] 7개 테이블 구조 정의 (rfid_tags를 pallets에 통합)
 - [x] View 6개 정의
 - [x] 트리거 및 제약조건
 
@@ -39,7 +39,7 @@
 - [x] 임베디드 README (`implementation/embedded/README.md`)
 
 ### 🚀 배포 스크립트
-- [x] 자동 설정 스크립트 (`setup.sh`)
+
 - [x] `.gitignore` 설정
 
 ---
@@ -49,67 +49,65 @@
 ### Phase 1: MVP (4주) - 인프라 및 기본 RFID 기능
 
 #### Week 1-2: 인프라 구축
-- [ ] **Docker 환경 실행 및 테스트**
+- [x] **Docker 환경 실행 및 테스트**
   ```bash
-  ./setup.sh
-  # 또는
   docker-compose up -d
   ```
-- [ ] **DB 연결 확인**
-  - [ ] API 서버에서 MySQL 연결 테스트
-  - [ ] SQLAlchemy 모델 생성
-  - [ ] Alembic 마이그레이션 설정
+- [x] **DB 연결 확인**
+  - [x] API 서버에서 MySQL 연결 테스트
+  - [x] SQLAlchemy 모델 생성
+  - [x] Alembic 마이그레이션 설정
 
-- [ ] **API 서버 기본 구조**
-  - [ ] `implementation/api/app/` 디렉토리 구조 생성
-    - [ ] `app/models/` - DB 모델
-    - [ ] `app/schemas/` - Pydantic 스키마
-    - [ ] `app/routes/` - API 라우터
-    - [ ] `app/services/` - 비즈니스 로직
-    - [ ] `app/database.py` - DB 연결 설정
-  - [ ] Health check 엔드포인트 구현
-  - [ ] CORS 설정 확인
+- [x] **API 서버 기본 구조**
+  - [x] `implementation/api/app/` 디렉토리 구조 생성
+    - [x] `app/models/` - DB 모델
+    - [x] `app/schemas/` - Pydantic 스키마
+    - [x] `app/routes/` - API 라우터
+    - [x] `app/services/` - 비즈니스 로직
+    - [x] `app/database.py` - DB 연결 설정
+  - [x] Health check 엔드포인트 구현
+  - [x] CORS 설정 확인
 
-- [ ] **프론트엔드 기본 구조**
-  - [ ] `implementation/frontend/src/` 디렉토리 구조 생성
-    - [ ] `api/` - API 클라이언트
-    - [ ] `components/` - 재사용 컴포넌트
-    - [ ] `pages/` - 페이지 컴포넌트
-    - [ ] `hooks/` - 커스텀 훅
-    - [ ] `store/` - 상태 관리
-    - [ ] `types/` - TypeScript 타입
-  - [ ] React Router 설정
-  - [ ] Ant Design 통합
-  - [ ] Axios API 클라이언트 설정
+- [x] **프론트엔드 기본 구조**
+  - [x] `implementation/frontend/src/` 디렉토리 구조 생성
+    - [x] `api/` - API 클라이언트
+    - [x] `components/` - 재사용 컴포넌트
+    - [x] `pages/` - 페이지 컴포넌트
+    - [x] `hooks/` - 커스텀 훅
+    - [x] `store/` - 상태 관리
+    - [x] `types/` - TypeScript 타입
+  - [x] React Router 설정
+  - [x] Ant Design 통합
+  - [x] Axios API 클라이언트 설정
 
 #### Week 3-4: 핵심 RFID 기능
-- [ ] **마스터 데이터 CRUD API**
-  - [ ] 원자재 관리 API (`/materials`)
-  - [ ] 품번 관리 API (`/parts`)
-  - [ ] 공정 관리 API (`/processes`)
-  - [ ] 리더기 위치 관리 API (`/reader-locations`)
-  - [ ] RFID 태그 관리 API (`/rfid-tags`)
+- [x] **마스터 데이터 CRUD API**
+  - [x] 원자재 관리 API (`/materials`)
+  - [x] 품번 관리 API (`/parts`)
+  - [x] 공정 관리 API (`/processes`)
+  - [x] 리더기 위치 관리 API (`/reader-locations`)
+  - [x] RFID 태그 상태 API (`pallets.tag_status`로 통합됨)
 
-- [ ] **팔레트 관리 API**
-  - [ ] 팔레트 생성/조회 API
-  - [ ] 팔레트-LOT 연결 API
-  - [ ] 팔레트 상태 관리 API
+- [x] **팔레트 관리 API**
+  - [x] 팔레트 생성/조회 API
+  - [x] 팔레트-LOT 연결 API
+  - [x] 팔레트 상태 관리 API
 
-- [ ] **LOT 관리 API**
-  - [ ] 중간품 LOT 생성 API
-  - [ ] 조립품 LOT 생성 API
-  - [ ] 구성 요소 관리 API
+- [x] **LOT 관리 API**
+  - [x] 중간품 LOT 생성 API
+  - [x] 조립품 LOT 생성 API
+  - [x] 구성 요소 관리 API
 
-- [ ] **RFID 스캔 처리**
-  - [ ] `POST /rfid/scan` 구현
-  - [ ] 상태 기계 로직 구현
-  - [ ] 포트 → 공정/위치 자동 판별
-  - [ ] 피드백 명령 생성
+- [x] **RFID 스캔 처리**
+  - [x] `POST /rfid/scan` 구현
+  - [x] 상태 기계 로직 구현
+  - [x] 포트 → 공정/위치 자동 판별
+  - [x] 피드백 명령 생성
 
 - [ ] **프론트엔드 마스터 데이터 페이지**
-  - [ ] 원자재 관리 페이지
+  - [x] 원자재 관리 페이지 (`MaterialsPage`)
   - [ ] 품번 관리 페이지
-  - [ ] 공정 관리 페이지
+  - [x] 공정 관리 페이지 (`ProcessMappingPage`)
   - [ ] 리더기 위치 관리 페이지
   - [ ] LOT 관리 페이지
   - [ ] 팔레트 관리 페이지
@@ -117,34 +115,34 @@
 ### Phase 2: 추적성 (3주) - 검증 및 추적
 
 #### Week 5-6: 검증 로직
-- [ ] **FIFO 검증**
-  - [ ] FIFO 체크 함수 구현
-  - [ ] 경고 메시지 생성
+- [x] **FIFO 검증**
+  - [x] FIFO 체크 함수 구현
+  - [x] 경고 메시지 생성
   - [ ] 프론트엔드 경고 표시
 
-- [ ] **오투입 방지**
-  - [ ] 품번 검증 로직
-  - [ ] 차단 메시지 생성
+- [x] **오투입 방지**
+  - [x] 품번 검증 로직 (기본 구현)
+  - [x] 차단 메시지 생성
   - [ ] 프론트엔드 에러 표시
 
-- [ ] **완제품 검증**
-  - [ ] `is_final_product` 체크
-  - [ ] Finished 상태 전이 제한
+- [x] **완제품 검증**
+  - [x] `is_final_product` 체크
+  - [x] Finished 상태 전이 제한
 
 #### Week 7: 추적성 쿼리
-- [ ] **정방향 추적 API**
-  - [ ] `GET /trace/forward` 구현
-  - [ ] 코일 → 제품 추적
-  - [ ] View 활용 최적화
+- [x] **정방향 추적 API**
+  - [x] `GET /trace/forward` 구현
+  - [x] 코일 → 제품 추적
+  - [x] View 활용 최적화
 
-- [ ] **역방향 추적 API**
-  - [ ] `GET /trace/backward` 구현
-  - [ ] 제품 → 코일 추적
-  - [ ] 조립품 계층 구조 처리
+- [x] **역방향 추적 API**
+  - [x] `GET /trace/backward` 구현
+  - [x] 제품 → 코일 추적
+  - [x] 조립품 계층 구조 처리
 
-- [ ] **드릴다운 검색**
-  - [ ] `GET /trace/drill-down` 구현
-  - [ ] 통합 검색 기능
+- [x] **드릴다운 검색**
+  - [x] `GET /trace/drill-down` 구현
+  - [x] 통합 검색 기능
 
 - [ ] **추적성 UI**
   - [ ] 추적성 조회 페이지
@@ -165,13 +163,13 @@
   - [ ] 이벤트 핸들러
 
 #### Week 9: 모니터링 UI
-- [ ] **대시보드**
-  - [ ] 요약 통계 표시
-  - [ ] 공정별 현황
-  - [ ] 리더기 상태
+- [x] **대시보드** (`DashboardPage`)
+  - [x] 요약 통계 표시
+  - [x] 공정별 현황
+  - [x] 리더기 상태
 
-- [ ] **실시간 모니터링 페이지**
-  - [ ] 팔레트 현황 테이블
+- [x] **실시간 모니터링 페이지** (`MonitoringPage`)
+  - [x] 팔레트 현황 테이블
   - [ ] 최근 이벤트 로그
   - [ ] 실시간 업데이트
 
@@ -214,7 +212,7 @@
 
 ### 1. Docker 환경 실행
 ```bash
-./setup.sh
+docker-compose up -d
 ```
 
 ### 2. API 서버 개발 시작

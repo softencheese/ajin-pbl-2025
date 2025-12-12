@@ -2,16 +2,7 @@ from sqlalchemy import Column, String, Boolean, BigInteger, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from app.models.base import BaseModel
 
-class RFIDTag(BaseModel):
-    __tablename__ = "rfid_tags"
-
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    epc = Column(String(100), unique=True, nullable=False, comment='RFID EPC 코드')
-    status = Column(String(20), default='AVAILABLE', comment='상태 (AVAILABLE, IN_USE, DAMAGED)')
-    current_pallet_id = Column(BigInteger, ForeignKey("pallets.id"), comment='현재 연결된 팔레트 ID')
-
-    # Relationships
-    current_pallet = relationship("Pallet")
+# RFIDTag 클래스 삭제됨 - pallets.tag_status로 통합
 
 
 class RFIDReaderLocation(BaseModel):
