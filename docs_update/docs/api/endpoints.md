@@ -205,34 +205,15 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 
 ---
 
-### 2.4 RFID 태그 (RFID Tags)
+### ~~2.4 RFID 태그 (RFID Tags)~~ - **삭제됨**
 
-#### 목록 조회
-- **GET** `/rfid-tags`
-- **Query Parameters**: `status` (AVAILABLE, IN_USE, DAMAGED)
+> **Note**: `rfid_tags` 테이블이 `pallets`에 통합되었습니다.  
+> 태그 상태는 `pallets.tag_status` 필드로 관리합니다.
 
-#### 상세 조회
-- **GET** `/rfid-tags/{id}`
-
-#### 등록
-- **POST** `/rfid-tags`
-```json
-{
-  "epc": "E2801170000002036B3D8CCD"
-}
-```
-
-#### 상태 변경
-- **PUT** `/rfid-tags/{id}/status`
-```json
-{
-  "status": "DAMAGED",
-  "reason": "물리적 손상"
-}
-```
-
-#### 팔레트 연결 해제
-- **POST** `/rfid-tags/{id}/detach`
+기존 RFID 태그 API 대신 **Pallets API**를 사용하세요:
+- 태그 등록 → `POST /pallets` (rfid_epc 포함)
+- 태그 상태 조회 → `GET /pallets/{id}` (tag_status 필드 확인)
+- 태그 상태 변경 → `PUT /pallets/{id}/tag-status`
 
 ---
 
@@ -270,6 +251,22 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
   "reason": "품질 검사 대기"
 }
 ```
+
+#### 태그 상태 변경
+> **Note**: 기존 `/rfid-tags/{id}/status` 대체
+
+- **PUT** `/pallets/{id}/tag-status`
+```json
+{
+  "tag_status": "DAMAGED",
+  "reason": "물리적 손상"
+}
+```
+
+**tag_status 값**:
+- `AVAILABLE`: 사용 가능
+- `IN_USE`: 사용 중
+- `DAMAGED`: 손상됨
 
 ---
 

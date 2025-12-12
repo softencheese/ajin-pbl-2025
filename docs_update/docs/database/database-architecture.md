@@ -124,17 +124,19 @@
 
 ---
 
-### RFID 추적 데이터 (3개 테이블)
+### RFID 추적 데이터 (1개 테이블)
 
-#### 6. 팔레트 (pallets)
-- **목적**: RFID 태그 매칭 및 상태 관리
+#### 6. 팔레트 + RFID 태그 통합 (pallets)
+- **목적**: RFID 태그 매칭 및 상태 관리 (기존 rfid_tags 테이블 흡수)
 - **주요 컬럼**:
   - `pallet_no` (VARCHAR, UNIQUE): 팔레트 번호
   - `rfid_epc` (VARCHAR, UNIQUE): RFID EPC 코드 (1:1 매핑)
   - `lot_id`: 연결된 LOT ID (FK → lots)
   - `status`: 팔레트 상태 (9가지)
+  - `tag_status`: RFID 태그 상태 (AVAILABLE, IN_USE, DAMAGED)
   - `current_process_id`: 현재 공정 ID
   - `quantity`: 현재 적재 수량
+  - `tag_registered_at`, `tag_deregistered_at`: 태그 등록/해제 시각
 
 **상태 흐름**:
 - 중간품: Generated → Empty → Producing → Stock → Consuming → Deregistered
@@ -152,12 +154,6 @@
   - `event_type`: 이벤트 유형
   - `scan_time`: 스캔 시간
   - `notes`: 비고
-
-#### 8. RFID 태그 (rfid_tags)
-- **목적**: RFID 태그 자체 관리
-- **주요 컬럼**:
-  - `epc` (VARCHAR, UNIQUE): RFID EPC 코드
-  - `status`: 태그 상태 (AVAILABLE, IN_USE, DAMAGED)
 
 ---
 
@@ -238,11 +234,10 @@ CREATE FUNCTION check_fifo(
 | 마스터 | `rfid_reader_locations` | 리더기 위치 매핑 |
 | LOT | `lots` | 통합 LOT 관리 |
 | LOT | `lot_genealogy` | LOT 족보 (추적성 핵심) |
-| RFID | `rfid_tags` | RFID 태그 마스터 |
-| RFID | `pallets` | 팔레트 상태 관리 |
+| RFID | `pallets` | 팔레트 + RFID 태그 통합 |
 | RFID | `pallet_histories` | 팔레트 이력 로그 |
 
-**총 8개 테이블**
+**총 7개 테이블** (rfid_tags를 pallets에 통합)
 
 ---
 

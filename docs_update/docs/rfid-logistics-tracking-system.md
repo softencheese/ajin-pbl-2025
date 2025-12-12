@@ -440,10 +440,10 @@ WebSocket 또는 SSE로 1초마다 업데이트
 
 ### 2.4 데이터베이스
 
-**핵심 테이블 (8개)**:
+**핵심 테이블 (7개)**:
 - **마스터 (3개)**: items, processes, rfid_reader_locations
 - **LOT 관리 (2개)**: lots, lot_genealogy
-- **RFID (3개)**: pallets, pallet_histories, rfid_tags
+- **RFID (2개)**: pallets (태그 통합), pallet_histories
 
 **추적성 뷰 (5개)**:
 - v_pallet_status: 팔레트 현황
@@ -666,7 +666,7 @@ API: 원래 타임스탬프로 이력 기록
 - [ ] 임베디드: RFID 스캔 → API 연동
 - [ ] API: 스캔 처리, 상태 전이, 기본 검증
 - [ ] 웹: 리더기 매핑, 팔레트 등록, 기본 모니터링
-- [ ] DB: 10개 핵심 테이블 생성
+- [ ] DB: 7개 핵심 테이블 생성
 
 **검증**: 샤링 → 프레스 단일 공정 흐름 동작
 

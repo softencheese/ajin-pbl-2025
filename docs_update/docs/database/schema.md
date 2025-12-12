@@ -238,25 +238,9 @@ VALUES (4, 5, 4, 50);
 
 ---
 
-### 3. RFID 추적 테이블 (3개)
+### 3. RFID 추적 테이블 (2개)
 
-#### 3.1 rfid_tags (RFID 태그)
-```sql
-CREATE TABLE rfid_tags (
-  id BIGINT PRIMARY KEY AUTO_INCREMENT,
-  epc VARCHAR(100) UNIQUE NOT NULL COMMENT 'EPC 코드',
-  tag_type ENUM('PALLET', 'PRODUCT', 'OTHER') DEFAULT 'PALLET',
-  status ENUM('AVAILABLE', 'IN_USE', 'DAMAGED') DEFAULT 'AVAILABLE' COMMENT '태그 상태',
-  registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  deregistered_at TIMESTAMP NULL COMMENT '등록 해제 시각',
-  INDEX idx_epc (epc),
-  INDEX idx_status (status)
-) COMMENT 'RFID 태그 마스터';
-```
-
----
-
-#### 3.2 pallets (팔레트)
+#### 3.1 pallets (팔레트 + RFID 태그 통합)
 ```sql
 CREATE TABLE pallets (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -273,29 +257,34 @@ CREATE TABLE pallets (
     'Hold',           -- 보류
     'Defect'          -- 불량
   ) DEFAULT 'Generated',
+  tag_status ENUM('AVAILABLE', 'IN_USE', 'DAMAGED') DEFAULT 'AVAILABLE' COMMENT 'RFID 태그 상태',
   lot_id BIGINT COMMENT 'LOT ID (현재 적재된 LOT)',
   current_process_id BIGINT COMMENT '현재 공정 ID',
   quantity INT DEFAULT 0 COMMENT '현재 적재 수량',
+  tag_registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'RFID 태그 등록 시각',
+  tag_deregistered_at TIMESTAMP NULL COMMENT 'RFID 태그 해제 시각',
   registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (lot_id) REFERENCES lots(id),
   FOREIGN KEY (current_process_id) REFERENCES processes(id),
   INDEX idx_rfid_epc (rfid_epc),
   INDEX idx_status (status),
+  INDEX idx_tag_status (tag_status),
   INDEX idx_lot_id (lot_id)
-) COMMENT '팔레트 (RFID 부착)';
+) COMMENT '팔레트 + RFID 태그 통합 관리';
 ```
 
 **변경 사항**:
-- 기존 `lot_id`, `assembly_lot_id` 분리 → **`lot_id` 하나로 통합**
-- 모든 LOT가 `lots` 테이블에 통합되었으므로 단일 FK로 충분
+- 기존 `rfid_tags` 테이블을 흡수하여 통합
+- `tag_status`: RFID 태그 상태 (AVAILABLE/IN_USE/DAMAGED)
+- `tag_registered_at`, `tag_deregistered_at`: 태그 등록/해제 시각
 
 **상태 전이 규칙**:
 - 상세 내용은 `pallet-state-machine.md` 참조
 
 ---
 
-#### 3.3 pallet_histories (팔레트 이력)
+#### 3.2 pallet_histories (팔레트 이력)
 ```sql
 CREATE TABLE pallet_histories (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -551,11 +540,10 @@ docker exec -i ajin-db mysql -u root -p ajin_rfid < backup.sql
 | 마스터 | `rfid_reader_locations` | 리더기 위치 | 기존과 동일 |
 | LOT | `lots` | 통합 LOT 관리 | 원자재~완제품 모두 |
 | LOT | `lot_genealogy` | LOT 족보 | 추적성 핵심 |
-| RFID | `rfid_tags` | RFID 태그 | 기존과 동일 |
-| RFID | `pallets` | 팔레트 | lot_id 단일화 |
+| RFID | `pallets` | 팔레트 + RFID 태그 통합 | tag_status 포함 |
 | RFID | `pallet_histories` | 팔레트 이력 | 기존과 동일 |
 
-**총 8개 테이블** (기존 10개에서 통합으로 감소)
+**총 7개 테이블** (rfid_tags를 pallets에 통합)
 
 ---
 
