@@ -180,8 +180,44 @@ class RFIDService:
     
     def _validate_wrong_part(self, pallet: Pallet, location: RFIDReaderLocation) -> ScanError | None:
         """오투입 검증 - 품번이 해당 공정에서 처리 가능한지 확인"""
-        # TODO: 공정별 허용 품번 테이블과 연동하여 실제 검증 구현
-        # 현재는 기본 구현만
+        if not pallet.lot or not pallet.lot.item or not location.process:
+            return None
+
+        # 공정별 허용 Item Type 매핑
+        # 샤링: RAW (원자재) 투입
+        # 프레스: WIP (재공품) 투입
+        # 조립: WIP (재공품) 투입
+        # 출하: PRODUCT (완제품) 투입 (출하 로직에 따라 다름)
+        
+        # 간단한 로직: 공정 코드에 따라 허용 Item Type 결정
+        process_code = location.process.process_code
+        item_type = pallet.lot.item.item_type
+        
+        allowed_types = []
+        if "SHEARING" in process_code:
+            allowed_types = ["RAW"]
+        elif "PRESS" in process_code:
+             # 프레스는 이전 공정(샤링)의 결과물(WIP)을 받음
+             # 때로는 RAW를 직접 받을 수도 있음 (Blanking Line인 경우)
+             # 여기서는 WIP만 받는다고 가정
+            allowed_types = ["WIP"]
+        elif "ASSEMBLY" in process_code:
+            allowed_types = ["WIP", "PRODUCT"] # 조립은 반제품 조립
+        elif "SHIPPING" in process_code:
+            allowed_types = ["PRODUCT"]
+        
+        if allowed_types and item_type not in allowed_types:
+             return ScanError(
+                type="WRONG_PART",
+                message=f"오투입 감지: {process_code} 공정에는 {allowed_types} 타입만 투입 가능합니다. (현재: {item_type})",
+                details={
+                    "process_code": process_code,
+                    "allowed_types": allowed_types,
+                    "current_item_type": item_type,
+                    "item_code": pallet.lot.item.item_code
+                }
+            )
+            
         return None
     
     def _validate_fifo(self, pallet: Pallet, location: RFIDReaderLocation) -> FIFOWarning | None:

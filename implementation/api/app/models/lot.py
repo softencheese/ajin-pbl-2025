@@ -15,7 +15,7 @@ class Lot(BaseModel):
     initial_quantity = Column(Integer, nullable=False, comment='초기 수량')
     status = Column(String(20), default='WAIT', comment='LOT 상태 (WAIT, PROCESS, STOCK, CONSUMED, SHIPPED, HOLD, DEFECT)')
     production_date = Column(Date, nullable=False, comment='생산일 또는 입고일')
-    process_id = Column(BigInteger, ForeignKey("processes.id"), comment='생성된 공정 ID')
+    process_id = Column(Integer, ForeignKey("processes.id"), comment='생성된 공정 ID')
     supplier = Column(String(100), comment='공급사 (원자재 입고 시, 기본 공급사와 다를 경우)')
     worker_name = Column(String(50), comment='작업자')
     qc_passed = Column(Boolean, default=False, comment='QC 합격 여부')

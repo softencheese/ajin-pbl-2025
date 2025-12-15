@@ -81,38 +81,9 @@ class TraceService:
         for gen in genealogies:
             output_lot = gen.output_lot
             if output_lot.id not in produced_lots_map:
-                # 팔레트 조회
-                pallets = self.db.query(Pallet).filter(Pallet.lot_id == output_lot.id).all()
-                pallet_summaries = [
-                    PalletSummary(
-                        pallet_no=p.pallet_no,
-                        status=p.status,
-                        current_process=p.current_process.process_name if p.current_process else None
-                    ) for p in pallets
-                ]
-
-                # 이 Output Lot이 또 다른 Lot의 Input이 되었는지 확인 (ChildUsage)
-                child_usages = []
-                child_genes = self.db.query(LotGenealogy).filter(LotGenealogy.input_lot_id == output_lot.id).all()
-                for cg in child_genes:
-                    child_usages.append(ChildLotUsage(
-                        child_lot_no=cg.output_lot.lot_number,
-                        child_item_code=cg.output_lot.item.item_code,
-                        child_item_name=cg.output_lot.item.item_name,
-                        quantity_consumed=cg.quantity_consumed
-                    ))
-
-                produced_lots_map[output_lot.id] = ProducedLot(
-                    lot_no=output_lot.lot_number,
-                    item_code=output_lot.item.item_code,
-                    item_name=output_lot.item.item_name,
-                    quantity=output_lot.quantity,
-                    production_date=output_lot.production_date,
-                    qc_passed=output_lot.qc_passed,
-                    pallets=pallet_summaries,
-                    child_lots=child_usages
-                )
-        
+                # Recursively trace children
+                self._trace_children(output_lot, produced_lots_map)
+                
         return ForwardTraceResponse(
             root_lot_no=root_lot.lot_number,
             item_code=root_lot.item.item_code,
@@ -123,6 +94,50 @@ class TraceService:
             qc_passed=root_lot.qc_passed,
             produced_lots=list(produced_lots_map.values())
         )
+
+    def _trace_children(self, parent_lot: Lot, produced_lots_map: dict):
+        """재귀적으로 하위 LOT 추적"""
+        if parent_lot.id in produced_lots_map:
+             return
+
+        # 1. 팔레트 조회
+        pallets = self.db.query(Pallet).filter(Pallet.lot_id == parent_lot.id).all()
+        pallet_summaries = [
+            PalletSummary(
+                pallet_no=p.pallet_no,
+                status=p.status,
+                current_process=p.current_process.process_name if p.current_process else None
+            ) for p in pallets
+        ]
+
+        # 2. 바로 아래 자식들 조회
+        child_genes = self.db.query(LotGenealogy).filter(LotGenealogy.input_lot_id == parent_lot.id).all()
+        child_usages = []
+        
+        for cg in child_genes:
+            child_lot = cg.output_lot
+            child_usages.append(ChildLotUsage(
+                child_lot_no=child_lot.lot_number,
+                child_item_code=child_lot.item.item_code,
+                child_item_name=child_lot.item.item_name,
+                quantity_consumed=cg.quantity_consumed
+            ))
+            
+            # 재귀 호출
+            self._trace_children(child_lot, produced_lots_map)
+
+        produced_lots_map[parent_lot.id] = ProducedLot(
+            lot_no=parent_lot.lot_number,
+            item_code=parent_lot.item.item_code,
+            item_name=parent_lot.item.item_name,
+            quantity=parent_lot.quantity,
+            production_date=parent_lot.production_date,
+            qc_passed=parent_lot.qc_passed,
+            pallets=pallet_summaries,
+            child_lots=child_usages
+        )
+        
+
 
     def backward_trace(
         self, 

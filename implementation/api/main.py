@@ -18,14 +18,20 @@ from app.routers import (
 )
 from app.config import settings
 
+from contextlib import asynccontextmanager
+
 # 데이터베이스 테이블 생성 (개발용)
 # 프로덕션에서는 Alembic 마이그레이션을 사용하는 것이 좋습니다.
-Base.metadata.create_all(bind=engine)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    Base.metadata.create_all(bind=engine)
+    yield
 
 app = FastAPI(
     title="AJIN RFID Tracking API",
     description="RFID 기반 물류 추적 시스템 API",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # CORS 설정
