@@ -202,4 +202,4 @@ implementation/data/mysql/#innodb_temp/temp_7.ibt
 implementation/data/mysql/#innodb_temp/temp_8.ibt
 implementation/data/mysql/#innodb_temp/temp_9.ibt
 implementation/data/mysql/#innodb_temp/temp_10.ibt
-implementation/implementation/frontend/node_modules/*
+implementation/frontend/node_modules/*
