@@ -4,10 +4,6 @@ _z_refs/회의록/2회차_251001.md
 _z_refs/todos.md
 implementation/api/__pycache__/*
 implementation/api/app/__pycache__/*
-implementation/api/app/models/*
-implementation/api/app/routers/*
-implementation/api/app/schemas/*
-implementation/api/app/services/*
 implementation/data/mysql/*
 implementation/data/mysql/#ib_16384_0.dblwr
 implementation/data/mysql/#ib_16384_1.dblwr
