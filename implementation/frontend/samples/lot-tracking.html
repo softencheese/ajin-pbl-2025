@@ -1,0 +1,1905 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LOT 추적 및 관리</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 25px 30px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .search-section {
+            padding: 25px 30px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .search-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .search-field {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .search-field label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #495057;
+            font-size: 13px;
+        }
+
+        .search-field input, .search-field select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .search-field input:focus, .search-field select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-actions {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .summary-bar {
+            padding: 15px 30px;
+            background: #fff3cd;
+            border-bottom: 1px solid #ffc107;
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .summary-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .summary-item strong {
+            color: #856404;
+        }
+
+        .toolbar {
+            padding: 15px 30px;
+            background: white;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .table-container {
+            padding: 30px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        thead {
+            background: #f8f9fa;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        th {
+            padding: 12px 10px;
+            text-align: left;
+            font-weight: 600;
+            color: #495057;
+            border-bottom: 2px solid #dee2e6;
+            white-space: nowrap;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #e9ecef;
+            transition: background 0.2s;
+        }
+
+        tbody tr.child-row {
+            background: #f8f9fa;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        tbody tr.expanded {
+            background: #e7f3ff;
+        }
+
+        tbody tr.defect-status {
+            background: #ffe5e5;
+        }
+
+        tbody tr.defect-status:hover {
+            background: #ffd4d4;
+        }
+
+        tbody tr.hold-status {
+            background: #fff3cd;
+        }
+
+        tbody tr.hold-status:hover {
+            background: #ffe8b3;
+        }
+
+        td {
+            padding: 12px 10px;
+            vertical-align: middle;
+        }
+
+        .process-cell {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .expand-icon {
+            cursor: pointer;
+            color: #667eea;
+            font-size: 16px;
+            user-select: none;
+            transition: transform 0.3s;
+            width: 20px;
+            text-align: center;
+        }
+
+        .expand-icon.expanded {
+            transform: rotate(90deg);
+        }
+
+        .expand-icon.disabled {
+            color: #dee2e6;
+            cursor: default;
+        }
+
+        .indent-1 { padding-left: 30px; }
+        .indent-2 { padding-left: 60px; }
+        .indent-3 { padding-left: 90px; }
+        .indent-4 { padding-left: 120px; }
+
+        .item-type-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-right: 5px;
+        }
+
+        .type-raw { background: #d1ecf1; color: #0c5460; }
+        .type-wip { background: #fff3cd; color: #856404; }
+        .type-product { background: #d4edda; color: #155724; }
+
+        .pallet-status-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .lot-status-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-wait { background: #e2e3e5; color: #383d41; }
+        .status-process { background: #cce5ff; color: #004085; }
+        .status-stock { background: #d4edda; color: #155724; }
+        .status-consumed { background: #e2e3e5; color: #383d41; }
+        .status-shipped { background: #d1ecf1; color: #0c5460; }
+        .status-hold { background: #fff3cd; color: #856404; }
+        .status-defect { background: #f8d7da; color: #721c24; }
+
+        .status-consuming { background: #cce5ff; color: #004085; }
+        .status-producing { background: #e2e3e5; color: #383d41; }
+        .status-finished { background: #d1ecf1; color: #0c5460; }
+        .status-empty { background: #e9ecef; color: #6c757d; }
+        .status-deregistered { background: #f8f9fa; color: #495057; }
+
+        .btn-detail {
+            padding: 5px 12px;
+            background: #17a2b8;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .btn-detail:hover {
+            background: #138496;
+            transform: scale(1.05);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 900px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            padding: 20px 25px;
+            background: #667eea;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .modal-header h2 {
+            font-size: 20px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            line-height: 1;
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .detail-section {
+            margin-bottom: 25px;
+        }
+
+        .detail-section h3 {
+            font-size: 16px;
+            margin-bottom: 12px;
+            color: #495057;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .detail-row {
+            display: flex;
+            padding: 10px 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #6c757d;
+            min-width: 150px;
+        }
+
+        .detail-value {
+            color: #212529;
+            flex: 1;
+        }
+
+        .lot-clickable {
+            color: #667eea;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .lot-clickable:hover {
+            text-decoration: underline;
+        }
+
+        .count-badge {
+            background: #667eea;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .genealogy-tree {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+
+        .genealogy-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .genealogy-item:hover {
+            background: #e7f3ff;
+            transform: translateX(5px);
+        }
+
+        .genealogy-item.parent {
+            border-left-color: #28a745;
+        }
+
+        .genealogy-item.child {
+            border-left-color: #17a2b8;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .rfid-input-section {
+            margin-top: 20px;
+        }
+
+        .rfid-input-section input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .rfid-input-section input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .rfid-scanning {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            background: #e7f3ff;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .rfid-scanning.active {
+            display: block;
+        }
+
+        .scanning-animation {
+            font-size: 48px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        /* AutoFilter Styles */
+        .filter-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 5px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .filter-icon {
+            font-size: 10px;
+            color: #6c757d;
+            transition: color 0.2s;
+        }
+
+        .filter-icon:hover {
+            color: #667eea;
+        }
+
+        .filter-icon.active {
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .filter-dropdown {
+            display: none;
+            position: absolute;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            min-width: 250px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .filter-dropdown.active {
+            display: block;
+        }
+
+        .filter-section {
+            padding: 10px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .filter-section:last-child {
+            border-bottom: none;
+        }
+
+        .filter-operator {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+
+        .filter-operator select, .filter-operator input {
+            flex: 1;
+            padding: 6px 8px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .filter-values {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .filter-value-item {
+            padding: 5px 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .filter-value-item:hover {
+            background: #f8f9fa;
+        }
+
+        .filter-value-item input[type="checkbox"] {
+            cursor: pointer;
+        }
+
+        .filter-actions {
+            padding: 8px;
+            display: flex;
+            gap: 5px;
+        }
+
+        .filter-actions button {
+            flex: 1;
+            padding: 6px;
+            font-size: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .search-row {
+                flex-direction: column;
+            }
+
+            .search-field {
+                min-width: 100%;
+            }
+
+            .summary-bar {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .table-container {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>LOT 추적 및 관리</h1>
+            <p>LOT의 연결성 확인 및 조회</p>
+        </div>
+
+        <div class="search-section">
+            <div class="search-row">
+                <div class="search-field">
+                    <label>🔍 품명 (제품명/부품명)</label>
+                    <input type="text" id="itemName" placeholder="예: PNL-FR DR INR">
+                </div>
+                <div class="search-field">
+                    <label>📦 품목 유형</label>
+                    <select id="itemType">
+                        <option value="RAW" selected>원자재 (RAW)</option>
+                        <option value="WIP">재공품 (WIP)</option>
+                        <option value="PRODUCT">완제품 (PRODUCT)</option>
+                    </select>
+                </div>
+                <div class="search-field">
+                    <label>📅 시작 일시</label>
+                    <input type="datetime-local" id="startDate" value="2024-12-01T00:00">
+                </div>
+                <div class="search-field">
+                    <label>📅 종료 일시</label>
+                    <input type="datetime-local" id="endDate" value="2024-12-17T23:59">
+                </div>
+            </div>
+            <div class="search-row">
+                <div class="search-field">
+                    <label>🏷️ LOT 번호 (선택)</label>
+                    <input type="text" id="lotNumber" placeholder="예: SH-231211-001">
+                </div>
+                <div class="search-field">
+                    <label>📊 LOT 상태</label>
+                    <select id="lotStatus">
+                        <option value="all">전체</option>
+                        <option value="WAIT">대기 (WAIT)</option>
+                        <option value="PROCESS">공정 진행 중 (PROCESS)</option>
+                        <option value="STOCK">재고 (STOCK)</option>
+                        <option value="CONSUMED">소비 완료 (CONSUMED)</option>
+                        <option value="SHIPPED">출하 완료 (SHIPPED)</option>
+                        <option value="HOLD">보류 (HOLD)</option>
+                        <option value="DEFECT">불량 (DEFECT)</option>
+                    </select>
+                </div>
+                <div class="search-actions">
+                    <button class="btn btn-primary" onclick="searchData()">🔍 검색</button>
+                    <button class="btn btn-secondary" onclick="resetSearch()">↻ 초기화</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="summary-bar" id="summaryBar" style="display: none;">
+            <div class="summary-item">
+                <span>📦 전체 팔레트:</span>
+                <strong id="totalPallets">0</strong>
+            </div>
+            <div class="summary-item">
+                <span>✅ Stock:</span>
+                <strong id="stockCount" style="color: #28a745;">0</strong>
+            </div>
+            <div class="summary-item">
+                <span>⚠️ Hold:</span>
+                <strong id="holdCount" style="color: #ffc107;">0</strong>
+            </div>
+            <div class="summary-item">
+                <span>❌ Defect:</span>
+                <strong id="defectCount" style="color: #dc3545;">0</strong>
+            </div>
+        </div>
+
+        <div class="toolbar" id="toolbar" style="display: none;">
+            <button class="btn btn-secondary" onclick="expandAll()">📂 전체 확장</button>
+            <button class="btn btn-secondary" onclick="collapseAll()">📁 전체 접기</button>
+            <button class="btn btn-secondary" onclick="exportData()">📥 엑셀 내보내기</button>
+        </div>
+
+        <div class="table-container">
+            <div class="empty-state" id="emptyState">
+                <div class="empty-state-icon">🔍</div>
+                <h3>검색 조건을 입력하고 검색 버튼을 클릭하세요</h3>
+                <p>품명과 기간을 선택하여 공정 추적을 시작할 수 있습니다</p>
+            </div>
+            <table id="dataTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th style="width: 200px; position: relative;">
+                            <div class="filter-header" onclick="toggleFilter(event, 'itemName')">
+                                <span>품명</span>
+                                <span class="filter-icon" id="filter-icon-itemName">▼</span>
+                            </div>
+                            <div class="filter-dropdown" id="filter-dropdown-itemName"></div>
+                        </th>
+                        <th style="width: 250px; position: relative;">
+                            <div class="filter-header" onclick="toggleFilter(event, 'processName')">
+                                <span>공정/팔레트</span>
+                                <span class="filter-icon" id="filter-icon-processName">▼</span>
+                            </div>
+                            <div class="filter-dropdown" id="filter-dropdown-processName"></div>
+                        </th>
+                        <th style="width: 140px; position: relative;">
+                            <div class="filter-header" onclick="toggleFilter(event, 'lotNumber')">
+                                <span>LOT 번호</span>
+                                <span class="filter-icon" id="filter-icon-lotNumber">▼</span>
+                            </div>
+                            <div class="filter-dropdown" id="filter-dropdown-lotNumber"></div>
+                        </th>
+                        <th style="width: 150px; position: relative;">
+                            <div class="filter-header" onclick="toggleFilter(event, 'itemCode')">
+                                <span>품목코드</span>
+                                <span class="filter-icon" id="filter-icon-itemCode">▼</span>
+                            </div>
+                            <div class="filter-dropdown" id="filter-dropdown-itemCode"></div>
+                        </th>
+                        <th style="width: 120px; position: relative;">
+                            <div class="filter-header" onclick="toggleFilter(event, 'status')">
+                                <span>LOT 상태</span>
+                                <span class="filter-icon" id="filter-icon-status">▼</span>
+                            </div>
+                            <div class="filter-dropdown" id="filter-dropdown-status"></div>
+                        </th>
+                        <th style="width: 100px;">수량</th>
+                        <th style="width: 120px;">팔레트 상태</th>
+                        <th style="width: 80px;">상세</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="modal" id="detailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📋 LOT 상세 정보 및 Genealogy</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+            </div>
+        </div>
+    </div>
+
+    <!-- RFID 등록 모달 -->
+    <div class="modal" id="rfidModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🏷️ RFID 등록</h2>
+                <button class="modal-close" onclick="closeRfidModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="rfidModalBody">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 실제 스키마 기반 통합 데이터
+        const lotDatabase = {
+            // 원자재 LOT
+            'IN-241210-001': {
+                lotNumber: 'IN-241210-001',
+                itemCode: 'STEEL-SPCC',
+                itemName: 'SPCC 냉연강판',
+                itemType: 'RAW',
+                quantity: 0,
+                initialQuantity: 500,
+                consumed: 500,
+                status: 'CONSUMED',
+                processName: '입고',
+                productionDate: '2024-12-10',
+                inputTime: '2024-12-10 14:30:00',
+                outputTime: null,
+                supplier: '포스코',
+                barcode: '251018226687',
+                hasParent: false,
+                parents: [],
+                children: ['SH-241211-001'],
+                pallets: []
+            },
+            // 샤링 LOT
+            'SH-241211-001': {
+                lotNumber: 'SH-241211-001',
+                itemCode: '71412-T6000S',
+                itemName: 'PNL-FR DR INR LH',
+                itemType: 'WIP',
+                quantity: 0,
+                initialQuantity: 400,
+                consumed: 400,
+                status: 'CONSUMED',
+                processName: '샤링',
+                productionDate: '2024-12-11',
+                inputTime: '2024-12-11 08:00:00',
+                outputTime: '2024-12-11 09:30:00',
+                workerName: '김철수',
+                barcode: 'SH-BAR-001',
+                hasParent: true,
+                parents: ['IN-241210-001'],
+                children: ['PR-241211-001'],
+                pallets: [
+                    {
+                        id: 'SH-241211-001-PLT-001',
+                        palletNo: 'PLT-2024-030',
+                        paletteNumber: 1,
+                        rfidEpc: 'E2801170000002036B3D8CC9',
+                        quantity: 50,
+                        status: 'Deregistered'
+                    },
+                    {
+                        id: 'SH-241211-001-PLT-002',
+                        palletNo: 'PLT-2024-031',
+                        paletteNumber: 2,
+                        rfidEpc: 'E2801170000002036B3D8CCA',
+                        quantity: 50,
+                        status: 'Deregistered'
+                    },
+                    {
+                        id: 'SH-241211-001-PLT-003',
+                        palletNo: 'PLT-2024-032',
+                        paletteNumber: 3,
+                        rfidEpc: 'E2801170000002036B3D8CCB',
+                        quantity: 50,
+                        status: 'Deregistered'
+                    },
+                    {
+                        id: 'SH-241211-001-PLT-004',
+                        palletNo: 'PLT-2024-033',
+                        paletteNumber: 4,
+                        rfidEpc: 'E2801170000002036B3D8CCC',
+                        quantity: 50,
+                        status: 'Deregistered'
+                    },
+                    {
+                        id: 'SH-241211-001-PLT-005',
+                        palletNo: 'PLT-2024-034',
+                        paletteNumber: 5,
+                        rfidEpc: 'E2801170000002036B3D8CCD',
+                        quantity: 50,
+                        status: 'Deregistered'
+                    },
+                    {
+                        id: 'SH-241211-001-PLT-006',
+                        palletNo: 'PLT-2024-035',
+                        paletteNumber: 6,
+                        rfidEpc: 'E2801170000002036B3D8CCE',
+                        quantity: 50,
+                        status: 'Deregistered'
+                    },
+                    {
+                        id: 'SH-241211-001-PLT-007',
+                        palletNo: 'PLT-2024-036',
+                        paletteNumber: 7,
+                        rfidEpc: 'E2801170000002036B3D8CCF',
+                        quantity: 50,
+                        status: 'Deregistered'
+                    },
+                    {
+                        id: 'SH-241211-001-PLT-008',
+                        palletNo: 'PLT-2024-037',
+                        paletteNumber: 8,
+                        rfidEpc: 'E2801170000002036B3D8CD0',
+                        quantity: 50,
+                        status: 'Deregistered'
+                    }
+                ]
+            },
+            // 프레스 LOT
+            'PR-241211-001': {
+                lotNumber: 'PR-241211-001',
+                itemCode: '71412-T6000S-PR',
+                itemName: 'PNL-FR DR INR (프레스)',
+                itemType: 'WIP',
+                quantity: 0,
+                initialQuantity: 400,
+                consumed: 400,
+                status: 'CONSUMED',
+                processName: '프레스',
+                productionDate: '2024-12-11',
+                inputTime: '2024-12-11 11:30:00',
+                outputTime: '2024-12-11 13:15:00',
+                workerName: '박민수',
+                barcode: 'PR-BAR-001',
+                hasParent: true,
+                parents: ['SH-241211-001'],
+                children: ['AS-241215-001'],
+                pallets: [
+                    {
+                        id: 'PR-241211-001-PLT-001',
+                        palletNo: 'PLT-2024-040',
+                        paletteNumber: 1,
+                        rfidEpc: 'E2801170000002036B3D8CD1',
+                        quantity: 50,
+                        status: 'Deregistered'
+                    },
+                    {
+                        id: 'PR-241211-001-PLT-002',
+                        palletNo: 'PLT-2024-041',
+                        paletteNumber: 2,
+                        rfidEpc: 'E2801170000002036B3D8CD2',
+                        quantity: 50,
+                        status: 'Deregistered'
+                    },
+                    {
+                        id: 'PR-241211-001-PLT-003',
+                        palletNo: 'PLT-2024-042',
+                        paletteNumber: 3,
+                        rfidEpc: 'E2801170000002036B3D8CD3',
+                        quantity: 50,
+                        status: 'Deregistered'
+                    },
+                    {
+                        id: 'PR-241211-001-PLT-004',
+                        palletNo: 'PLT-2024-043',
+                        paletteNumber: 4,
+                        rfidEpc: 'E2801170000002036B3D8CD4',
+                        quantity: 50,
+                        status: 'Deregistered'
+                    },
+                    {
+                        id: 'PR-241211-001-PLT-005',
+                        palletNo: 'PLT-2024-044',
+                        paletteNumber: 5,
+                        rfidEpc: 'E2801170000002036B3D8CD5',
+                        quantity: 50,
+                        status: 'Deregistered'
+                    },
+                    {
+                        id: 'PR-241211-001-PLT-006',
+                        palletNo: 'PLT-2024-045',
+                        paletteNumber: 6,
+                        rfidEpc: 'E2801170000002036B3D8CD6',
+                        quantity: 50,
+                        status: 'Deregistered'
+                    },
+                    {
+                        id: 'PR-241211-001-PLT-007',
+                        palletNo: 'PLT-2024-046',
+                        paletteNumber: 7,
+                        rfidEpc: 'E2801170000002036B3D8CD7',
+                        quantity: 50,
+                        status: 'Deregistered'
+                    },
+                    {
+                        id: 'PR-241211-001-PLT-008',
+                        palletNo: 'PLT-2024-047',
+                        paletteNumber: 8,
+                        rfidEpc: 'E2801170000002036B3D8CD8',
+                        quantity: 50,
+                        status: 'Deregistered'
+                    }
+                ]
+            },
+            // 부품 LOT
+            'PR-241212-002': {
+                lotNumber: 'PR-241212-002',
+                itemCode: '71420-BOLT',
+                itemName: '볼트 세트',
+                itemType: 'WIP',
+                quantity: 0,
+                initialQuantity: 200,
+                consumed: 200,
+                status: 'CONSUMED',
+                processName: '부품 입고',
+                productionDate: '2024-12-12',
+                inputTime: '2024-12-12 10:00:00',
+                outputTime: '2024-12-12 10:30:00',
+                supplier: '협력업체A',
+                hasParent: false,
+                parents: [],
+                children: ['AS-241215-001'],
+                pallets: [
+                    {
+                        id: 'PR-241212-002-PLT-001',
+                        palletNo: 'PLT-2024-048',
+                        paletteNumber: 1,
+                        rfidEpc: 'E2801170000002036B3D8CD9',
+                        quantity: 50,
+                        status: 'Deregistered'
+                    },
+                    {
+                        id: 'PR-241212-002-PLT-002',
+                        palletNo: 'PLT-2024-049',
+                        paletteNumber: 2,
+                        rfidEpc: 'E2801170000002036B3D8CDA',
+                        quantity: 50,
+                        status: 'Deregistered'
+                    },
+                    {
+                        id: 'PR-241212-002-PLT-003',
+                        palletNo: 'PLT-2024-050',
+                        paletteNumber: 3,
+                        rfidEpc: 'E2801170000002036B3D8CDB',
+                        quantity: 50,
+                        status: 'Deregistered'
+                    },
+                    {
+                        id: 'PR-241212-002-PLT-004',
+                        palletNo: 'PLT-2024-051',
+                        paletteNumber: 4,
+                        rfidEpc: 'E2801170000002036B3D8CDC',
+                        quantity: 50,
+                        status: 'Deregistered'
+                    }
+                ]
+            },
+            // 완제품 LOT
+            'AS-241215-001': {
+                lotNumber: 'AS-241215-001',
+                itemCode: '76211-GI000',
+                itemName: 'ASSY-FR DR MODULE',
+                itemType: 'PRODUCT',
+                quantity: 50,
+                initialQuantity: 50,
+                consumed: 0,
+                status: 'STOCK',
+                processName: '조립',
+                productionDate: '2024-12-15',
+                inputTime: '2024-12-15 14:00:00',
+                outputTime: '2024-12-15 16:30:00',
+                workerName: '강지은',
+                qcPassed: true,
+                hasParent: true,
+                parents: ['PR-241211-001', 'PR-241212-002'],
+                children: [],
+                pallets: [
+                    {
+                        id: 'AS-241215-001-PLT-001',
+                        palletNo: 'PLT-2024-052',
+                        paletteNumber: 1,
+                        rfidEpc: 'E2801170000002036B3D8CDD',
+                        quantity: 50,
+                        status: 'Finished'
+                    }
+                ]
+            },
+            // 추가 원자재 LOT
+            'IN-241208-002': {
+                lotNumber: 'IN-241208-002',
+                itemCode: 'STEEL-SPCC',
+                itemName: 'SPCC 냉연강판',
+                itemType: 'RAW',
+                quantity: 300,
+                initialQuantity: 500,
+                consumed: 200,
+                status: 'STOCK',
+                processName: '입고',
+                productionDate: '2024-12-08',
+                inputTime: '2024-12-08 10:00:00',
+                outputTime: null,
+                supplier: '포스코',
+                barcode: '251018226688',
+                hasParent: false,
+                parents: [],
+                children: ['SH-241209-003'],
+                pallets: []
+            },
+            // 샤링 LOT (재고)
+            'SH-241209-003': {
+                lotNumber: 'SH-241209-003',
+                itemCode: '71412-T6000S',
+                itemName: 'PNL-FR DR INR LH',
+                itemType: 'WIP',
+                quantity: 250,
+                initialQuantity: 250,
+                consumed: 0,
+                status: 'STOCK',
+                processName: '샤링',
+                productionDate: '2024-12-09',
+                inputTime: '2024-12-09 09:00:00',
+                outputTime: '2024-12-09 10:30:00',
+                workerName: '김철수',
+                hasParent: true,
+                parents: ['IN-241208-002'],
+                children: [],
+                pallets: [
+                    {
+                        id: 'SH-241209-003-PLT-001',
+                        palletNo: 'PLT-2024-025',
+                        paletteNumber: 1,
+                        rfidEpc: 'E2801170000002036B3D8CC8',
+                        quantity: 50,
+                        status: 'Stock'
+                    },
+                    {
+                        id: 'SH-241209-003-PLT-002',
+                        palletNo: 'PLT-2024-026',
+                        paletteNumber: 2,
+                        rfidEpc: 'E2801170000002036B3D8CC9',
+                        quantity: 50,
+                        status: 'Stock'
+                    },
+                    {
+                        id: 'SH-241209-003-PLT-003',
+                        palletNo: 'PLT-2024-027',
+                        paletteNumber: 3,
+                        rfidEpc: null,
+                        quantity: 50,
+                        status: 'Generated'
+                    },
+                    {
+                        id: 'SH-241209-003-PLT-004',
+                        palletNo: 'PLT-2024-028',
+                        paletteNumber: 4,
+                        rfidEpc: null,
+                        quantity: 50,
+                        status: 'Generated'
+                    },
+                    {
+                        id: 'SH-241209-003-PLT-005',
+                        palletNo: 'PLT-2024-029',
+                        paletteNumber: 5,
+                        rfidEpc: null,
+                        quantity: 50,
+                        status: 'Generated'
+                    }
+                ]
+            }
+        };
+
+        let expandedLots = new Set();
+        let currentData = [];
+        let columnFilters = {};
+        let activeFilterDropdown = null;
+
+        function searchData() {
+            const itemName = document.getElementById('itemName').value;
+            const itemType = document.getElementById('itemType').value;
+            const lotStatus = document.getElementById('lotStatus').value;
+
+            if (!itemName && !itemType) {
+                alert('품명을 입력하거나 품목 유형을 선택해주세요.');
+                return;
+            }
+
+            // 조건에 맞는 데이터 필터링 (정방향 정렬 - 입고부터 시작)
+            currentData = Object.values(lotDatabase)
+                .filter(lot =>
+                    (itemName === '' || lot.itemName.includes(itemName)) &&
+                    (!itemType || lot.itemType === itemType) &&
+                    (lotStatus === 'all' || lot.status === lotStatus)
+                )
+                .sort((a, b) => {
+                    // 공정 순서: 입고 > 샤링 > 프레스 > 조립 (정방향)
+                    const processOrder = { '입고': 1, '부품 입고': 1, '샤링': 2, '프레스': 3, '조립': 4 };
+                    return (processOrder[a.processName] || 0) - (processOrder[b.processName] || 0);
+                });
+
+            expandedLots.clear();
+            displayData();
+            updateSummary();
+
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('dataTable').style.display = 'table';
+            document.getElementById('summaryBar').style.display = 'flex';
+            document.getElementById('toolbar').style.display = 'flex';
+        }
+
+        function displayData() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            // Apply filters
+            const filteredData = applyFiltersToData(currentData);
+
+            filteredData.forEach(lot => {
+                renderRow(lot, tbody);
+            });
+        }
+
+        function renderRow(lot, container, depth = 0) {
+            const tr = document.createElement('tr');
+            tr.dataset.lotNumber = lot.lotNumber;
+
+            if (depth > 0) {
+                tr.classList.add('child-row');
+            }
+
+            if (expandedLots.has(lot.lotNumber)) {
+                tr.classList.add('expanded');
+            }
+
+            if (lot.status === 'DEFECT') {
+                tr.classList.add('defect-status');
+            } else if (lot.status === 'HOLD') {
+                tr.classList.add('hold-status');
+            }
+
+            const itemTypeClass = `type-${lot.itemType.toLowerCase()}`;
+            const indentClass = depth > 0 ? `indent-${depth}` : '';
+            const lotStatusClass = `status-${lot.status.toLowerCase()}`;
+
+            // 수량 표시: x/total 형식
+            const quantityDisplay = `${lot.quantity}/${lot.initialQuantity}`;
+
+            // 팔레트 상태 (첫 번째 팔레트만 표시)
+            const palletStatus = lot.pallets.length > 0
+                ? `<span class="pallet-status-badge status-${lot.pallets[0].status.toLowerCase()}">${lot.pallets[0].status}</span>`
+                : '-';
+
+            // 자식 LOT이 있는지 확인
+            const hasChildren = lot.children && lot.children.length > 0;
+
+            tr.innerHTML = `
+                <td>${lot.itemName}</td>
+                <td>
+                    <div class="process-cell ${indentClass}">
+                        <span class="expand-icon ${hasChildren ? '' : 'disabled'} ${expandedLots.has(lot.lotNumber) ? 'expanded' : ''}"
+                              onclick="toggleExpand('${lot.lotNumber}')">
+                            ${hasChildren ? '▶' : ''}
+                        </span>
+                        <span class="item-type-badge ${itemTypeClass}">${getItemTypeLabel(lot.itemType)}</span>
+                        <span>${lot.processName}</span>
+                    </div>
+                </td>
+                <td><span class="lot-clickable" onclick="showDetail('${lot.lotNumber}')">${lot.lotNumber}</span></td>
+                <td>${lot.itemCode}</td>
+                <td><span class="lot-status-badge ${lotStatusClass}">${getStatusLabel(lot.status)}</span></td>
+                <td>${quantityDisplay}</td>
+                <td>${palletStatus}</td>
+                <td><button class="btn-detail" onclick="showDetail('${lot.lotNumber}')">보기</button></td>
+            `;
+
+            container.appendChild(tr);
+
+            // 확장된 경우 자식 LOT 렌더링 (정방향 추적)
+            if (expandedLots.has(lot.lotNumber) && hasChildren) {
+                lot.children.forEach(childLotNumber => {
+                    const childLot = lotDatabase[childLotNumber];
+                    if (childLot) {
+                        renderRow(childLot, container, depth + 1);
+                    }
+                });
+            }
+        }
+
+        function toggleExpand(lotNumber) {
+            const lot = lotDatabase[lotNumber];
+            if (!lot || !lot.children || lot.children.length === 0) return;
+
+            if (expandedLots.has(lotNumber)) {
+                expandedLots.delete(lotNumber);
+            } else {
+                expandedLots.add(lotNumber);
+            }
+
+            displayData();
+        }
+
+        function expandAll() {
+            Object.keys(lotDatabase).forEach(lotNumber => {
+                const lot = lotDatabase[lotNumber];
+                if (lot.children && lot.children.length > 0) {
+                    expandedLots.add(lotNumber);
+                }
+            });
+            displayData();
+        }
+
+        function collapseAll() {
+            expandedLots.clear();
+            displayData();
+        }
+
+        function getItemTypeLabel(type) {
+            const labels = {
+                'RAW': '원자재',
+                'WIP': '재공품',
+                'PRODUCT': '완제품'
+            };
+            return labels[type] || type;
+        }
+
+        function getStatusLabel(status) {
+            const labels = {
+                'WAIT': '대기',
+                'PROCESS': '공정중',
+                'STOCK': '재고',
+                'CONSUMED': '소비완료',
+                'SHIPPED': '출하완료',
+                'HOLD': '보류',
+                'DEFECT': '불량'
+            };
+            return labels[status] || status;
+        }
+
+        function showDetail(lotNumber) {
+            const lot = lotDatabase[lotNumber];
+            if (!lot) return;
+
+            const modalBody = document.getElementById('modalBody');
+
+            let html = `
+                <div class="detail-section">
+                    <h3>📋 기본 정보</h3>
+                    <div class="detail-row">
+                        <div class="detail-label">품목 유형</div>
+                        <div class="detail-value"><span class="item-type-badge type-${lot.itemType.toLowerCase()}">${getItemTypeLabel(lot.itemType)}</span></div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">품목코드</div>
+                        <div class="detail-value"><strong>${lot.itemCode}</strong></div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">품명</div>
+                        <div class="detail-value">${lot.itemName}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">LOT 번호</div>
+                        <div class="detail-value"><strong style="color: #667eea;">${lot.lotNumber}</strong></div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">LOT 상태</div>
+                        <div class="detail-value"><span class="lot-status-badge status-${lot.status.toLowerCase()}">${getStatusLabel(lot.status)}</span></div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">바코드</div>
+                        <div class="detail-value">${lot.barcode || '-'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">공정</div>
+                        <div class="detail-value">${lot.processName}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">생산/입고일</div>
+                        <div class="detail-value">${lot.productionDate}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">수량</div>
+                        <div class="detail-value">${lot.quantity} / ${lot.initialQuantity} (초기)</div>
+                    </div>
+            `;
+
+            // 작업자 정보
+            if (lot.workerName) {
+                html += `
+                    <div class="detail-row">
+                        <div class="detail-label">작업자</div>
+                        <div class="detail-value">${lot.workerName}</div>
+                    </div>
+                `;
+            }
+
+            // 공급사 정보
+            if (lot.supplier) {
+                html += `
+                    <div class="detail-row">
+                        <div class="detail-label">공급사</div>
+                        <div class="detail-value">${lot.supplier}</div>
+                    </div>
+                `;
+            }
+
+            // QC 정보
+            if (lot.qcPassed !== undefined) {
+                html += `
+                    <div class="detail-row">
+                        <div class="detail-label">QC 합격</div>
+                        <div class="detail-value">${lot.qcPassed ? '✅ 합격' : '❌ 불합격'}</div>
+                    </div>
+                `;
+            }
+
+            html += '</div>';
+
+            // 역방향 추적 (부모 LOT - 투입 재료)
+            if (lot.parents && lot.parents.length > 0) {
+                html += `
+                    <div class="detail-section">
+                        <h3>⬅️ 투입 LOT (역방향 추적) <span class="count-badge">${lot.parents.length}</span></h3>
+                        <div class="genealogy-tree">
+                `;
+                lot.parents.forEach(parentLotNumber => {
+                    const parentLot = lotDatabase[parentLotNumber];
+                    if (parentLot) {
+                        html += `
+                            <div class="genealogy-item parent" onclick="showDetail('${parentLot.lotNumber}')">
+                                <strong>${parentLot.lotNumber}</strong> - ${parentLot.itemName}
+                                <br><small style="color: #6c757d;">
+                                    품목코드: ${parentLot.itemCode} |
+                                    유형: ${getItemTypeLabel(parentLot.itemType)} |
+                                    수량: ${parentLot.initialQuantity}
+                                </small>
+                            </div>
+                        `;
+                    }
+                });
+                html += '</div></div>';
+            }
+
+            // 정방향 추적 (자식 LOT - 생산된 제품)
+            if (lot.children && lot.children.length > 0) {
+                html += `
+                    <div class="detail-section">
+                        <h3>➡️ 생산된 LOT (정방향 추적) <span class="count-badge">${lot.children.length}</span></h3>
+                        <div class="genealogy-tree">
+                `;
+                lot.children.forEach(childLotNumber => {
+                    const childLot = lotDatabase[childLotNumber];
+                    if (childLot) {
+                        html += `
+                            <div class="genealogy-item child" onclick="showDetail('${childLot.lotNumber}')">
+                                <strong>${childLot.lotNumber}</strong> - ${childLot.itemName}
+                                <br><small style="color: #6c757d;">
+                                    품목코드: ${childLot.itemCode} |
+                                    유형: ${getItemTypeLabel(childLot.itemType)} |
+                                    수량: ${childLot.initialQuantity}
+                                </small>
+                            </div>
+                        `;
+                    }
+                });
+                html += '</div></div>';
+            }
+
+            // 팔레트 정보 (마지막에 추가)
+            if (lot.pallets && lot.pallets.length > 0) {
+                html += `
+                    <div class="detail-section">
+                        <h3>📦 팔레트 정보 <span class="count-badge">${lot.pallets.length}</span></h3>
+                        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                            <thead style="background: #f8f9fa;">
+                                <tr>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 2px solid #dee2e6;">팔레트 번호</th>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 2px solid #dee2e6;">RFID EPC</th>
+                                    <th style="padding: 10px; text-align: center; border-bottom: 2px solid #dee2e6;">수량</th>
+                                    <th style="padding: 10px; text-align: center; border-bottom: 2px solid #dee2e6;">팔레트상태</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                lot.pallets.forEach(pallet => {
+                    const rfidDisplay = pallet.rfidEpc
+                        ? `<span style="font-family: monospace; font-size: 12px;">${pallet.rfidEpc}</span>`
+                        : `<button class="btn btn-warning btn-small" onclick="openRfidRegistration('${lot.lotNumber}', '${pallet.id}')">RFID 등록</button>`;
+
+                    html += `
+                        <tr style="border-bottom: 1px solid #e9ecef;">
+                            <td style="padding: 10px;"><strong>${pallet.palletNo}</strong></td>
+                            <td style="padding: 10px; text-align: left;">
+                                ${rfidDisplay}
+                            </td>
+                            <td style="padding: 10px; text-align: center;">${pallet.quantity}</td>
+                            <td style="padding: 10px; text-align: center;">
+                                <span class="pallet-status-badge status-${pallet.status.toLowerCase()}">${pallet.status}</span>
+                            </td>
+                        </tr>
+                    `;
+                });
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+
+            modalBody.innerHTML = html;
+            document.getElementById('detailModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('detailModal').classList.remove('active');
+        }
+
+        function closeRfidModal() {
+            document.getElementById('rfidModal').classList.remove('active');
+        }
+
+        function openRfidRegistration(lotNumber, palletId) {
+            const lot = lotDatabase[lotNumber];
+            if (!lot) return;
+
+            const pallet = lot.pallets.find(p => p.id === palletId);
+            if (!pallet) return;
+
+            const modalBody = document.getElementById('rfidModalBody');
+
+            modalBody.innerHTML = `
+                <div class="detail-section">
+                    <h3>팔레트 정보</h3>
+                    <div class="detail-row">
+                        <div class="detail-label">팔레트 ID</div>
+                        <div class="detail-value"><strong>${pallet.id}</strong></div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">팔레트 번호</div>
+                        <div class="detail-value">${pallet.palletNo}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">소속 LOT</div>
+                        <div class="detail-value">${lot.lotNumber}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">품목</div>
+                        <div class="detail-value">${lot.itemName}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">수량</div>
+                        <div class="detail-value">${pallet.quantity}개</div>
+                    </div>
+                </div>
+
+                <div class="rfid-input-section">
+                    <label style="font-weight: 600; color: #495057; margin-bottom: 10px; display: block;">
+                        RFID EPC 코드 입력
+                    </label>
+                    <input type="text" id="rfidInput" placeholder="RFID EPC 번호를 입력하거나 스캔하세요">
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-success" onclick="registerRfid('${lotNumber}', '${palletId}')" style="flex: 1;">
+                            ✅ 등록
+                        </button>
+                        <button class="btn btn-warning" onclick="startRfidScanning('${lotNumber}', '${palletId}')" style="flex: 1;">
+                            📡 스캔 모드
+                        </button>
+                    </div>
+                </div>
+
+                <div class="rfid-scanning" id="rfidScanning">
+                    <div class="scanning-animation">📡</div>
+                    <h3 style="margin-top: 15px;">RFID 스캔 대기 중...</h3>
+                    <p style="color: #6c757d; margin-top: 10px;">RFID 리더기를 태그에 가까이 대주세요</p>
+                    <button class="btn btn-secondary btn-small" onclick="stopRfidScanning()" style="margin-top: 15px;">
+                        중지
+                    </button>
+                </div>
+            `;
+
+            document.getElementById('rfidModal').classList.add('active');
+        }
+
+        function startRfidScanning(lotNumber, palletId) {
+            document.getElementById('rfidScanning').classList.add('active');
+
+            // 시뮬레이션: 3초 후 자동으로 RFID 스캔
+            setTimeout(() => {
+                const simulatedRfid = 'E280' + Math.random().toString(36).substr(2, 20).toUpperCase();
+                document.getElementById('rfidInput').value = simulatedRfid;
+                stopRfidScanning();
+                alert('RFID 스캔 완료!\n감지된 EPC: ' + simulatedRfid);
+            }, 3000);
+        }
+
+        function stopRfidScanning() {
+            const scanningEl = document.getElementById('rfidScanning');
+            if (scanningEl) {
+                scanningEl.classList.remove('active');
+            }
+        }
+
+        function registerRfid(lotNumber, palletId) {
+            const rfidValue = document.getElementById('rfidInput').value.trim();
+
+            if (!rfidValue) {
+                alert('RFID EPC 코드를 입력해주세요.');
+                return;
+            }
+
+            const lot = lotDatabase[lotNumber];
+            if (!lot) return;
+
+            const pallet = lot.pallets.find(p => p.id === palletId);
+            if (!pallet) return;
+
+            // RFID 등록
+            pallet.rfidEpc = rfidValue;
+            pallet.rfidRegisteredAt = new Date().toLocaleString('ko-KR');
+
+            // 상태 업데이트 (Generated -> Empty or Stock)
+            if (pallet.status === 'Generated') {
+                pallet.status = 'Empty';
+            }
+
+            closeRfidModal();
+
+            alert(`RFID 등록 완료!\n팔레트: ${pallet.palletNo}\nRFID EPC: ${rfidValue}`);
+
+            // 상세 모달 새로고침
+            showDetail(lotNumber);
+        }
+
+        function updateSummary() {
+            const allPallets = [];
+            Object.values(lotDatabase).forEach(lot => {
+                if (lot.pallets) {
+                    allPallets.push(...lot.pallets);
+                }
+            });
+
+            const stockCount = allPallets.filter(p => p.status === 'Stock').length;
+            const holdCount = allPallets.filter(p => p.status === 'Hold').length;
+            const defectCount = allPallets.filter(p => p.status === 'Defect').length;
+
+            document.getElementById('totalPallets').textContent = allPallets.length;
+            document.getElementById('stockCount').textContent = stockCount;
+            document.getElementById('holdCount').textContent = holdCount;
+            document.getElementById('defectCount').textContent = defectCount;
+        }
+
+        function exportData() {
+            alert('엑셀 내보내기 기능은 서버 연동 후 구현됩니다.');
+        }
+
+        function resetSearch() {
+            document.getElementById('itemName').value = '';
+            document.getElementById('itemType').value = 'RAW';
+            document.getElementById('lotNumber').value = '';
+            document.getElementById('lotStatus').value = 'all';
+
+            currentData = [];
+            expandedLots.clear();
+
+            document.getElementById('emptyState').style.display = 'block';
+            document.getElementById('dataTable').style.display = 'none';
+            document.getElementById('summaryBar').style.display = 'none';
+            document.getElementById('toolbar').style.display = 'none';
+        }
+
+        // AutoFilter Functions
+        function toggleFilter(event, column) {
+            event.stopPropagation();
+
+            const dropdown = document.getElementById(`filter-dropdown-${column}`);
+
+            // Close other dropdowns
+            if (activeFilterDropdown && activeFilterDropdown !== dropdown) {
+                activeFilterDropdown.classList.remove('active');
+            }
+
+            // Toggle current dropdown
+            dropdown.classList.toggle('active');
+            activeFilterDropdown = dropdown.classList.contains('active') ? dropdown : null;
+
+            if (dropdown.classList.contains('active')) {
+                renderFilterDropdown(column);
+            }
+        }
+
+        function renderFilterDropdown(column) {
+            const dropdown = document.getElementById(`filter-dropdown-${column}`);
+
+            // Get unique values from current data
+            const uniqueValues = [...new Set(currentData.map(item => {
+                if (column === 'processName') return item.processName;
+                if (column === 'itemName') return item.itemName;
+                if (column === 'lotNumber') return item.lotNumber;
+                if (column === 'itemCode') return item.itemCode;
+                if (column === 'status') return item.status;
+                return '';
+            }))].sort();
+
+            const currentFilter = columnFilters[column] || { operator: 'contains', value: '', selected: [] };
+
+            let html = `
+                <div class="filter-section">
+                    <div class="filter-operator">
+                        <select id="filter-operator-${column}" onchange="updateFilterOperator('${column}', this.value)">
+                            <option value="contains" ${currentFilter.operator === 'contains' ? 'selected' : ''}>포함</option>
+                            <option value="equals" ${currentFilter.operator === 'equals' ? 'selected' : ''}>일치</option>
+                            <option value="startsWith" ${currentFilter.operator === 'startsWith' ? 'selected' : ''}>시작</option>
+                            <option value="endsWith" ${currentFilter.operator === 'endsWith' ? 'selected' : ''}>끝</option>
+                            <option value="notContains" ${currentFilter.operator === 'notContains' ? 'selected' : ''}>불포함</option>
+                        </select>
+                    </div>
+                    <input type="text"
+                           id="filter-value-${column}"
+                           placeholder="검색..."
+                           value="${currentFilter.value || ''}"
+                           oninput="updateFilterValue('${column}', this.value)">
+                </div>
+                <div class="filter-section">
+                    <div style="padding: 5px 0; font-weight: 600; font-size: 12px; color: #6c757d;">
+                        값 선택 (${uniqueValues.length}개)
+                    </div>
+                    <div class="filter-value-item" onclick="toggleAllFilterValues('${column}', ${uniqueValues.length})">
+                        <input type="checkbox" id="filter-all-${column}" ${currentFilter.selected.length === 0 || currentFilter.selected.length === uniqueValues.length ? 'checked' : ''}>
+                        <label>(모두 선택)</label>
+                    </div>
+                    <div class="filter-values">
+            `;
+
+            uniqueValues.forEach(value => {
+                const isChecked = currentFilter.selected.length === 0 || currentFilter.selected.includes(value);
+                html += `
+                    <div class="filter-value-item" onclick="toggleFilterValue('${column}', '${value.replace(/'/g, "\\'")}')">
+                        <input type="checkbox"
+                               class="filter-checkbox-${column}"
+                               value="${value}"
+                               ${isChecked ? 'checked' : ''}>
+                        <label>${value || '(빈 값)'}</label>
+                    </div>
+                `;
+            });
+
+            html += `
+                    </div>
+                </div>
+                <div class="filter-actions">
+                    <button class="btn btn-primary btn-small" onclick="applyFilter('${column}')">적용</button>
+                    <button class="btn btn-secondary btn-small" onclick="clearFilter('${column}')">지우기</button>
+                </div>
+            `;
+
+            dropdown.innerHTML = html;
+        }
+
+        function updateFilterOperator(column, operator) {
+            if (!columnFilters[column]) {
+                columnFilters[column] = { operator: 'contains', value: '', selected: [] };
+            }
+            columnFilters[column].operator = operator;
+        }
+
+        function updateFilterValue(column, value) {
+            if (!columnFilters[column]) {
+                columnFilters[column] = { operator: 'contains', value: '', selected: [] };
+            }
+            columnFilters[column].value = value;
+        }
+
+        function toggleAllFilterValues(column, count) {
+            const checkboxes = document.querySelectorAll(`.filter-checkbox-${column}`);
+            const allCheckbox = document.getElementById(`filter-all-${column}`);
+            const isChecked = allCheckbox.checked;
+
+            checkboxes.forEach(cb => {
+                cb.checked = isChecked;
+            });
+
+            if (!columnFilters[column]) {
+                columnFilters[column] = { operator: 'contains', value: '', selected: [] };
+            }
+            columnFilters[column].selected = isChecked ? [] : Array.from(checkboxes).map(cb => cb.value);
+        }
+
+        function toggleFilterValue(column, value) {
+            if (!columnFilters[column]) {
+                columnFilters[column] = { operator: 'contains', value: '', selected: [] };
+            }
+
+            const checkbox = Array.from(document.querySelectorAll(`.filter-checkbox-${column}`))
+                .find(cb => cb.value === value);
+
+            if (checkbox) {
+                checkbox.checked = !checkbox.checked;
+
+                // Update selected array
+                const selectedValues = Array.from(document.querySelectorAll(`.filter-checkbox-${column}:checked`))
+                    .map(cb => cb.value);
+
+                columnFilters[column].selected = selectedValues;
+
+                // Update "All" checkbox
+                const allCheckbox = document.getElementById(`filter-all-${column}`);
+                const totalCheckboxes = document.querySelectorAll(`.filter-checkbox-${column}`).length;
+                allCheckbox.checked = selectedValues.length === 0 || selectedValues.length === totalCheckboxes;
+            }
+        }
+
+        function applyFilter(column) {
+            const dropdown = document.getElementById(`filter-dropdown-${column}`);
+            dropdown.classList.remove('active');
+            activeFilterDropdown = null;
+
+            // Update filter icon
+            const icon = document.getElementById(`filter-icon-${column}`);
+            if (columnFilters[column] && (columnFilters[column].value || columnFilters[column].selected.length > 0)) {
+                icon.classList.add('active');
+            } else {
+                icon.classList.remove('active');
+            }
+
+            // Re-render table with filters
+            displayData();
+        }
+
+        function clearFilter(column) {
+            delete columnFilters[column];
+
+            const icon = document.getElementById(`filter-icon-${column}`);
+            icon.classList.remove('active');
+
+            const dropdown = document.getElementById(`filter-dropdown-${column}`);
+            dropdown.classList.remove('active');
+            activeFilterDropdown = null;
+
+            displayData();
+        }
+
+        function applyFiltersToData(data) {
+            return data.filter(lot => {
+                for (const [column, filter] of Object.entries(columnFilters)) {
+                    let value = '';
+                    if (column === 'processName') value = lot.processName || '';
+                    else if (column === 'itemName') value = lot.itemName || '';
+                    else if (column === 'lotNumber') value = lot.lotNumber || '';
+                    else if (column === 'itemCode') value = lot.itemCode || '';
+                    else if (column === 'status') value = lot.status || '';
+
+                    // Check text filter
+                    if (filter.value) {
+                        const filterValue = filter.value.toLowerCase();
+                        const cellValue = value.toLowerCase();
+
+                        let match = false;
+                        switch (filter.operator) {
+                            case 'contains':
+                                match = cellValue.includes(filterValue);
+                                break;
+                            case 'equals':
+                                match = cellValue === filterValue;
+                                break;
+                            case 'startsWith':
+                                match = cellValue.startsWith(filterValue);
+                                break;
+                            case 'endsWith':
+                                match = cellValue.endsWith(filterValue);
+                                break;
+                            case 'notContains':
+                                match = !cellValue.includes(filterValue);
+                                break;
+                        }
+
+                        if (!match) return false;
+                    }
+
+                    // Check selected values filter
+                    if (filter.selected && filter.selected.length > 0) {
+                        if (!filter.selected.includes(value)) {
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            });
+        }
+
+        // 모달 외부 클릭 시 닫기
+        document.getElementById('detailModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        document.getElementById('rfidModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeRfidModal();
+            }
+        });
+
+        // Close filter dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (activeFilterDropdown && !e.target.closest('.filter-dropdown') && !e.target.closest('.filter-header')) {
+                activeFilterDropdown.classList.remove('active');
+                activeFilterDropdown = null;
+            }
+        });
+
+        // 키보드 단축키
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+                closeRfidModal();
+                if (activeFilterDropdown) {
+                    activeFilterDropdown.classList.remove('active');
+                    activeFilterDropdown = null;
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -199,3 +199,5 @@ implementation/data/mysql/#innodb_temp/temp_8.ibt
 implementation/data/mysql/#innodb_temp/temp_9.ibt
 implementation/data/mysql/#innodb_temp/temp_10.ibt
 implementation/frontend/node_modules/*
+implementation/frontend/samples/sample1.html
+implementation/frontend/samples/sample2.html
