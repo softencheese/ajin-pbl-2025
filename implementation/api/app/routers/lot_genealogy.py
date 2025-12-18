@@ -1,7 +1,7 @@
 """LOT 족보(Genealogy) 라우터"""
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.database import get_db
+from app.core.database import get_db
 from app.models.lot import Lot
 from app.models.lot_genealogy import LotGenealogy
 from app.models.item import Item

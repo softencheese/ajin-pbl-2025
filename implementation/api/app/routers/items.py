@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import Optional
-from app.database import get_db
+from app.core.database import get_db
 from app.models.item import Item
 from app.schemas.item import ItemCreate, ItemUpdate, ItemResponse, ItemListResponse
 

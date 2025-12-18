@@ -43,6 +43,8 @@ deep-clean: clean
 	@rm -rf implementation/data
 	@rm -rf implementation/api/venv
 	@rm -rf implementation/frontend/node_modules
+	@rm -rf implementation/api/logs
+	@rm -rf implementation/backups
 	@rm -f .env
 	@echo "Deep clean complete. System is factory reset."
 

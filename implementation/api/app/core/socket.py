@@ -1,5 +1,9 @@
 import socketio
 
+from app.core.logging import get_logger
+
+logger = get_logger(__name__)
+
 # 비동기 Socket.IO 서버 생성
 # cors_allowed_origins='*'는 개발용입니다. 프로덕션에서는 구체적인 도메인을 지정하세요.
 sio_server = socketio.AsyncServer(
@@ -17,9 +21,9 @@ sio_app = socketio.ASGIApp(
 
 @sio_server.event
 async def connect(sid, environ, auth):
-    print(f"Client connected: {sid}")
+    logger.info(f"Client connected: {sid}")
     await sio_server.emit('message', {'data': 'Connected'}, room=sid)
 
 @sio_server.event
 async def disconnect(sid):
-    print(f"Client disconnected: {sid}")
+    logger.info(f"Client disconnected: {sid}")

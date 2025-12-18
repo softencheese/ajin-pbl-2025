@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from app.database import get_db
+from app.core.database import get_db
 from app.models.rfid import RFIDReaderLocation
 from app.schemas.reader_location import (
     ReaderLocationCreate,

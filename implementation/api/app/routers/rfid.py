@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.database import get_db
+from app.core.database import get_db
 from app.services.rfid_service import RFIDService
 from app.schemas.rfid import (
     ScanEvent, 

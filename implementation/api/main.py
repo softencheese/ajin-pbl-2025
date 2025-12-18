@@ -3,8 +3,10 @@ AJIN RFID 물류 추적 시스템 - FastAPI 서버
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.database import engine, Base
-from app.sio import sio_app # Socket.IO 앱 임포트
+from app.core.database import engine, Base
+from app.core.socket import sio_app # Socket.IO 앱 임포트
+from app.core.logging import setup_logging
+from app.middlewares.logging import LoggingMiddleware
 from app.routers import (
     rfid_router, 
     pallets_router, 
@@ -15,9 +17,10 @@ from app.routers import (
     lots_router,
     lot_genealogy_router,
     # rfid_tags_router 삭제됨 - pallets로 통합
+    # rfid_tags_router 삭제됨 - pallets로 통합
     dashboard_router
 )
-from app.config import settings
+from app.core.config import settings
 
 from contextlib import asynccontextmanager
 
@@ -25,6 +28,8 @@ from contextlib import asynccontextmanager
 # 프로덕션에서는 Alembic 마이그레이션을 사용하는 것이 좋습니다.
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # 로깅 설정 초기화
+    setup_logging()
     Base.metadata.create_all(bind=engine)
     yield
 
@@ -45,6 +50,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 로깅 미들웨어 추가 (CORS 뒤에 위치하여 모든 요청 기록)
+app.add_middleware(LoggingMiddleware)
 
 # Socket.IO 앱 마운트
 app.mount("/socket.io", sio_app)

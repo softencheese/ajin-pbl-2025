@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, case
 from typing import Optional, List
 from datetime import date, datetime, timedelta
-from app.database import get_db
+from app.core.database import get_db
 from app.models.pallet import Pallet, PalletHistory
 from app.models.lot import Lot
 from app.models.item import Item

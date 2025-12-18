@@ -17,7 +17,7 @@ from app.schemas.rfid import (
     ReaderStatusResponse
 )
 from datetime import datetime, date
-from app.sio import sio_server # Socket.IO 서버 임포트
+from app.core.socket import sio_server # Socket.IO 서버 임포트
 
 
 class RFIDService:
