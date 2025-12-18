@@ -20,29 +20,36 @@ from app.schemas.lot import (
 router = APIRouter()
 
 
-def generate_lot_number(item_type: str, production_date: date, db: Session) -> str:
-    """LOT 번호 자동 생성
+def generate_lot_number(process_order: int, production_date: date, db: Session) -> str:
+    """LOT 번호 자동 생성 (12자리 숫자)
     
-    규칙:
-    - 원자재 입고: IN-YYMMDD-SEQ
-    - 샤링: SH-YYMMDD-SEQ
-    - 프레스: PR-YYMMDD-SEQ
-    - 조립: AS-YYMMDD-SEQ
+    규칙: YYMMDD + PP + SSSS
+    - YYMMDD: 생산일 (예: 251218)
+    - PP: 공정 순서 (예: 00, 01, 02...)
+    - SSSS: 일련번호 (0001~9999)
     """
-    prefix_map = {
-        "RAW": "IN",
-        "WIP": "PR",  # 기본값, 공정에 따라 변경 가능
-        "PRODUCT": "AS"
-    }
-    prefix = prefix_map.get(item_type, "LT")
     date_str = production_date.strftime("%y%m%d")
+    proc_str = f"{process_order:02}"
+    prefix = f"{date_str}{proc_str}"
     
-    # 오늘 생성된 동일 prefix LOT 수 카운트
-    pattern = f"{prefix}-{date_str}-%"
-    count = db.query(Lot).filter(Lot.lot_number.like(pattern)).count()
-    seq = str(count + 1).zfill(3)
+    # 오늘 해당 공정에서 생성된 LOT 수 카운트
+    pattern = f"{prefix}%"
     
-    return f"{prefix}-{date_str}-{seq}"
+    # 마지막 시퀀스 번호 조회 (더 안전한 방식)
+    last_lot = db.query(Lot).filter(Lot.lot_number.like(pattern))\
+        .order_by(Lot.lot_number.desc()).first()
+    
+    if last_lot:
+        # 마지막 4자리 파싱
+        try:
+            last_seq = int(last_lot.lot_number[-4:])
+            seq = last_seq + 1
+        except ValueError:
+            seq = 1
+    else:
+        seq = 1
+        
+    return f"{prefix}{seq:04}"
 
 
 @router.get("", response_model=LotListResponse)
@@ -165,13 +172,14 @@ async def create_receiving_lot(data: LotReceiving, db: Session = Depends(get_db)
     if item.item_type != "RAW":
         raise HTTPException(status_code=422, detail="원자재 입고는 RAW 타입 품목만 가능합니다")
     
-    # LOT 번호 자동 생성
-    lot_number = generate_lot_number("RAW", data.production_date, db)
-    
     # 입고 공정 찾기 (process_code = 'RECEIVING' 또는 process_order = 0)
     receiving_process = db.query(Process).filter(
         (Process.process_code == "RECEIVING") | (Process.process_order == 0)
     ).first()
+    
+    # LOT 번호 자동 생성 (입고 공정 순서 사용, 없으면 0)
+    proc_order = receiving_process.process_order if receiving_process else 0
+    lot_number = generate_lot_number(proc_order, data.production_date, db)
     
     lot = Lot(
         lot_number=lot_number,
@@ -182,7 +190,7 @@ async def create_receiving_lot(data: LotReceiving, db: Session = Depends(get_db)
         production_date=data.production_date,
         process_id=receiving_process.id if receiving_process else None,
         supplier=data.supplier or item.default_supplier,
-        barcode=data.barcode,
+        barcode=data.barcode or lot_number,
         notes=data.notes
     )
     
@@ -230,7 +238,7 @@ async def create_lot(data: LotCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="공정을 찾을 수 없습니다")
     
     # LOT 번호 자동 생성
-    lot_number = generate_lot_number(item.item_type, data.production_date, db)
+    lot_number = generate_lot_number(process.process_order, data.production_date, db)
     
     lot = Lot(
         lot_number=lot_number,
@@ -243,7 +251,7 @@ async def create_lot(data: LotCreate, db: Session = Depends(get_db)):
         supplier=data.supplier,
         worker_name=data.worker_name,
         qc_passed=data.qc_passed,
-        barcode=data.barcode,
+        barcode=data.barcode or lot_number,
         notes=data.notes
     )
     

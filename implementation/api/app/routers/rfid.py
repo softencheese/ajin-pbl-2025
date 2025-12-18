@@ -4,6 +4,7 @@ from app.database import get_db
 from app.services.rfid_service import RFIDService
 from app.schemas.rfid import (
     ScanEvent, 
+    BarcodeScanEvent,
     ScanResponse, 
     ReaderStatusEvent, 
     ReaderStatusResponse
@@ -25,6 +26,18 @@ async def scan_tag(event: ScanEvent, db: Session = Depends(get_db)):
     """
     service = RFIDService(db)
     return await service.process_scan(event)
+
+
+@router.post("/scan-barcode", response_model=ScanResponse)
+async def scan_barcode(event: BarcodeScanEvent, db: Session = Depends(get_db)):
+    """
+    바코드 스캔 이벤트 처리 (RFID와 동일 로직)
+    
+    - Barcode(LOT번호)로 팔레트 조회
+    - 이후 로직은 RFID 스캔과 동일
+    """
+    service = RFIDService(db)
+    return await service.process_barcode_scan(event)
 
 
 @router.post("/reader-status", response_model=ReaderStatusResponse)

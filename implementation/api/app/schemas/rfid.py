@@ -10,10 +10,19 @@ class ReaderInfo(BaseModel):
     rssi: Optional[int] = Field(None, description="신호 세기")
 
 
+
 class ScanEvent(BaseModel):
     """RFID 스캔 이벤트"""
     epc: str = Field(..., description="RFID Tag EPC")
     port_name: str = Field(..., description="Reader Port Name (COM3, READER_01)")
+    scan_time: datetime = Field(default_factory=datetime.now, description="스캔 시각")
+    reader_info: Optional[ReaderInfo] = Field(None, description="리더기 상세 정보")
+
+
+class BarcodeScanEvent(BaseModel):
+    """바코드 스캔 이벤트"""
+    barcode: str = Field(..., description="Barcode (LOT Number)")
+    port_name: str = Field(..., description="Reader Port Name")
     scan_time: datetime = Field(default_factory=datetime.now, description="스캔 시각")
     reader_info: Optional[ReaderInfo] = Field(None, description="리더기 상세 정보")
 

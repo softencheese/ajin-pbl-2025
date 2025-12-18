@@ -36,7 +36,7 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
     "pallet_no": "PLT-2025-001",
     "previous_status": "Stock",
     "current_status": "Consuming",
-    "lot_number": "SH-231211-001",
+    "lot_number": "231211010001",
     "item_code": "71412-T6000S"
   },
   "feedback": {
@@ -55,7 +55,7 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
     "type": "FIFO_VIOLATION",
     "message": "더 오래된 재고가 있습니다",
     "oldest_stock": {
-      "lot_number": "SH-231209-001",
+      "lot_number": "231209010001",
       "days_old": 2
     }
   },
@@ -85,7 +85,26 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 }
 ```
 
-### 1.2 리더기 상태 수신
+### 1.2 바코드 스캔 처리 (신규)
+**엔드포인트**: `POST /rfid/scan-barcode`
+
+**설명**: 바코드(LOT 번호)를 스캔하여 RFID 태그 스캔과 동일한 팔레트 상태 전이를 수행합니다.
+
+**요청**:
+```json
+{
+  "barcode": "251218010001",
+  "port_name": "COM3",
+  "scan_time": "2025-11-17T09:23:45.123Z",
+  "reader_info": null
+}
+```
+
+**응답**: `POST /rfid/scan`과 동일 (ScanResponse)
+
+---
+
+### 1.3 리더기 상태 수신
 **엔드포인트**: `POST /rfid/reader-status`
 
 **설명**: 임베디드 시스템에서 리더기 상태를 주기적으로 전송합니다 (Heartbeat).
@@ -290,8 +309,8 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 ```json
 {
   "id": 1,
-  "lot_number": "IN-231211-001",
-  "barcode": "251018226687",
+  "lot_number": "231211000001",
+  "barcode": "231211000001",
   "item": {
     "id": 5,
     "item_code": "STEEL-SPCC",
@@ -319,7 +338,6 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
   "quantity": 100,
   "production_date": "2023-12-11",
   "supplier": "포스코",
-  "barcode": "251018226687",
   "notes": "비고"
 }
 ```
@@ -328,8 +346,8 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 ```json
 {
   "id": 1,
-  "lot_number": "IN-231211-001",
-  "barcode": "251018226687",
+  "lot_number": "231211000001",
+  "barcode": "231211000001",
   "item_code": "STEEL-SPCC",
   "status": "STOCK"
 }
@@ -361,14 +379,13 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 ```json
 {
   "id": 2,
-  "id": 2,
-  "lot_number": "SH-231211-001",
-  "barcode": "SH-BARCODE-001",
+  "lot_number": "231211010001",
+  "barcode": "231211010001",
   "item_code": "71412-T6000S",
   "status": "STOCK",
   "genealogy": [
     {
-      "input_lot_number": "IN-231211-001",
+      "input_lot_number": "231211000001",
       "quantity_consumed": 100
     }
   ]
@@ -396,12 +413,12 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 {
   "lot": {
     "id": 2,
-    "lot_number": "SH-231211-001",
+    "lot_number": "231211010001",
     "item_code": "71412-T6000S"
   },
   "parents": [
     {
-      "lot_number": "IN-231211-001",
+      "lot_number": "231211000001",
       "item_code": "STEEL-SPCC",
       "item_type": "RAW",
       "quantity_consumed": 100
@@ -409,7 +426,7 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
   ],
   "children": [
     {
-      "lot_number": "PR-231211-001",
+      "lot_number": "231211020001",
       "item_code": "71412-T6000S-PR",
       "item_type": "WIP",
       "quantity_consumed": 400
@@ -542,28 +559,48 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 ### 6.2 공정별 현황
 - **GET** `/dashboard/process-status`
 
+**응답**:
+```json
+{
+  "processes": [
+    {
+      "process_id": 1,
+      "process_name": "샤링",
+      "active_pallets": 10,
+      "status_breakdown": {
+        "Running": 8,
+        "Error": 2
+      }
+    }
+  ],
+  "total_active_pallets": 10
+}
+```
+
 ### 6.3 재고 현황 (FIFO 포함)
 - **GET** `/inventory/stock`
 
 **응답**:
 ```json
-[
-  {
-    "item_code": "71412-T6000S",
-    "item_name": "PNL-FR DR INR, LH",
-    "item_type": "WIP",
-    "process_name": "프레스",
-    "lots": [
-      {
-        "lot_number": "PR-231209-001",
-        "production_date": "2023-12-09",
-        "days_old": 5,
-        "quantity": 400,
-        "status": "urgent"
-      }
-    ]
-  }
-]
+{
+  "stock_items": [
+    {
+      "item_code": "71412-T6000S",
+      "item_name": "PNL-FR DR INR, LH",
+      "item_type": "WIP",
+      "process_name": "프레스",
+      "lots": [
+        {
+          "lot_number": "PR-231209-001",
+          "production_date": "2023-12-09",
+          "days_old": 5,
+          "quantity": 400,
+          "status": "urgent"
+        }
+      ]
+    }
+  ]
+}
 ```
 
 ---
