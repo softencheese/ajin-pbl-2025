@@ -24,7 +24,7 @@ async def scan_tag(event: ScanEvent, db: Session = Depends(get_db)):
     - 피드백 명령 반환
     """
     service = RFIDService(db)
-    return service.process_scan(event)
+    return await service.process_scan(event)
 
 
 @router.post("/reader-status", response_model=ReaderStatusResponse)
@@ -36,4 +36,4 @@ async def reader_status(event: ReaderStatusEvent, db: Session = Depends(get_db))
     - 실시간 모니터링 업데이트용
     """
     service = RFIDService(db)
-    return service.update_reader_status(event)
+    return await service.update_reader_status(event)

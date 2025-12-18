@@ -4,6 +4,7 @@ AJIN RFID 물류 추적 시스템 - FastAPI 서버
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
+from app.sio import sio_app # Socket.IO 앱 임포트
 from app.routers import (
     rfid_router, 
     pallets_router, 
@@ -44,6 +45,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Socket.IO 앱 마운트
+app.mount("/socket.io", sio_app)
 
 # 라우터 등록
 app.include_router(rfid_router, prefix="/api/v1/rfid", tags=["RFID"])

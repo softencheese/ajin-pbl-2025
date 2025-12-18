@@ -650,26 +650,33 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 
 ### 이벤트 타입
 
-1. **pallet_updated**: 팔레트 상태 변경
+1. **pallet_updated**: 팔레트 상태 변경 (생성, LOT 연결, 상태 강제 변경)
 ```json
 {
   "event": "pallet_updated",
   "data": {
     "pallet_id": 123,
     "pallet_no": "PLT-2025-001",
-    "status": "Consuming"
+    "status": "Consuming",
+    "tag_status": "AVAILABLE"
   }
 }
 ```
 
-2. **scan_event**: 스캔 이벤트 발생
+2. **scan_event**: 스캔 이벤트 발생 (성공 시)
 ```json
 {
   "event": "scan_event",
   "data": {
-    "epc": "E280...",
+    "type": "SCAN",
+    "pbl_location": "IN",
+    "process_code": "PRESS",
+    "scan_time": "2025-11-17T09:23:45.123456",
+    "pallet_no": "PLT-2025-001",
+    "status": "Consuming",
+    "epc": "E2801170000002036B3D8CCD",
     "port_name": "COM3",
-    "timestamp": "2025-11-17T09:23:45.123Z"
+    "success": true
   }
 }
 ```
@@ -680,7 +687,21 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
   "event": "reader_status",
   "data": {
     "port_name": "COM3",
-    "status": "CONNECTED"
+    "status": "CONNECTED",
+    "timestamp": "2025-11-17T09:23:45.123456"
+  }
+}
+```
+
+4. **scan_error**: 스캔 에러 발생
+```json
+{
+  "event": "scan_error",
+  "data": {
+    "type": "WRONG_PART",
+    "port_name": "COM3",
+    "epc": "E280...",
+    "message": "오투입 감지..."
   }
 }
 ```

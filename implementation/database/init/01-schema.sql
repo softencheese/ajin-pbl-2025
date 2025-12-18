@@ -31,6 +31,8 @@ CREATE TABLE processes (
     process_name VARCHAR(50) NOT NULL COMMENT '공정명',
     process_order INT NOT NULL COMMENT '공정 순서',
     production_line VARCHAR(50) COMMENT '생산 라인',
+    allowed_item_types VARCHAR(100) COMMENT '허용 아이템 타입 (RAW,WIP,PRODUCT 쉼표 구분)',
+    is_first_process BOOLEAN DEFAULT FALSE COMMENT '첫 공정 여부 (빈 팔레트 → 바로 생산)',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uk_process_order (process_order),

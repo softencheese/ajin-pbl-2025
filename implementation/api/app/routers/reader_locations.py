@@ -1,5 +1,5 @@
 """RFID 리더기 위치 관리 API"""
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.database import get_db
@@ -13,13 +13,15 @@ from app.schemas.reader_location import (
 router = APIRouter()
 
 
-@router.get("", response_model=List[ReaderLocationResponse])
+@router.get("")
 async def list_reader_locations(
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
     is_registered: Optional[bool] = None,
     db: Session = Depends(get_db)
 ):
     """
-    리더기 위치 목록 조회
+    리더기 위치 목록 조회 (페이지네이션 지원)
     
     - is_registered=true: 공정 매핑된 리더기만
     - is_registered=false: 미등록(공정 미매핑) 리더기만
@@ -32,8 +34,17 @@ async def list_reader_locations(
     elif is_registered is False:
         query = query.filter(RFIDReaderLocation.process_id.is_(None))
     
-    locations = query.all()
-    return locations
+    total = query.count()
+    locations = query.offset((page - 1) * per_page).limit(per_page).all()
+    pages = (total + per_page - 1) // per_page if total > 0 else 1
+    
+    return {
+        "items": locations,
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "pages": pages
+    }
 
 
 @router.get("/{id}", response_model=ReaderLocationResponse)

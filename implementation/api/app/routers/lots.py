@@ -254,9 +254,20 @@ async def create_lot(data: LotCreate, db: Session = Depends(get_db)):
     # 투입 LOT 정보가 있으면 lot_genealogy에 기록
     if data.input_lots:
         for input_info in data.input_lots:
-            input_lot = db.query(Lot).filter(Lot.id == input_info.lot_id).first()
+            # 동시성 문제 방지를 위해 FOR UPDATE 락 사용
+            input_lot = db.query(Lot).filter(
+                Lot.id == input_info.lot_id
+            ).with_for_update().first()
+            
             if not input_lot:
                 raise HTTPException(status_code=404, detail=f"투입 LOT {input_info.lot_id}를 찾을 수 없습니다")
+            
+            # 수량 부족 체크
+            if input_lot.quantity < input_info.quantity_consumed:
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"LOT {input_lot.lot_number}의 재고가 부족합니다. (현재: {input_lot.quantity}, 요청: {input_info.quantity_consumed})"
+                )
             
             genealogy = LotGenealogy(
                 input_lot_id=input_info.lot_id,
@@ -318,3 +329,85 @@ async def update_lot_status(lot_id: int, data: LotStatusUpdate, db: Session = De
     db.refresh(lot)
     
     return {"success": True, "lot_number": lot.lot_number, "status": lot.status}
+
+
+@router.put("/{lot_id}", response_model=LotResponse)
+async def update_lot(lot_id: int, data: LotUpdate, db: Session = Depends(get_db)):
+    """LOT 수정"""
+    lot = db.query(Lot).filter(Lot.id == lot_id).first()
+    if not lot:
+        raise HTTPException(status_code=404, detail="LOT을 찾을 수 없습니다")
+    
+    update_data = data.model_dump(exclude_unset=True)
+    
+    # 상태 변경 시 유효성 검사
+    if "status" in update_data:
+        valid_statuses = ["WAIT", "PROCESS", "STOCK", "CONSUMED", "SHIPPED", "HOLD", "DEFECT"]
+        if update_data["status"] not in valid_statuses:
+            raise HTTPException(status_code=400, detail=f"유효하지 않은 상태입니다. 가능한 값: {valid_statuses}")
+    
+    for key, value in update_data.items():
+        setattr(lot, key, value)
+    
+    db.commit()
+    db.refresh(lot)
+    
+    item = db.query(Item).filter(Item.id == lot.item_id).first()
+    process = db.query(Process).filter(Process.id == lot.process_id).first() if lot.process_id else None
+    
+    return LotResponse(
+        id=lot.id,
+        lot_number=lot.lot_number,
+        barcode=lot.barcode,
+        item_id=lot.item_id,
+        quantity=lot.quantity,
+        initial_quantity=lot.initial_quantity,
+        status=lot.status,
+        production_date=lot.production_date,
+        process_id=lot.process_id,
+        supplier=lot.supplier,
+        worker_name=lot.worker_name,
+        qc_passed=lot.qc_passed,
+        notes=lot.notes,
+        created_at=lot.created_at,
+        updated_at=lot.updated_at,
+        item={
+            "id": item.id,
+            "item_code": item.item_code,
+            "item_name": item.item_name,
+            "item_type": item.item_type
+        } if item else None,
+        process_name=process.process_name if process else None
+    )
+
+
+@router.delete("/{lot_id}")
+async def delete_lot(lot_id: int, db: Session = Depends(get_db)):
+    """LOT 삭제 (참조되지 않은 경우만)"""
+    from app.models.pallet import Pallet
+    
+    lot = db.query(Lot).filter(Lot.id == lot_id).first()
+    if not lot:
+        raise HTTPException(status_code=404, detail="LOT을 찾을 수 없습니다")
+    
+    # 팔레트 연결 확인
+    pallet_count = db.query(Pallet).filter(Pallet.lot_id == lot_id).count()
+    if pallet_count > 0:
+        raise HTTPException(
+            status_code=409, 
+            detail=f"해당 LOT에 연결된 팔레트가 {pallet_count}개 있습니다. 삭제할 수 없습니다."
+        )
+    
+    # lot_genealogy 참조 확인 (부모 또는 자식으로 사용된 경우)
+    genealogy_count = db.query(LotGenealogy).filter(
+        (LotGenealogy.input_lot_id == lot_id) | (LotGenealogy.output_lot_id == lot_id)
+    ).count()
+    if genealogy_count > 0:
+        raise HTTPException(
+            status_code=409, 
+            detail=f"해당 LOT이 족보에서 {genealogy_count}번 참조됩니다. 삭제할 수 없습니다."
+        )
+    
+    db.delete(lot)
+    db.commit()
+    return {"success": True, "message": "LOT이 삭제되었습니다"}

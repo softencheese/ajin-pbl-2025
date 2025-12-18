@@ -22,9 +22,11 @@ def list_items(
     query = db.query(Item)
     
     if search:
+        # SQL LIKE 와일드카드 이스케이프 (보안)
+        safe_search = search.replace("%", r"\%").replace("_", r"\_")
         query = query.filter(
-            (Item.item_code.ilike(f"%{search}%")) |
-            (Item.item_name.ilike(f"%{search}%"))
+            (Item.item_code.ilike(f"%{safe_search}%", escape="\\")) |
+            (Item.item_name.ilike(f"%{safe_search}%", escape="\\"))
         )
     
     if item_type:

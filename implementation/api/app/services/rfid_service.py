@@ -16,6 +16,7 @@ from app.schemas.rfid import (
     ReaderStatusResponse
 )
 from datetime import datetime, date
+from app.sio import sio_server # Socket.IO 서버 임포트
 
 
 class RFIDService:
@@ -23,7 +24,7 @@ class RFIDService:
         self.db = db
         self.state_machine = StateMachine()
     
-    def process_scan(self, event: ScanEvent) -> ScanResponse:
+    async def process_scan(self, event: ScanEvent) -> ScanResponse:
         """RFID 스캔 이벤트 처리"""
         
         # 1. 포트로 공정/위치 조회
@@ -33,7 +34,7 @@ class RFIDService:
         ).first()
         
         if not location:
-            return ScanResponse(
+            error_response = ScanResponse(
                 success=False,
                 error=ScanError(
                     type="UNKNOWN_PORT",
@@ -41,10 +42,18 @@ class RFIDService:
                 ),
                 feedback=Feedback(action="BUZZER", pattern="ERROR", count=3, led_color="RED")
             )
+            # WebSocket 에러 이벤트 발송
+            await sio_server.emit('scan_error', {
+                'type': 'UNKNOWN_PORT',
+                'port_name': event.port_name,
+                'epc': event.epc,
+                'message': error_response.error.message
+            })
+            return error_response
         
         # 1.1 공정 매핑 확인 (자동 등록 후 미설정 상태)
         if location.process_id is None or location.location_type is None:
-            return ScanResponse(
+            error_response = ScanResponse(
                 success=False,
                 error=ScanError(
                     type="READER_NOT_CONFIGURED",
@@ -52,6 +61,13 @@ class RFIDService:
                 ),
                 feedback=Feedback(action="BUZZER", pattern="ERROR", count=3, led_color="RED")
             )
+            await sio_server.emit('scan_error', {
+                'type': 'READER_NOT_CONFIGURED',
+                'port_name': event.port_name,
+                'epc': event.epc,
+                'message': error_response.error.message
+            })
+            return error_response
         
         # 2. EPC로 팔레트 조회
         pallet = self.db.query(Pallet).filter(
@@ -59,7 +75,7 @@ class RFIDService:
         ).first()
         
         if not pallet:
-            return ScanResponse(
+            error_response = ScanResponse(
                 success=False,
                 error=ScanError(
                     type="PALLET_NOT_FOUND",
@@ -67,6 +83,13 @@ class RFIDService:
                 ),
                 feedback=Feedback(action="BUZZER", pattern="ERROR", count=3, led_color="RED")
             )
+            await sio_server.emit('scan_error', {
+                'type': 'PALLET_NOT_FOUND',
+                'port_name': event.port_name,
+                'epc': event.epc,
+                'message': error_response.error.message
+            })
+            return error_response
         
         # 3. 검증 로직 실행
         # 3.1 오투입 검증 (IN 위치에서만)
@@ -90,7 +113,8 @@ class RFIDService:
             current_status=previous_status,
             process_code=location.process.process_code,
             location_type=location.location_type,
-            is_final_product=self._is_final_product(pallet)
+            is_final_product=self._is_final_product(pallet),
+            is_first_process=getattr(location.process, 'is_first_process', False)
         )
         
         if not transition_result["allowed"]:
@@ -108,6 +132,10 @@ class RFIDService:
             )
         
         next_status = transition_result["next_status"]
+        
+        # Hold 해제 시 이전 상태 복구
+        if next_status == "__RESTORE_PRE_HOLD__":
+            next_status = self._get_pre_hold_status(pallet.id)
         
         # 5. 트랜잭션 처리
         try:
@@ -128,6 +156,7 @@ class RFIDService:
                 lot_id=pallet.lot_id,
                 process_id=location.process_id,
                 location_type=location.location_type,
+                reader_location_id=location.id,
                 previous_status=previous_status,
                 new_status=next_status,
                 event_type="TAG_SCAN",
@@ -159,59 +188,65 @@ class RFIDService:
             else:
                 feedback = Feedback(action="BUZZER", pattern="SUCCESS", count=1, led_color="GREEN")
             
+            # Socket.IO 이벤트 발송 (return 전에 실행해야 함)
+            await sio_server.emit('scan_event', {
+                'type': 'SCAN',
+                'pbl_location': location.location_type,
+                'process_code': location.process.process_code if location.process else 'UNKNOWN',
+                'scan_time': event.scan_time.isoformat(),
+                'pallet_no': pallet.pallet_no,
+                "status": next_status,
+                "epc": event.epc,
+                "port_name": event.port_name,
+                "success": True
+            })
+            
             return ScanResponse(
                 success=True,
                 pallet=pallet_info,
                 warning=fifo_warning,
                 feedback=feedback
             )
+
         
         except Exception as e:
             self.db.rollback()
-            print(f"Error processing scan: {e}")
+            # 에러 로깅 (디버깅용) - 실제 운영에서는 logging 모듈 사용 권장
+            print(f"[SYSTEM_ERROR] process_scan: {type(e).__name__}: {e}")
+            
+            # 내부 에러 메시지 숨기기 (보안)
             return ScanResponse(
                 success=False,
                 error=ScanError(
                     type="SYSTEM_ERROR",
-                    message=str(e)
+                    message="시스템 오류가 발생했습니다. 관리자에게 문의하세요."
                 ),
                 feedback=Feedback(action="BUZZER", pattern="ERROR", count=3, led_color="RED")
             )
     
     def _validate_wrong_part(self, pallet: Pallet, location: RFIDReaderLocation) -> ScanError | None:
-        """오투입 검증 - 품번이 해당 공정에서 처리 가능한지 확인"""
+        """오투입 검증 - 품번이 해당 공정에서 처리 가능한지 확인 (DB 기반)"""
         if not pallet.lot or not pallet.lot.item or not location.process:
             return None
 
-        # 공정별 허용 Item Type 매핑
-        # 샤링: RAW (원자재) 투입
-        # 프레스: WIP (재공품) 투입
-        # 조립: WIP (재공품) 투입
-        # 출하: PRODUCT (완제품) 투입 (출하 로직에 따라 다름)
-        
-        # 간단한 로직: 공정 코드에 따라 허용 Item Type 결정
-        process_code = location.process.process_code
+        process = location.process
         item_type = pallet.lot.item.item_type
         
-        allowed_types = []
-        if "SHEARING" in process_code:
-            allowed_types = ["RAW"]
-        elif "PRESS" in process_code:
-             # 프레스는 이전 공정(샤링)의 결과물(WIP)을 받음
-             # 때로는 RAW를 직접 받을 수도 있음 (Blanking Line인 경우)
-             # 여기서는 WIP만 받는다고 가정
-            allowed_types = ["WIP"]
-        elif "ASSEMBLY" in process_code:
-            allowed_types = ["WIP", "PRODUCT"] # 조립은 반제품 조립
-        elif "SHIPPING" in process_code:
-            allowed_types = ["PRODUCT"]
+        # DB에서 허용 타입 조회 (쉼표로 구분된 문자열)
+        allowed_types_str = getattr(process, 'allowed_item_types', None)
         
-        if allowed_types and item_type not in allowed_types:
-             return ScanError(
+        if not allowed_types_str:
+            # 설정이 없으면 검증 통과 (하위 호환성)
+            return None
+        
+        allowed_types = [t.strip() for t in allowed_types_str.split(',')]
+        
+        if item_type not in allowed_types:
+            return ScanError(
                 type="WRONG_PART",
-                message=f"오투입 감지: {process_code} 공정에는 {allowed_types} 타입만 투입 가능합니다. (현재: {item_type})",
+                message=f"오투입 감지: {process.process_code} 공정에는 {allowed_types} 타입만 투입 가능합니다. (현재: {item_type})",
                 details={
-                    "process_code": process_code,
+                    "process_code": process.process_code,
                     "allowed_types": allowed_types,
                     "current_item_type": item_type,
                     "item_code": pallet.lot.item.item_code
@@ -248,13 +283,27 @@ class RFIDService:
         
         return None
     
+    def _get_pre_hold_status(self, pallet_id: int) -> str:
+        """Hold 상태 진입 전의 상태를 조회"""
+        # Hold 상태로 변경된 가장 최근 이력 조회
+        hold_history = self.db.query(PalletHistory).filter(
+            PalletHistory.pallet_id == pallet_id,
+            PalletHistory.new_status == "Hold"
+        ).order_by(PalletHistory.scan_time.desc()).first()
+        
+        if hold_history and hold_history.previous_status:
+            return hold_history.previous_status
+        
+        # 조회 실패 시 기본값
+        return "Stock"
+    
     def _is_final_product(self, pallet: Pallet) -> bool:
         """완제품 여부 확인"""
         if pallet.lot and pallet.lot.item:
             return pallet.lot.item.item_type == "PRODUCT"
         return False
     
-    def update_reader_status(self, event: ReaderStatusEvent) -> ReaderStatusResponse:
+    async def update_reader_status(self, event: ReaderStatusEvent) -> ReaderStatusResponse:
         """리더기 상태 업데이트"""
         location = self.db.query(RFIDReaderLocation).filter(
             RFIDReaderLocation.port_name == event.port_name
@@ -277,6 +326,14 @@ class RFIDService:
                 success=True,
                 message=f"Registered new reader: {event.port_name}"
             )
+
+        
+        # WebSocket 이벤트 발송
+        await sio_server.emit('reader_status', {
+            'port_name': event.port_name,
+            'status': event.status,
+            'timestamp': datetime.now().isoformat()
+        })
         
         return ReaderStatusResponse(
             success=True,

@@ -1,5 +1,5 @@
 """LOT 스키마"""
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List
 from datetime import date, datetime
 
@@ -60,13 +60,11 @@ class ItemInfo(BaseModel):
     item_name: str
     item_type: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class LotResponse(BaseModel):
     """LOT 응답"""
-    id: int
     id: int
     lot_number: str
     barcode: Optional[str] = None
@@ -87,8 +85,7 @@ class LotResponse(BaseModel):
     item: Optional[ItemInfo] = None
     process_name: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class LotListResponse(BaseModel):

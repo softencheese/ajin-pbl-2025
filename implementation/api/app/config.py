@@ -1,4 +1,4 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     DATABASE_URL: str = "mysql+pymysql://ajin_user:ajin_password@localhost:3306/ajin_rfid"
@@ -7,7 +7,6 @@ class Settings(BaseSettings):
     API_PORT: int = 8000
     CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
 
-    class Config:
-        env_file = ".env"
+    model_config = SettingsConfigDict(env_file=".env")
 
 settings = Settings()

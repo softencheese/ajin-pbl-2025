@@ -8,9 +8,9 @@ from app.models.base import BaseModel
 class RFIDReaderLocation(BaseModel):
     __tablename__ = "rfid_reader_locations"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    port_name = Column(String(100), unique=True, nullable=False, comment='리더기 포트 식별자')
-    process_id = Column(Integer, ForeignKey("processes.id"), nullable=True, comment='연결된 공정 ID')
+    id = Column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True, autoincrement=True)
+    port_name = Column(String(50), unique=True, nullable=False, comment='리더기 포트 식별자')
+    process_id = Column(BigInteger, ForeignKey("processes.id"), nullable=True, comment='연결된 공정 ID')
     location_type = Column(String(20), nullable=True, comment='위치 유형 (IN, OUT, HOLD, DEFECT, FINISH)')
     description = Column(String(255), comment='설명')
     is_active = Column(Boolean, default=True, comment='활성 상태')

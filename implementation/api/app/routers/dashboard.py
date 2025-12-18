@@ -73,23 +73,33 @@ async def get_process_status(db: Session = Depends(get_db)):
     공정별 현황
     
     각 공정의 활성 팔레트 수와 상태별 분포를 반환합니다.
+    (N+1 쿼리 최적화: 단일 쿼리로 집계)
     """
+    # 단일 쿼리로 모든 공정의 팔레트 상태별 집계
+    status_data = db.query(
+        Pallet.current_process_id,
+        Pallet.status,
+        func.count(Pallet.id)
+    ).filter(
+        Pallet.current_process_id.isnot(None),
+        Pallet.status.notin_(["Deregistered", "Defect", "Generated"])
+    ).group_by(Pallet.current_process_id, Pallet.status).all()
+    
+    # 공정별로 데이터 정리
+    process_map = {}
+    for process_id, status, count in status_data:
+        if process_id not in process_map:
+            process_map[process_id] = {}
+        process_map[process_id][status] = count
+    
+    # 공정 목록 조회
     processes = db.query(Process).order_by(Process.process_order).all()
     
     process_statuses = []
     total_active = 0
     
     for process in processes:
-        # 해당 공정의 팔레트 상태별 집계
-        status_counts = db.query(
-            Pallet.status,
-            func.count(Pallet.id)
-        ).filter(
-            Pallet.current_process_id == process.id,
-            Pallet.status.notin_(["Deregistered", "Defect", "Generated"])
-        ).group_by(Pallet.status).all()
-        
-        status_breakdown = {status: count for status, count in status_counts}
+        status_breakdown = process_map.get(process.id, {})
         active_count = sum(status_breakdown.values())
         total_active += active_count
         
