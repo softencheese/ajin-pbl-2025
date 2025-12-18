@@ -28,6 +28,14 @@ down:
 logs:
 	docker-compose logs -f
 
+test:
+	@echo "Running tests..."
+	@cd implementation/api && . venv/bin/activate && pytest tests/ -v
+
+test-cov:
+	@echo "Running tests with coverage..."
+	@cd implementation/api && . venv/bin/activate && pytest tests/ -v --cov=app
+
 clean:
 	@echo "Cleaning temporary files..."
 	@find . -type d -name "__pycache__" -exec rm -rf {} +
@@ -51,5 +59,3 @@ deep-clean: clean
 fclean: deep-clean
 
 
-test:
-	cd implementation/api && pytest

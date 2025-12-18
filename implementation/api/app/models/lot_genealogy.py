@@ -8,9 +8,9 @@ class LotGenealogy(BaseModel):
     __tablename__ = "lot_genealogy"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    input_lot_id = Column(BigInteger, ForeignKey("lots.id"), nullable=False, comment='투입 LOT ID (부모)')
-    output_lot_id = Column(BigInteger, ForeignKey("lots.id"), nullable=False, comment='생성 LOT ID (자식)')
-    process_id = Column(Integer, ForeignKey("processes.id"), nullable=False, comment='발생 공정 ID')
+    input_lot_id = Column(BigInteger, ForeignKey("lots.id"), nullable=False, index=True, comment='투입 LOT ID (부모)')
+    output_lot_id = Column(BigInteger, ForeignKey("lots.id"), nullable=False, index=True, comment='생성 LOT ID (자식)')
+    process_id = Column(Integer, ForeignKey("processes.id"), nullable=False, index=True, comment='발생 공정 ID')
     quantity_consumed = Column(Integer, nullable=False, comment='투입 수량')
 
     # Relationships
