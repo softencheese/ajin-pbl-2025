@@ -12,7 +12,7 @@ sio_server = socketio.AsyncServer(
 # ASGI 앱 생성 (FastAPI에 마운트할 객체)
 sio_app = socketio.ASGIApp(
     socketio_server=sio_server,
-    socketio_path='socket.io'
+    socketio_path=''
 )
 
 @sio_server.event
