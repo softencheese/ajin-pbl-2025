@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import datetime
 from app.core.database import get_db
+from app.core.deps import get_current_user
 from app.models.pallet import Pallet, PalletHistory
 from app.core.socket import sio_server
 from app.models.lot import Lot
@@ -16,6 +17,9 @@ from app.schemas.pallet import (
     PalletStatusUpdate,
     PalletTagStatusUpdate
 )
+
+from app.core.permissions import PermissionChecker
+from app.models.user import User
 
 router = APIRouter()
 
@@ -51,8 +55,12 @@ def _build_pallet_response(pallet: Pallet, db: Session) -> dict:
 
 
 @router.post("", response_model=PalletResponse, status_code=201)
-async def create_pallet(data: PalletCreate, db: Session = Depends(get_db)):
-    """팔레트 생성"""
+async def create_pallet(
+    data: PalletCreate, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("pallets", "write"))
+):
+    """팔레트 생성 (권한: pallets:write)"""
     existing = db.query(Pallet).filter(Pallet.pallet_no == data.pallet_no).first()
     if existing:
         raise HTTPException(status_code=400, detail="이미 존재하는 팔레트 번호입니다")
@@ -87,9 +95,10 @@ async def list_pallets(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     status: Optional[str] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("pallets", "read"))
 ):
-    """팔레트 목록 조회"""
+    """팔레트 목록 조회 (권한: pallets:read)"""
     query = db.query(Pallet)
     if status:
         query = query.filter(Pallet.status == status)
@@ -109,8 +118,12 @@ async def list_pallets(
 
 
 @router.get("/{id}", response_model=PalletResponse)
-async def get_pallet(id: int, db: Session = Depends(get_db)):
-    """팔레트 상세 조회"""
+async def get_pallet(
+    id: int, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("pallets", "read"))
+):
+    """팔레트 상세 조회 (권한: pallets:read)"""
     pallet = db.query(Pallet).filter(Pallet.id == id).first()
     if not pallet:
         raise HTTPException(status_code=404, detail="팔레트를 찾을 수 없습니다")
@@ -121,9 +134,10 @@ async def get_pallet(id: int, db: Session = Depends(get_db)):
 async def update_tag_status(
     id: int,
     data: PalletTagStatusUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("pallets", "write"))
 ):
-    """RFID 태그 상태 변경"""
+    """RFID 태그 상태 변경 (권한: pallets:write)"""
     pallet = db.query(Pallet).filter(Pallet.id == id).first()
     if not pallet:
         raise HTTPException(status_code=404, detail="팔레트를 찾을 수 없습니다")
@@ -160,9 +174,10 @@ async def update_tag_status(
 async def link_lot(
     id: int, 
     data: PalletLinkLot,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("pallets", "write"))
 ):
-    """팔레트에 LOT 연결"""
+    """팔레트에 LOT 연결 (권한: pallets:write)"""
     pallet = db.query(Pallet).filter(Pallet.id == id).first()
     if not pallet:
         raise HTTPException(status_code=404, detail="팔레트를 찾을 수 없습니다")
@@ -193,9 +208,10 @@ async def link_lot(
 async def update_pallet_status(
     id: int,
     data: PalletStatusUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("pallets", "write"))
 ):
-    """팔레트 상태 강제 변경 (관리자)"""
+    """팔레트 상태 강제 변경 (권한: pallets:write)"""
     pallet = db.query(Pallet).filter(Pallet.id == id).first()
     if not pallet:
         raise HTTPException(status_code=404, detail="팔레트를 찾을 수 없습니다")

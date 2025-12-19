@@ -3,9 +3,15 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import Optional
 from app.core.database import get_db
+from app.core.deps import get_current_active_user, get_admin_user
 from app.models.item import Item
+from app.models.user import User
 from app.schemas.item import ItemCreate, ItemUpdate, ItemResponse, ItemListResponse
 
+from app.core.permissions import PermissionChecker
+
+# 모든 아이템 관리: 권한 기반 제어
+# router level dependency 제거하고 각 엔드포인트별로 적용
 router = APIRouter()
 
 
@@ -16,9 +22,10 @@ def list_items(
     search: Optional[str] = None,
     item_type: Optional[str] = None,
     is_active: Optional[bool] = True,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("items", "read"))
 ):
-    """품목 목록 조회"""
+    """품목 목록 조회 (권한: items:read)"""
     query = db.query(Item)
     
     if search:
@@ -49,8 +56,12 @@ def list_items(
 
 
 @router.get("/{item_id}", response_model=ItemResponse)
-def get_item(item_id: int, db: Session = Depends(get_db)):
-    """품목 상세 조회"""
+def get_item(
+    item_id: int, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("items", "read"))
+):
+    """품목 상세 조회 (권한: items:read)"""
     item = db.query(Item).filter(Item.id == item_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="품목을 찾을 수 없습니다")
@@ -58,8 +69,12 @@ def get_item(item_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("", response_model=ItemResponse, status_code=201)
-def create_item(item_data: ItemCreate, db: Session = Depends(get_db)):
-    """품목 등록"""
+def create_item(
+    item_data: ItemCreate, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("items", "write"))
+):
+    """품목 등록 (권한: items:write)"""
     # 품목코드 중복 검사
     existing = db.query(Item).filter(Item.item_code == item_data.item_code).first()
     if existing:
@@ -77,8 +92,13 @@ def create_item(item_data: ItemCreate, db: Session = Depends(get_db)):
 
 
 @router.put("/{item_id}", response_model=ItemResponse)
-def update_item(item_id: int, item_data: ItemUpdate, db: Session = Depends(get_db)):
-    """품목 수정"""
+def update_item(
+    item_id: int, 
+    item_data: ItemUpdate, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("items", "write"))
+):
+    """품목 수정 (권한: items:write)"""
     item = db.query(Item).filter(Item.id == item_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="품목을 찾을 수 없습니다")
@@ -93,8 +113,12 @@ def update_item(item_id: int, item_data: ItemUpdate, db: Session = Depends(get_d
 
 
 @router.delete("/{item_id}")
-def delete_item(item_id: int, db: Session = Depends(get_db)):
-    """품목 삭제 (사용 이력 없는 경우만)"""
+def delete_item(
+    item_id: int, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("items", "write"))
+):
+    """품목 삭제 (권한: items:write)"""
     from app.models.lot import Lot
     
     item = db.query(Item).filter(Item.id == item_id).first()

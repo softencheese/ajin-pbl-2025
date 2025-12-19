@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import date, datetime
 from app.core.database import get_db
+from app.core.deps import get_current_user
 from app.models.lot import Lot
 from app.models.item import Item
 from app.models.process import Process
@@ -16,6 +17,9 @@ from app.schemas.lot import (
     LotResponse,
     LotListResponse
 )
+
+from app.core.permissions import PermissionChecker
+from app.models.user import User
 
 router = APIRouter()
 
@@ -62,9 +66,10 @@ async def list_lots(
     status: Optional[str] = None,
     date_from: Optional[date] = None,
     date_to: Optional[date] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("lots", "read"))
 ):
-    """LOT 목록 조회"""
+    """LOT 목록 조회 (권한: lots:read)"""
     query = db.query(Lot)
     
     if item_id:
@@ -127,8 +132,12 @@ async def list_lots(
 
 
 @router.get("/{lot_id}", response_model=LotResponse)
-async def get_lot(lot_id: int, db: Session = Depends(get_db)):
-    """LOT 상세 조회"""
+async def get_lot(
+    lot_id: int, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("lots", "read"))
+):
+    """LOT 상세 조회 (권한: lots:read)"""
     lot = db.query(Lot).filter(Lot.id == lot_id).first()
     if not lot:
         raise HTTPException(status_code=404, detail="LOT을 찾을 수 없습니다")
@@ -163,8 +172,12 @@ async def get_lot(lot_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/receiving", response_model=LotResponse, status_code=201)
-async def create_receiving_lot(data: LotReceiving, db: Session = Depends(get_db)):
-    """원자재 입고 LOT 생성 (RFID 불필요, 수동 등록)"""
+async def create_receiving_lot(
+    data: LotReceiving, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("lots", "write"))
+):
+    """원자재 입고 LOT 생성 (RFID 불필요, 수동 등록) (권한: lots:write)"""
     # 품목 검증 (RAW 타입만 허용)
     item = db.query(Item).filter(Item.id == data.item_id).first()
     if not item:
@@ -225,8 +238,12 @@ async def create_receiving_lot(data: LotReceiving, db: Session = Depends(get_db)
 
 
 @router.post("", response_model=LotResponse, status_code=201)
-async def create_lot(data: LotCreate, db: Session = Depends(get_db)):
-    """생산 LOT 생성 (샤링, 프레스, 조립 등)"""
+async def create_lot(
+    data: LotCreate, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("lots", "write"))
+):
+    """생산 LOT 생성 (샤링, 프레스, 조립 등) (권한: lots:write)"""
     # 품목 검증
     item = db.query(Item).filter(Item.id == data.item_id).first()
     if not item:
@@ -319,8 +336,13 @@ async def create_lot(data: LotCreate, db: Session = Depends(get_db)):
 
 
 @router.put("/{lot_id}/status")
-async def update_lot_status(lot_id: int, data: LotStatusUpdate, db: Session = Depends(get_db)):
-    """LOT 상태 변경"""
+async def update_lot_status(
+    lot_id: int, 
+    data: LotStatusUpdate, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("lots", "write"))
+):
+    """LOT 상태 변경 (권한: lots:write)"""
     lot = db.query(Lot).filter(Lot.id == lot_id).first()
     if not lot:
         raise HTTPException(status_code=404, detail="LOT을 찾을 수 없습니다")
@@ -340,8 +362,13 @@ async def update_lot_status(lot_id: int, data: LotStatusUpdate, db: Session = De
 
 
 @router.put("/{lot_id}", response_model=LotResponse)
-async def update_lot(lot_id: int, data: LotUpdate, db: Session = Depends(get_db)):
-    """LOT 수정"""
+async def update_lot(
+    lot_id: int, 
+    data: LotUpdate, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("lots", "write"))
+):
+    """LOT 수정 (권한: lots:write)"""
     lot = db.query(Lot).filter(Lot.id == lot_id).first()
     if not lot:
         raise HTTPException(status_code=404, detail="LOT을 찾을 수 없습니다")
@@ -390,8 +417,12 @@ async def update_lot(lot_id: int, data: LotUpdate, db: Session = Depends(get_db)
 
 
 @router.delete("/{lot_id}")
-async def delete_lot(lot_id: int, db: Session = Depends(get_db)):
-    """LOT 삭제 (참조되지 않은 경우만)"""
+async def delete_lot(
+    lot_id: int, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("lots", "write"))
+):
+    """LOT 삭제 (참조되지 않은 경우만) (권한: lots:write)"""
     from app.models.pallet import Pallet
     
     lot = db.query(Lot).filter(Lot.id == lot_id).first()

@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List
 from app.core.database import get_db
+from app.core.deps import get_admin_user
 from app.models.process import Process
 from app.schemas.process import (
     ProcessCreate,
@@ -11,6 +12,9 @@ from app.schemas.process import (
     ProcessOrderUpdate
 )
 
+from app.core.permissions import PermissionChecker
+from app.models.user import User
+
 router = APIRouter()
 
 
@@ -18,9 +22,10 @@ router = APIRouter()
 async def list_processes(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("processes", "read"))
 ):
-    """공정 목록 조회 (페이지네이션 지원)"""
+    """공정 목록 조회 (페이지네이션 지원) (권한: processes:read)"""
     query = db.query(Process).order_by(Process.process_order)
     
     total = query.count()
@@ -37,8 +42,12 @@ async def list_processes(
 
 
 @router.get("/{id}", response_model=ProcessResponse)
-async def get_process(id: int, db: Session = Depends(get_db)):
-    """공정 상세 조회"""
+async def get_process(
+    id: int, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("processes", "read"))
+):
+    """공정 상세 조회 (권한: processes:read)"""
     process = db.query(Process).filter(Process.id == id).first()
     if not process:
         raise HTTPException(status_code=404, detail="Process not found")
@@ -46,8 +55,12 @@ async def get_process(id: int, db: Session = Depends(get_db)):
 
 
 @router.post("", response_model=ProcessResponse, status_code=201)
-async def create_process(data: ProcessCreate, db: Session = Depends(get_db)):
-    """공정 등록"""
+async def create_process(
+    data: ProcessCreate, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("processes", "write"))
+):
+    """공정 등록 (권한: processes:write)"""
     existing = db.query(Process).filter(
         Process.process_code == data.process_code
     ).first()
@@ -69,8 +82,13 @@ async def create_process(data: ProcessCreate, db: Session = Depends(get_db)):
 
 
 @router.put("/{id}", response_model=ProcessResponse)
-async def update_process(id: int, data: ProcessUpdate, db: Session = Depends(get_db)):
-    """공정 수정"""
+async def update_process(
+    id: int, 
+    data: ProcessUpdate, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("processes", "write"))
+):
+    """공정 수정 (권한: processes:write)"""
     process = db.query(Process).filter(Process.id == id).first()
     if not process:
         raise HTTPException(status_code=404, detail="Process not found")
@@ -95,9 +113,10 @@ async def update_process(id: int, data: ProcessUpdate, db: Session = Depends(get
 async def update_process_order(
     id: int, 
     data: ProcessOrderUpdate, 
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("processes", "write"))
 ):
-    """공정 순서 변경"""
+    """공정 순서 변경 (권한: processes:write)"""
     process = db.query(Process).filter(Process.id == id).first()
     if not process:
         raise HTTPException(status_code=404, detail="Process not found")
@@ -126,8 +145,12 @@ async def update_process_order(
 
 
 @router.delete("/{id}")
-async def delete_process(id: int, db: Session = Depends(get_db)):
-    """공정 삭제 (사용 이력 없는 경우만)"""
+async def delete_process(
+    id: int, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("processes", "write"))
+):
+    """공정 삭제 (권한: processes:write)"""
     from app.models.rfid import RFIDReaderLocation
     from app.models.lot import Lot
     

@@ -5,6 +5,7 @@ from sqlalchemy import func, case
 from typing import Optional, List
 from datetime import date, datetime, timedelta
 from app.core.database import get_db
+from app.core.deps import get_current_user
 from app.models.pallet import Pallet, PalletHistory
 from app.models.lot import Lot
 from app.models.item import Item
@@ -21,13 +22,19 @@ from app.schemas.dashboard import (
     LotStock
 )
 
+from app.core.permissions import PermissionChecker
+from app.models.user import User
+
 router = APIRouter()
 
 
 @router.get("/summary", response_model=DashboardSummary)
-async def get_dashboard_summary(db: Session = Depends(get_db)):
+async def get_dashboard_summary(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("dashboard", "read"))
+):
     """
-    대시보드 요약 정보
+    대시보드 요약 정보 (권한: dashboard:read)
     
     - 활성 팔레트 수
     - 총 재고 수량
@@ -68,9 +75,12 @@ async def get_dashboard_summary(db: Session = Depends(get_db)):
 
 
 @router.get("/process-status", response_model=ProcessStatusList)
-async def get_process_status(db: Session = Depends(get_db)):
+async def get_process_status(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("dashboard", "read"))
+):
     """
-    공정별 현황
+    공정별 현황 (권한: dashboard:read)
     
     각 공정의 활성 팔레트 수와 상태별 분포를 반환합니다.
     (N+1 쿼리 최적화: 단일 쿼리로 집계)
@@ -119,9 +129,12 @@ async def get_process_status(db: Session = Depends(get_db)):
 
 
 @router.get("/readers", response_model=ReaderStatusList)
-async def get_reader_status(db: Session = Depends(get_db)):
+async def get_reader_status(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("dashboard", "read"))
+):
     """
-    리더기 상태 조회
+    리더기 상태 조회 (권한: dashboard:read)
     
     모든 등록된 리더기의 연결 상태와 마지막 스캔 시간을 반환합니다.
     last_scan_time은 rfid_reader_locations 테이블에 직접 저장되어 조인 없이 빠르게 조회됩니다.
@@ -148,10 +161,11 @@ async def get_stock_inventory(
     item_code: Optional[str] = Query(None, alias="part_number"), # 호환성 유지 위해 alias 사용
     process_id: Optional[int] = None,
     sort: str = Query("production_date", description="정렬 기준"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("dashboard", "read"))
 ):
     """
-    재고 현황 (FIFO 관리용)
+    재고 현황 (FIFO 관리용) (권한: dashboard:read)
     
     품번/공정별 재고를 생산일자순으로 정렬하여 반환합니다.
     경과일에 따른 긴급도 표시 포함.

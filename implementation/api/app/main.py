@@ -8,9 +8,7 @@ from app.core.socket import sio_app # Socket.IO 앱 임포트
 from app.core.logging import setup_logging
 from app.middlewares.logging import LoggingMiddleware
 from app.routers import (
-    rfid_router,
-    auth_router,
-    users_router, 
+    rfid_router, 
     pallets_router, 
     trace_router,
     items_router,
@@ -68,8 +66,6 @@ app.include_router(processes_router, prefix="/api/v1/processes", tags=["Processe
 app.include_router(reader_locations_router, prefix="/api/v1/reader-locations", tags=["Reader Locations"])
 app.include_router(lots_router, prefix="/api/v1/lots", tags=["Lots"])
 app.include_router(lot_genealogy_router, prefix="/api/v1/lot-genealogy", tags=["Lot Genealogy"])
-app.include_router(auth_router, prefix="/api/v1/auth", tags=["Authentication"])
-app.include_router(users_router, prefix="/api/v1/users", tags=["User Management"])
 # rfid_tags_router 삭제됨 - pallets로 통합 (pallets.tag_status 사용)
 app.include_router(dashboard_router, prefix="/api/v1/dashboard", tags=["Dashboard"])
 
