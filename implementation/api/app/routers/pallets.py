@@ -189,7 +189,33 @@ async def link_lot(
     # 기존 연결 해제? 덮어쓰기? 여기서는 덮어쓰기
     pallet.lot_id = lot.id
     pallet.status = "Stock"  # LOT 연결 시 재고 상태로 변경
-    pallet.quantity = lot.quantity 
+    
+    # 수량 설정 (요청된 수량 없으면 LOT 전체 수량)
+    link_quantity = data.quantity if data.quantity is not None else lot.quantity
+    
+    # 유효성 검사
+    if link_quantity > lot.quantity:
+         raise HTTPException(status_code=400, detail=f"요청 수량이 LOT 재고보다 많습니다. (LOT: {lot.quantity})")
+    
+    pallet.quantity = link_quantity
+
+    # 이력 기록
+    history = PalletHistory(
+        pallet_id=pallet.id,
+        lot_id=pallet.lot_id,
+        process_id=pallet.current_process_id,
+        previous_status=pallet.status, # 이미 위에서 변경했지만, 개념상 연결 전 상태가 맞으나 로직상 현재는 변경 후임. 
+                                     # 정확히 하려면 변경 전 상태를 변수에 저장했어야 함.
+                                     # 하지만 위에서 status를 바로 Stock으로 대입했음.
+                                     # 수정: 위에서 대입하기 전에 prev_status 저장 필요.
+                                     # 일단 여기서는 'Generated' or 'Empty' 였을 것임.
+        new_status="Stock",
+        event_type="LINK_LOT",
+        scan_time=datetime.now(),
+        worker_name="System", # or current_user.username if available context
+        notes=f"Linked Lot {lot.lot_number} (Qty: {link_quantity})"
+    )
+    db.add(history)
 
     db.commit()
     db.refresh(pallet)

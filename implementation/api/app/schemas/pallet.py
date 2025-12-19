@@ -46,6 +46,7 @@ class PalletListResponse(BaseModel):
 class PalletLinkLot(BaseModel):
     """LOT 연결 요청"""
     lot_id: int = Field(..., description="LOT ID")
+    quantity: Optional[int] = Field(None, description="연결할 수량 (기본값: LOT 전체)")
 
 
 class PalletStatusUpdate(BaseModel):

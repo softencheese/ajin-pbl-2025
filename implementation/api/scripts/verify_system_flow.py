@@ -202,23 +202,16 @@ def run_verification():
     if not check(r, 200): return
     log(f"Linked Shearing Lot to Pallet {plt_shear}", "green")
 
-    # C. Scan at Shearing OUT (First time scan -> Just verifies matching? Spec says "Empty -> Stock" for first process?)
-    # Spec says: "샤링 OUT 리더기 (첫 공정 예외): 첫 태깅: Empty → Empty (RFID 매칭 확인만) / 재태깅: Empty → Stock"
-    # Wait, my StateMachine code says:
-    # if is_first_process: if Empty -> Producing -> Stock?
-    # Let's check StateMachine code again.
-    # Lines 105-119: 
-    # if is_first_process:
-    #   if Empty: return Producing ("생산 시작")
-    #   if Producing: return Stock ("생산 완료")
-    
-    # But the spec says "샤링만 예외: OUT 리더기를 2회 태깅 (Empty → Stock, Producing 생략)"
-    # Ah, the spec says "Producing 생략" but the code implements "Empty -> Producing -> Stock" logic even for first process?
-    # Or maybe "Producing" happens instantly?
-    # The 2-tap method in spec: 
-    # 1st tap: Checked (Empty -> Empty or Empty -> Producing?)
-    # C. Scan at Shearing OUT (SKIPPED because connect-lot sets Stock)
-    log("Skipping Shearing OUT Scan (connect-lot set status to Stock)", "yellow")
+    # C. Scan at Shearing OUT (Now verified)
+    log("Scan at Shearing OUT (Expect Stock - Idempotent Check)")
+    scan_event_shear_out = {
+        "epc": epc_shear,
+        "port_name": "SHEAR_OUT",
+        "scan_time": datetime.now().isoformat()
+    }
+    r = requests.post(f"{BASE_URL}/rfid/scan", json=scan_event_shear_out)
+    check(r, 200)
+    log(f"Shearing OUT Scan Status: {r.json()['pallet']['current_status']}", "green")
 
     # 3.3 Press Process
     log("--- Step 3.3: Press Process ---")
@@ -277,13 +270,29 @@ def run_verification():
     r = requests.post(f"{BASE_URL}/lots", json=press_lot_payload)
     press_lot_id = r.json()["id"]
     
-    # Link
+    # Link (Testing Optional Quantity if implemented, but here test default)
     r = requests.get(f"{BASE_URL}/pallets?search={plt_press}")
     pallet_id_press = r.json()["items"][0]["id"]
-    r = requests.put(f"{BASE_URL}/pallets/{pallet_id_press}/link-lot", json={"lot_id": press_lot_id})
     
-    # Scan at Press OUT (SKIPPED because connect-lot sets Stock)
-    log("Skipping Press OUT Scan (connect-lot set status to Stock)", "yellow")
+    # Use quantity field 
+    link_payload = {"lot_id": press_lot_id, "quantity": 100}
+    r = requests.put(f"{BASE_URL}/pallets/{pallet_id_press}/link-lot", json=link_payload)
+    check(r, 200)
+    
+    # Verify History Created
+    # Assuming valid connection, we can't easily check DB directly here without DB lib or history API.
+    # But if no error, at least logic passed.
+    
+    # Scan at Press OUT
+    log("Scan at Press OUT (Expect Stock - Idempotent Check)")
+    scan_event_press_out = {
+        "epc": epc_press,
+        "port_name": "PRESS_OUT",
+        "scan_time": datetime.now().isoformat()
+    }
+    r = requests.post(f"{BASE_URL}/rfid/scan", json=scan_event_press_out)
+    check(r, 200)
+    log(f"Press OUT Scan Status: {r.json()['pallet']['current_status']}", "green")
     
     # 3.4 Assembly Process (Input)
     log("--- Step 3.4: Assembly Process ---")

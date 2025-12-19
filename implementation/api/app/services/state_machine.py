@@ -139,6 +139,13 @@ class StateMachine:
                         "next_status": "Stock",
                         "message": "중간품 생산 완료 (재고 적재)"
                     }
+            elif current_status == "Stock":
+                 # 이미 재고 상태 (수동으로 LOT 연결 후 스캔한 경우 idempotent 처리)
+                 return {
+                     "allowed": True,
+                     "next_status": "Stock",
+                     "message": "이미 재고 상태입니다. (생산 완료 확인)"
+                 }
             elif current_status == "Consuming":
                 # 소비 완료 (빈 팔레트)
                 return {
