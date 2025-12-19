@@ -1,5 +1,5 @@
 """팔레트 스키마"""
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List
 from datetime import datetime
 
@@ -32,8 +32,7 @@ class PalletResponse(BaseModel):
     item_type: Optional[str] = None
     current_process_name: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PalletListResponse(BaseModel):
@@ -47,6 +46,7 @@ class PalletListResponse(BaseModel):
 class PalletLinkLot(BaseModel):
     """LOT 연결 요청"""
     lot_id: int = Field(..., description="LOT ID")
+    quantity: Optional[int] = Field(None, description="연결할 수량 (기본값: LOT 전체)")
 
 
 class PalletStatusUpdate(BaseModel):

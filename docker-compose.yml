@@ -15,12 +15,12 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - ./implementation/data/mysql:/var/lib/mysql              # 데이터 영구 보존
-      - ./implementation/database/init:/docker-entrypoint-initdb.d  # 초기화 SQL
+      - ./implementation/data/mysql:/var/lib/mysql # 데이터 영구 보존
+      - ./implementation/database/init:/docker-entrypoint-initdb.d # 초기화 SQL
     networks:
       - ajin_network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpassword}"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpassword}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -36,13 +36,14 @@ services:
       DATABASE_URL: mysql+pymysql://${MYSQL_USER:-ajin_user}:${MYSQL_PASSWORD:-ajin_password}@db:3306/${MYSQL_DATABASE:-ajin_rfid}
       API_HOST: 0.0.0.0
       API_PORT: 8000
-      CORS_ORIGINS: "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173"
+      CORS_ORIGINS: http://localhost:5173,http://localhost:3000
+      PYTHONPYCACHEPREFIX: /app/data/pycache
       TZ: Asia/Seoul
     ports:
       - "8000:8000"
     volumes:
       - ./implementation/api:/app
-      - ./implementation/logs:/app/logs
+      - ./implementation/data:/app/data
     depends_on:
       db:
         condition: service_healthy

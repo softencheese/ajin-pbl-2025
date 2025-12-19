@@ -6,7 +6,7 @@ class Item(BaseModel):
     """통합 품목 마스터 (원자재, 재공품, 완제품)"""
     __tablename__ = "items"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True, autoincrement=True)
     item_code = Column(String(50), unique=True, nullable=False, comment='품번 또는 원자재코드 (고유)')
     item_name = Column(String(200), nullable=False, comment='품명')
     item_type = Column(String(20), nullable=False, comment='품목 유형 (RAW, WIP, PRODUCT)')

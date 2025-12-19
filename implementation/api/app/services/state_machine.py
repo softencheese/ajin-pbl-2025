@@ -22,7 +22,8 @@ class StateMachine:
         current_status: str, 
         process_code: str, 
         location_type: str,
-        is_final_product: bool = False
+        is_final_product: bool = False,
+        is_first_process: bool = False  # DB에서 가져온 첫 공정 여부
     ) -> Dict:
         """
         현재 상태, 공정, 위치를 기반으로 다음 상태를 결정합니다.
@@ -61,12 +62,13 @@ class StateMachine:
         
         if location_type == "HOLD":
             if current_status == "Hold":
-                # Hold 상태에서 다시 HOLD 리더기 태깅 시 해제 (원래 상태로 복귀 로직 필요)
-                # 현재는 단순히 Stock으로 복귀
+                # Hold 상태에서 다시 HOLD 리더기 태깅 시 해제
+                # Hold 이전 상태로 복귀 (get_pre_hold_status 로 조회 필요)
+                # 기본값: Stock (조회 실패 시)
                 return {
                     "allowed": True,
-                    "next_status": "Stock",
-                    "message": "보류 해제되었습니다."
+                    "next_status": "__RESTORE_PRE_HOLD__",  # 호출자가 실제 상태로 대체해야 함
+                    "message": "보류 해제되었습니다. (이전 상태로 복귀)"
                 }
             return {
                 "allowed": True,
@@ -90,6 +92,13 @@ class StateMachine:
                     "next_status": "Consuming",
                     "message": "소비 시작 (투입 완료)"
                 }
+            elif current_status == "Consuming":
+                # 소비 완료 (빈 팔레트 회수)
+                return {
+                    "allowed": True,
+                    "next_status": "Deregistered",
+                    "message": "소비 완료 (빈 팔레트 회수)"
+                }
             else:
                 return {
                     "allowed": False,
@@ -99,21 +108,21 @@ class StateMachine:
         
         # 5. OUT 리더기 (공정 완료)
         if location_type == "OUT":
-            # 샤링 첫 공정 특수 처리
-            if process_code == "SHEARING":
+            # 첫 공정 특수 처리 (DB에서 is_first_process로 판단)
+            if is_first_process:
                 if current_status == "Empty":
-                    # 샤링에서 빈 팔레트 → 바로 생산 시작
+                    # 첫 공정에서 빈 팔레트 → 바로 생산 시작
                     return {
                         "allowed": True,
                         "next_status": "Producing",
-                        "message": "샤링 생산 시작"
+                        "message": f"{process_code} 생산 시작"
                     }
                 elif current_status == "Producing":
-                    # 샤링 생산 완료 → Stock
+                    # 첫 공정 생산 완료 → Stock
                     return {
                         "allowed": True,
                         "next_status": "Stock",
-                        "message": "샤링 생산 완료 (재고 적재)"
+                        "message": f"{process_code} 생산 완료 (재고 적재)"
                     }
             
             if current_status == "Producing":
@@ -130,6 +139,13 @@ class StateMachine:
                         "next_status": "Stock",
                         "message": "중간품 생산 완료 (재고 적재)"
                     }
+            elif current_status == "Stock":
+                 # 이미 재고 상태 (수동으로 LOT 연결 후 스캔한 경우 idempotent 처리)
+                 return {
+                     "allowed": True,
+                     "next_status": "Stock",
+                     "message": "이미 재고 상태입니다. (생산 완료 확인)"
+                 }
             elif current_status == "Consuming":
                 # 소비 완료 (빈 팔레트)
                 return {

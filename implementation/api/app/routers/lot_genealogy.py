@@ -1,7 +1,8 @@
 """LOT 족보(Genealogy) 라우터"""
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.database import get_db
+from app.core.database import get_db
+from app.core.deps import get_current_user
 from app.models.lot import Lot
 from app.models.lot_genealogy import LotGenealogy
 from app.models.item import Item
@@ -12,12 +13,19 @@ from app.schemas.lot_genealogy import (
     LotGenealogyWithDetails
 )
 
+from app.core.permissions import PermissionChecker
+from app.models.user import User
+
 router = APIRouter()
 
 
 @router.get("/{lot_id}")
-def get_lot_genealogy(lot_id: int, db: Session = Depends(get_db)):
-    """특정 LOT의 족보 조회 (부모 및 자식 LOT)"""
+def get_lot_genealogy(
+    lot_id: int, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("lots", "read"))
+):
+    """특정 LOT의 족보 조회 (부모 및 자식 LOT) (권한: lots:read)"""
     lot = db.query(Lot).filter(Lot.id == lot_id).first()
     if not lot:
         raise HTTPException(status_code=404, detail="LOT을 찾을 수 없습니다")
@@ -64,8 +72,12 @@ def get_lot_genealogy(lot_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("", response_model=LotGenealogyResponse, status_code=201)
-def create_lot_genealogy(data: LotGenealogyCreate, db: Session = Depends(get_db)):
-    """LOT 족보 수동 추가"""
+def create_lot_genealogy(
+    data: LotGenealogyCreate, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("lots", "write"))
+):
+    """LOT 족보 수동 추가 (권한: lots:write)"""
     # 입력 LOT 확인
     input_lot = db.query(Lot).filter(Lot.id == data.input_lot_id).first()
     if not input_lot:

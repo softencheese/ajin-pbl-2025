@@ -11,6 +11,7 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 
 ### 1.1 스캔 이벤트 처리
 **엔드포인트**: `POST /rfid/scan`
+> **Required Permission**: `rfid:write`
 
 **설명**: RFID 리더기에서 태그를 스캔한 이벤트를 처리하고 팔레트 상태를 전이시킵니다.
 
@@ -28,89 +29,23 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 }
 ```
 
-**응답 (성공)**:
-```json
-{
-  "success": true,
-  "pallet": {
-    "pallet_no": "PLT-2025-001",
-    "previous_status": "Stock",
-    "current_status": "Consuming",
-    "lot_number": "SH-231211-001",
-    "item_code": "71412-T6000S"
-  },
-  "feedback": {
-    "pattern": "SUCCESS",
-    "count": 1,
-    "led_color": "GREEN"
-  }
-}
-```
+...
 
-**응답 (FIFO 경고)**:
-```json
-{
-  "success": true,
-  "warning": {
-    "type": "FIFO_VIOLATION",
-    "message": "더 오래된 재고가 있습니다",
-    "oldest_stock": {
-      "lot_number": "SH-231209-001",
-      "days_old": 2
-    }
-  },
-  "feedback": {
-    "pattern": "WARNING",
-    "count": 3,
-    "led_color": "YELLOW"
-  }
-}
-```
+### 1.2 바코드 스캔 처리 (신규)
+**엔드포인트**: `POST /rfid/scan-barcode`
+> **Required Permission**: `rfid:write`
 
-**응답 (오류 - 오투입)**:
-```json
-{
-  "success": false,
-  "error": {
-    "type": "WRONG_PART",
-    "message": "품번 불일치 - 투입 불가",
-    "expected_item": "71412-T6000S",
-    "actual_item": "76211-GI000"
-  },
-  "feedback": {
-    "pattern": "ERROR",
-    "count": 3,
-    "led_color": "RED"
-  }
-}
-```
+**설명**: 바코드(LOT 번호)를 스캔하여 RFID 태그 스캔과 동일한 팔레트 상태 전이를 수행합니다.
 
-### 1.2 리더기 상태 수신
+...
+
+### 1.3 리더기 상태 수신
 **엔드포인트**: `POST /rfid/reader-status`
+> **Required Permission**: `rfid:write`
 
 **설명**: 임베디드 시스템에서 리더기 상태를 주기적으로 전송합니다 (Heartbeat).
 
-**요청**:
-```json
-{
-  "port_name": "COM3",
-  "status": "CONNECTED",
-  "last_scan_time": "2025-11-17T09:23:45.123Z",
-  "uptime_seconds": 3600,
-  "total_scans": 1234,
-  "error_count": 0
-}
-```
-
-**응답**:
-```json
-{
-  "success": true,
-  "message": "Status updated"
-}
-```
-
----
+...
 
 ## 2. 마스터 데이터 관리
 
@@ -120,6 +55,7 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 
 #### 목록 조회
 - **GET** `/items`
+- **Requires**: `items:read`
 - **Query Parameters**: 
   - `page`, `per_page`: 페이지네이션
   - `search`: 품목코드/품명 검색
@@ -127,9 +63,12 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 
 #### 상세 조회
 - **GET** `/items/{id}`
+- **Requires**: `items:read`
 
 #### 등록
 - **POST** `/items`
+- **Requires**: `items:write` (Admin only)
+
 ```json
 {
   "item_code": "STEEL-SPCC",
@@ -142,16 +81,15 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 }
 ```
 
-**item_type 구분**:
-- `RAW`: 원자재 (코일, 철판 등)
-- `WIP`: 재공품/중간품 (샤링품, 프레스품 등)
-- `PRODUCT`: 완제품 (조립 완료 제품)
+...
 
 #### 수정
 - **PUT** `/items/{id}`
+- **Requires**: `items:write` (Admin only)
 
 #### 삭제
 - **DELETE** `/items/{id}` (사용 이력 없는 경우만)
+- **Requires**: `items:write` (Admin only)
 
 ---
 
@@ -159,9 +97,12 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 
 #### 목록 조회
 - **GET** `/processes`
+- **Requires**: `processes:read`
 
 #### 등록
 - **POST** `/processes`
+- **Requires**: `processes:write` (Admin only)
+
 ```json
 {
   "process_code": "SHEARING",
@@ -173,6 +114,8 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 
 #### 순서 변경
 - **PUT** `/processes/{id}/order`
+- **Requires**: `processes:write` (Admin only)
+
 ```json
 {
   "new_order": 2
@@ -185,11 +128,14 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 
 #### 목록 조회
 - **GET** `/reader-locations`
+- **Requires**: `reader_locations:read`
 
 #### 등록 (수동)
 > **Note**: 일반적으로 리더기는 Heartbeat 수신 시 자동 등록됩니다.
 
 - **POST** `/reader-locations`
+- **Requires**: `reader_locations:write` (Admin only)
+
 ```json
 {
   "port_name": "READER_01",
@@ -202,6 +148,7 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 
 #### 수정
 - **PUT** `/reader-locations/{id}`
+- **Requires**: `reader_locations:write` (Admin only)
 
 ---
 
@@ -221,13 +168,17 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 
 #### 목록 조회
 - **GET** `/pallets`
+- **Requires**: `pallets:read`
 - **Query Parameters**: `status`, `process_id`, `search`
 
 #### 상세 조회
 - **GET** `/pallets/{id}`
+- **Requires**: `pallets:read`
 
 #### 생성
 - **POST** `/pallets`
+- **Requires**: `pallets:write`
+
 ```json
 {
   "pallet_no": "PLT-2025-001",
@@ -237,6 +188,8 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 
 #### LOT 연결
 - **PUT** `/pallets/{id}/link-lot`
+- **Requires**: `pallets:write`
+
 ```json
 {
   "lot_id": 123
@@ -245,6 +198,8 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 
 #### 상태 강제 변경 (관리자)
 - **PUT** `/pallets/{id}/status`
+- **Requires**: `pallets:write`
+
 ```json
 {
   "status": "Hold",
@@ -256,6 +211,7 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 > **Note**: 기존 `/rfid-tags/{id}/status` 대체
 
 - **PUT** `/pallets/{id}/tag-status`
+- **Requires**: `pallets:write`
 ```json
 {
   "tag_status": "DAMAGED",
@@ -276,6 +232,7 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 
 ### 3.1 LOT 목록 조회
 - **GET** `/lots`
+- **Requires**: `lots:read`
 - **Query Parameters**: 
   - `item_id`: 품목 ID 필터
   - `item_type`: RAW, WIP, PRODUCT 필터
@@ -285,13 +242,14 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 
 ### 3.2 LOT 상세 조회
 - **GET** `/lots/{id}`
+- **Requires**: `lots:read`
 
 **응답**:
 ```json
 {
   "id": 1,
-  "lot_number": "IN-231211-001",
-  "barcode": "251018226687",
+  "lot_number": "231211000001",
+  "barcode": "231211000001",
   "item": {
     "id": 5,
     "item_code": "STEEL-SPCC",
@@ -310,6 +268,7 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 
 ### 3.3 원자재 입고 (LOT 생성)
 - **POST** `/lots/receiving`
+- **Requires**: `lots:write`
 
 **설명**: 원자재 입고 시 LOT 생성 (RFID 불필요, 수동 등록)
 
@@ -319,7 +278,6 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
   "quantity": 100,
   "production_date": "2023-12-11",
   "supplier": "포스코",
-  "barcode": "251018226687",
   "notes": "비고"
 }
 ```
@@ -328,8 +286,8 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 ```json
 {
   "id": 1,
-  "lot_number": "IN-231211-001",
-  "barcode": "251018226687",
+  "lot_number": "231211000001",
+  "barcode": "231211000001",
   "item_code": "STEEL-SPCC",
   "status": "STOCK"
 }
@@ -337,6 +295,7 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 
 ### 3.4 생산 LOT 생성
 - **POST** `/lots`
+- **Requires**: `lots:write`
 
 **설명**: 샤링, 프레스, 조립 등 생산 공정에서 새 LOT 생성 + 투입 LOT 연결
 
@@ -361,14 +320,13 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 ```json
 {
   "id": 2,
-  "id": 2,
-  "lot_number": "SH-231211-001",
-  "barcode": "SH-BARCODE-001",
+  "lot_number": "231211010001",
+  "barcode": "231211010001",
   "item_code": "71412-T6000S",
   "status": "STOCK",
   "genealogy": [
     {
-      "input_lot_number": "IN-231211-001",
+      "input_lot_number": "231211000001",
       "quantity_consumed": 100
     }
   ]
@@ -377,6 +335,8 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 
 ### 3.5 LOT 상태 변경
 - **PUT** `/lots/{id}/status`
+- **Requires**: `lots:write`
+
 ```json
 {
   "status": "CONSUMED",
@@ -390,18 +350,19 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 
 ### 4.1 족보 조회 (특정 LOT)
 - **GET** `/lot-genealogy/{lot_id}`
+- **Requires**: `lots:read`
 
 **응답**:
 ```json
 {
   "lot": {
     "id": 2,
-    "lot_number": "SH-231211-001",
+    "lot_number": "231211010001",
     "item_code": "71412-T6000S"
   },
   "parents": [
     {
-      "lot_number": "IN-231211-001",
+      "lot_number": "231211000001",
       "item_code": "STEEL-SPCC",
       "item_type": "RAW",
       "quantity_consumed": 100
@@ -409,7 +370,7 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
   ],
   "children": [
     {
-      "lot_number": "PR-231211-001",
+      "lot_number": "231211020001",
       "item_code": "71412-T6000S-PR",
       "item_type": "WIP",
       "quantity_consumed": 400
@@ -420,6 +381,8 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 
 ### 4.2 족보 수동 추가
 - **POST** `/lot-genealogy`
+- **Requires**: `lots:write`
+
 ```json
 {
   "input_lot_id": 1,
@@ -435,6 +398,7 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 
 ### 5.1 정방향 추적 (원자재 → 완제품)
 **엔드포인트**: `GET /trace/forward`
+> **Requires**: `trace:read`
 
 **Query Parameters**: `lot_number` 또는 `lot_id`
 
@@ -454,20 +418,7 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
       "item_type": "WIP",
       "process_name": "샤링"
     },
-    {
-      "depth": 2,
-      "lot_number": "PR-231211-001",
-      "item_code": "71412-T6000S-PR",
-      "item_type": "WIP",
-      "process_name": "프레스"
-    },
-    {
-      "depth": 3,
-      "lot_number": "AS-231211-001",
-      "item_code": "ASSY-DOOR",
-      "item_type": "PRODUCT",
-      "process_name": "조립"
-    }
+    ...
   ]
 }
 ```
@@ -476,6 +427,7 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 
 ### 5.2 역방향 추적 (완제품 → 원자재)
 **엔드포인트**: `GET /trace/backward`
+> **Requires**: `trace:read`
 
 **Query Parameters**: `lot_number` 또는 `lot_id`
 
@@ -488,24 +440,7 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
     "item_type": "PRODUCT"
   },
   "trace_path": [
-    {
-      "depth": 1,
-      "lot_number": "PR-231211-001",
-      "item_code": "71412-T6000S-PR",
-      "item_type": "WIP"
-    },
-    {
-      "depth": 2,
-      "lot_number": "SH-231211-001",
-      "item_code": "71412-T6000S",
-      "item_type": "WIP"
-    },
-    {
-      "depth": 3,
-      "lot_number": "IN-231211-001",
-      "item_code": "STEEL-SPCC",
-      "item_type": "RAW"
-    }
+    ...
   ]
 }
 ```
@@ -514,6 +449,7 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 
 ### 5.3 드릴다운 검색
 **엔드포인트**: `GET /trace/search`
+> **Requires**: `trace:read`
 
 **Query Parameters**: `q` (품목코드, LOT번호, 팔레트 번호)
 
@@ -525,6 +461,7 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 
 ### 6.1 대시보드 요약
 - **GET** `/dashboard/summary`
+- **Requires**: `dashboard:read`
 
 **응답**:
 ```json
@@ -541,29 +478,51 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 
 ### 6.2 공정별 현황
 - **GET** `/dashboard/process-status`
-
-### 6.3 재고 현황 (FIFO 포함)
-- **GET** `/inventory/stock`
+- **Requires**: `dashboard:read`
 
 **응답**:
 ```json
-[
-  {
-    "item_code": "71412-T6000S",
-    "item_name": "PNL-FR DR INR, LH",
-    "item_type": "WIP",
-    "process_name": "프레스",
-    "lots": [
-      {
-        "lot_number": "PR-231209-001",
-        "production_date": "2023-12-09",
-        "days_old": 5,
-        "quantity": 400,
-        "status": "urgent"
+{
+  "processes": [
+    {
+      "process_id": 1,
+      "process_name": "샤링",
+      "active_pallets": 10,
+      "status_breakdown": {
+        "Running": 8,
+        "Error": 2
       }
-    ]
-  }
-]
+    }
+  ],
+  "total_active_pallets": 10
+}
+```
+
+### 6.3 재고 현황 (FIFO 포함)
+- **GET** `/inventory/stock`
+- **Requires**: `dashboard:read`
+
+**응답**:
+```json
+{
+  "stock_items": [
+    {
+      "item_code": "71412-T6000S",
+      "item_name": "PNL-FR DR INR, LH",
+      "item_type": "WIP",
+      "process_name": "프레스",
+      "lots": [
+        {
+          "lot_number": "PR-231209-001",
+          "production_date": "2023-12-09",
+          "days_old": 5,
+          "quantity": 400,
+          "status": "urgent"
+        }
+      ]
+    }
+  ]
+}
 ```
 
 ---
@@ -591,6 +550,73 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 - **POST** `/auth/refresh`
 
 ---
+
+## 8. 사용자 관리 (User Management)
+
+> **권한 필요**: `ADMIN` 역할 또는 관련 권한 필요
+
+### 8.1 사용자 목록 조회
+- **GET** `/users`
+- **Requires**: `ADMIN`
+
+**응답**:
+```json
+[
+  {
+    "id": 1,
+    "username": "2023001",
+    "full_name": "홍길동",
+    "role": "USER",
+    "is_active": true,
+    "permissions": {
+      "items": ["read"],
+      "lots": ["read", "write"]
+    }
+  }
+]
+```
+
+### 8.2 사용자 생성
+- **POST** `/users`
+- **Requires**: `ADMIN`
+
+**요청**:
+```json
+{
+  "username": "2024001",
+  "password": "initialPassword123",
+  "full_name": "김신입",
+  "role": "USER"
+}
+```
+> **Note**: 신규 생성 시 기본적으로 모든 리소스에 대한 `read` 권한과 현장 운영(`lots`, `pallets`, `rfid`)에 대한 `write` 권한이 부여됩니다.
+
+### 8.3 사용자 상세 조회
+- **GET** `/users/{id}`
+- **Requires**: `ADMIN`
+
+### 8.4 사용자 권한 수정
+- **PUT** `/users/{id}/permissions`
+- **Requires**: `ADMIN`
+
+**요청**:
+```json
+{
+  "items": ["read", "write"],
+  "processes": ["read"]
+}
+```
+
+### 8.5 사용자 역할 변경
+- **PUT** `/users/{id}/role`
+- **Requires**: `ADMIN`
+
+**요청**:
+```json
+{
+  "role": "ADMIN"
+}
+```
 
 ## HTTP 상태 코드
 
@@ -650,26 +676,33 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
 
 ### 이벤트 타입
 
-1. **pallet_updated**: 팔레트 상태 변경
+1. **pallet_updated**: 팔레트 상태 변경 (생성, LOT 연결, 상태 강제 변경)
 ```json
 {
   "event": "pallet_updated",
   "data": {
     "pallet_id": 123,
     "pallet_no": "PLT-2025-001",
-    "status": "Consuming"
+    "status": "Consuming",
+    "tag_status": "AVAILABLE"
   }
 }
 ```
 
-2. **scan_event**: 스캔 이벤트 발생
+2. **scan_event**: 스캔 이벤트 발생 (성공 시)
 ```json
 {
   "event": "scan_event",
   "data": {
-    "epc": "E280...",
+    "type": "SCAN",
+    "pbl_location": "IN",
+    "process_code": "PRESS",
+    "scan_time": "2025-11-17T09:23:45.123456",
+    "pallet_no": "PLT-2025-001",
+    "status": "Consuming",
+    "epc": "E2801170000002036B3D8CCD",
     "port_name": "COM3",
-    "timestamp": "2025-11-17T09:23:45.123Z"
+    "success": true
   }
 }
 ```
@@ -680,7 +713,21 @@ AJIN RFID 물류 추적 시스템의 모든 API 엔드포인트를 정의합니�
   "event": "reader_status",
   "data": {
     "port_name": "COM3",
-    "status": "CONNECTED"
+    "status": "CONNECTED",
+    "timestamp": "2025-11-17T09:23:45.123456"
+  }
+}
+```
+
+4. **scan_error**: 스캔 에러 발생
+```json
+{
+  "event": "scan_error",
+  "data": {
+    "type": "WRONG_PART",
+    "port_name": "COM3",
+    "epc": "E280...",
+    "message": "오투입 감지..."
   }
 }
 ```

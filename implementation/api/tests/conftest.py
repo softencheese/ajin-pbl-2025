@@ -3,7 +3,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 from fastapi.testclient import TestClient
-from app.database import Base, get_db
+from app.core.database import Base, get_db
+from fastapi import FastAPI
 from main import app
 
 # Use in-memory SQLite for testing to avoid side effects on real DB

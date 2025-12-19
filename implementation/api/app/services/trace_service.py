@@ -31,12 +31,12 @@ class TraceService:
         
         histories = self.db.query(PalletHistory).filter(
             PalletHistory.pallet_id == pallet.id
-        ).order_by(PalletHistory.event_time.desc()).all()
+        ).order_by(PalletHistory.scan_time.desc()).all()
         
         trace_items = []
         for h in histories:
             trace_items.append(TraceHistoryItem(
-                event_time=h.scan_time, # There is another possible error here. PalletHistory model has scan_time, TraceService access event_time.
+                event_time=h.scan_time,
                 event_type=h.event_type,
                 process_name=h.process.process_name if h.process else None,
                 location_type=h.location_type,
@@ -70,8 +70,7 @@ class TraceService:
         if not root_lot:
             return None
         
-        # 1. 직계 자식 LOT 조회 (1단계만 조회하거나, 재귀적으로 조회해야 함. 여기선 1단계만 예시)
-        # TODO: 필요 시 재귀적 탐색 구현
+        # 1. 직계 자식 LOT 조회 (재귀적 탐색 구현됨)
         genealogies = self.db.query(LotGenealogy).filter(
             LotGenealogy.input_lot_id == root_lot.id
         ).all()
@@ -143,7 +142,7 @@ class TraceService:
         self, 
         lot_no: str
     ) -> Optional[BackwardTraceResponse]:
-        """역방향 추적 (산출 LOT → 투입 LOT)"""
+        """역방향 추적 (산출 LOT → 투입 LOT) - 재귀적으로 원자재까지 추적"""
         
         target_lot = self.db.query(Lot).filter(Lot.lot_number == lot_no).first()
         
@@ -157,35 +156,49 @@ class TraceService:
             item_type=target_lot.item.item_type
         )
         
-        # 부모 LOT 조회
+        # 재귀적으로 모든 부모 LOT 조회
+        all_parents = []
+        visited = set()
+        self._trace_parents_recursive(target_lot.id, all_parents, visited)
+            
+        return BackwardTraceResponse(
+            product=product_info,
+            parent_lots=all_parents
+        )
+
+    def _trace_parents_recursive(self, lot_id: int, result: list, visited: set):
+        """재귀적으로 부모 LOT 추적"""
+        if lot_id in visited:
+            return
+        visited.add(lot_id)
+        
         genealogies = self.db.query(LotGenealogy).filter(
-            LotGenealogy.output_lot_id == target_lot.id
+            LotGenealogy.output_lot_id == lot_id
         ).all()
         
-        parent_lots = []
         for gen in genealogies:
             input_lot = gen.input_lot
-            parent_lots.append(ParentLotInfo(
+            result.append(ParentLotInfo(
                 lot_no=input_lot.lot_number,
                 item_code=input_lot.item.item_code,
                 item_name=input_lot.item.item_name,
                 quantity_consumed=gen.quantity_consumed,
-                supplier=None # Lot 모델에 supplier가 있다면 추가
+                supplier=getattr(input_lot, 'supplier', None)
             ))
-            
-        return BackwardTraceResponse(
-            product=product_info,
-            parent_lots=parent_lots
-        )
+            # 부모의 부모를 재귀적으로 탐색
+            self._trace_parents_recursive(input_lot.id, result, visited)
+
 
     def drill_down_search(self, search: str) -> Optional[DrillDownResponse]:
         """드릴다운 검색"""
         search = search.strip()
+        # SQL LIKE 와일드카드 이스케이프 (보안)
+        safe_search = search.replace("%", r"\%").replace("_", r"\_")
         
         # 1. 팔레트 검색
         pallet = self.db.query(Pallet).filter(
-            Pallet.pallet_no.contains(search) | 
-            Pallet.rfid_epc.contains(search)
+            Pallet.pallet_no.ilike(f"%{safe_search}%", escape="\\") | 
+            Pallet.rfid_epc.ilike(f"%{safe_search}%", escape="\\")
         ).first()
         
         if pallet:
@@ -203,7 +216,7 @@ class TraceService:
             )
         
         # 2. LOT 검색
-        lot = self.db.query(Lot).filter(Lot.lot_number.contains(search)).first()
+        lot = self.db.query(Lot).filter(Lot.lot_number.ilike(f"%{safe_search}%", escape="\\")).first()
         if lot:
             return DrillDownResponse(
                 search_type="LOT",
@@ -219,9 +232,10 @@ class TraceService:
                 ]
             )
         
-        # 3. Item 검색 (기존 Coil 검색 대체)
+        # 3. Item 검색
         item = self.db.query(Item).filter(
-            Item.item_code.contains(search) | Item.item_name.contains(search)
+            Item.item_code.ilike(f"%{safe_search}%", escape="\\") | 
+            Item.item_name.ilike(f"%{safe_search}%", escape="\\")
         ).first()
         
         if item:

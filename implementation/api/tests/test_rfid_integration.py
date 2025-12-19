@@ -8,9 +8,9 @@ from app.models.lot_genealogy import LotGenealogy
 
 def setup_test_data(db):
     """테스트용 기초 데이터 생성"""
-    # 1. Process
-    p1 = Process(process_code="SHEARING", process_name="샤링", process_order=1, production_line="400T")
-    p2 = Process(process_code="PRESS", process_name="프레스", process_order=2, production_line="1500T")
+    # 1. Process (with allowed_item_types for validation)
+    p1 = Process(process_code="SHEARING", process_name="샤링", process_order=1, production_line="400T", allowed_item_types="RAW")
+    p2 = Process(process_code="PRESS", process_name="프레스", process_order=2, production_line="1500T", allowed_item_types="WIP")
     db.add_all([p1, p2])
     db.commit()
     
