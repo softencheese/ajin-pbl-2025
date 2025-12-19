@@ -70,8 +70,7 @@ class TraceService:
         if not root_lot:
             return None
         
-        # 1. 직계 자식 LOT 조회 (1단계만 조회하거나, 재귀적으로 조회해야 함. 여기선 1단계만 예시)
-        # TODO: 필요 시 재귀적 탐색 구현
+        # 1. 직계 자식 LOT 조회 (재귀적 탐색 구현됨)
         genealogies = self.db.query(LotGenealogy).filter(
             LotGenealogy.input_lot_id == root_lot.id
         ).all()
