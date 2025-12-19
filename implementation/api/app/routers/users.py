@@ -67,7 +67,7 @@ def get_user(user_id: int, db: Session = Depends(get_db)):
 @router.put("/{user_id}/permissions")
 def update_user_permissions(
     user_id: int, 
-    permissions: Dict[str, List[str]] = Body(..., example={"items": ["read", "write"]}), 
+    permissions: Dict[str, List[str]] = Body(..., examples=[{"items": ["read", "write"]}]), 
     db: Session = Depends(get_db)
 ):
     """
