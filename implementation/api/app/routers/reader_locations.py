@@ -8,7 +8,8 @@ from app.models.rfid import RFIDReaderLocation
 from app.schemas.reader_location import (
     ReaderLocationCreate,
     ReaderLocationUpdate,
-    ReaderLocationResponse
+    ReaderLocationResponse,
+    ReaderLocationListResponse
 )
 
 from app.core.permissions import PermissionChecker
@@ -17,7 +18,7 @@ from app.models.user import User
 router = APIRouter()
 
 
-@router.get("")
+@router.get("", response_model=ReaderLocationListResponse)
 async def list_reader_locations(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
@@ -43,13 +44,31 @@ async def list_reader_locations(
     locations = query.offset((page - 1) * per_page).limit(per_page).all()
     pages = (total + per_page - 1) // per_page if total > 0 else 1
     
-    return {
-        "items": locations,
-        "total": total,
-        "page": page,
-        "per_page": per_page,
-        "pages": pages
-    }
+    # Response 변환
+    items = []
+    for loc in locations:
+        loc_dict = {
+            "id": loc.id,
+            "port_name": loc.port_name,
+            "process_id": loc.process_id,
+            "location_type": loc.location_type,
+            "description": loc.description,
+            "is_active": loc.is_active,
+            "created_at": getattr(loc, "created_at", None),
+            # "updated_at": getattr(loc, "updated_at", None), # TimestampSchema에 있다면
+            
+            "process_name": loc.process.process_name if loc.process else None,
+            "process_code": loc.process.process_code if loc.process else None
+        }
+        items.append(ReaderLocationResponse(**loc_dict))
+
+    return ReaderLocationListResponse(
+        items=items,
+        total=total,
+        page=page,
+        per_page=per_page,
+        pages=pages
+    )
 
 
 @router.get("/{id}", response_model=ReaderLocationResponse)

@@ -38,3 +38,13 @@ def test_inventory_stock(client: TestClient):
     assert response.status_code == 200
     data = response.json()
     assert "stock_items" in data
+
+
+def test_recent_activities(client: TestClient):
+    """최근 활동 이력 조회 테스트"""
+    response = client.get("/api/v1/dashboard/recent-activities")
+    assert response.status_code == 200
+    data = response.json()
+    assert "activities" in data
+    assert "total" in data
+    assert isinstance(data["activities"], list)

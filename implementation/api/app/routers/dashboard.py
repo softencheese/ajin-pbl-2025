@@ -238,3 +238,38 @@ async def get_stock_inventory(
         stock_items.append(StockItem(**data))
     
     return StockInventoryResponse(stock_items=stock_items)
+
+
+@router.get("/recent-activities")
+async def get_recent_activities(
+    limit: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("dashboard", "read"))
+):
+    """
+    최근 활동 이력 (권한: dashboard:read)
+    
+    최근 팔레트 상태 변경 이력을 반환합니다.
+    """
+    histories = db.query(PalletHistory).order_by(
+        PalletHistory.scan_time.desc()
+    ).limit(limit).all()
+    
+    activities = []
+    for h in histories:
+        pallet = db.query(Pallet).filter(Pallet.id == h.pallet_id).first()
+        process = db.query(Process).filter(Process.id == h.process_id).first() if h.process_id else None
+        
+        activities.append({
+            "id": h.id,
+            "pallet_no": pallet.pallet_no if pallet else None,
+            "event_type": h.event_type,
+            "previous_status": h.previous_status,
+            "new_status": h.new_status,
+            "process_name": process.process_name if process else None,
+            "scan_time": h.scan_time,
+            "worker_name": h.worker_name,
+            "notes": h.notes
+        })
+    
+    return {"activities": activities, "total": len(activities)}

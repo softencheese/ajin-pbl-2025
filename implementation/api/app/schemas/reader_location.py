@@ -27,5 +27,16 @@ class ReaderLocationResponse(ReaderLocationBase, TimestampSchema):
     id: int
     
     # 공정 정보 포함
+    display_name: Optional[str] = None
+    
+    # 공정 정보 포함
     process_name: Optional[str] = None
     process_code: Optional[str] = None
+
+
+class ReaderLocationListResponse(BaseModel):
+    items: list[ReaderLocationResponse]
+    total: int
+    page: int
+    per_page: int
+    pages: int

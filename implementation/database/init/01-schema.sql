@@ -169,6 +169,29 @@ INSERT INTO processes (process_code, process_name, process_order, production_lin
 ('SHIPPING', '출하', 4, '출하장');
 
 -- ============================================
+-- 사용자 테이블 (추가)
+-- ============================================
+
+-- 8. 사용자 관리
+CREATE TABLE IF NOT EXISTS users (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(50) UNIQUE NOT NULL COMMENT '사용자 아이디',
+    hashed_password VARCHAR(255) NOT NULL COMMENT '해싱된 비밀번호',
+    full_name VARCHAR(100) COMMENT '사용자 실명',
+    role VARCHAR(20) DEFAULT 'USER' COMMENT '권한 (ADMIN, USER)',
+    is_active BOOLEAN DEFAULT TRUE,
+    permissions JSON COMMENT '사용자 세부 권한 (JSON)',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_username (username)
+) COMMENT '사용자 관리';
+
+-- 기본 Admin 사용자 생성
+-- 비밀번호: admin123 (bcrypt 해싱됨)
+INSERT INTO users (username, hashed_password, full_name, role, is_active, permissions) VALUES
+('admin', '$2b$12$13zfEGam1CcnGzYS6cfGVe30h8eAbWrwv.JirjRp1tzem9Y.aVavi', 'Administrator', 'ADMIN', TRUE, '{}');
+
+-- ============================================
 -- 뷰 (Views)
 -- ============================================
 

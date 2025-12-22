@@ -9,7 +9,8 @@ from app.schemas.process import (
     ProcessCreate,
     ProcessUpdate,
     ProcessResponse,
-    ProcessOrderUpdate
+    ProcessOrderUpdate,
+    ProcessListResponse
 )
 
 from app.core.permissions import PermissionChecker
@@ -18,7 +19,7 @@ from app.models.user import User
 router = APIRouter()
 
 
-@router.get("")
+@router.get("", response_model=ProcessListResponse)
 async def list_processes(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
@@ -32,13 +33,13 @@ async def list_processes(
     processes = query.offset((page - 1) * per_page).limit(per_page).all()
     pages = (total + per_page - 1) // per_page if total > 0 else 1
     
-    return {
-        "items": processes,
-        "total": total,
-        "page": page,
-        "per_page": per_page,
-        "pages": pages
-    }
+    return ProcessListResponse(
+        items=[ProcessResponse.model_validate(p) for p in processes],
+        total=total,
+        page=page,
+        per_page=per_page,
+        pages=pages
+    )
 
 
 @router.get("/{id}", response_model=ProcessResponse)

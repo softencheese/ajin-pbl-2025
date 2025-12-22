@@ -31,3 +31,11 @@ class ProcessResponse(ProcessBase, TimestampSchema):
     id: int
     allowed_item_types: Optional[str] = None
     is_first_process: Optional[bool] = None
+
+
+class ProcessListResponse(BaseModel):
+    items: list[ProcessResponse]
+    total: int
+    page: int
+    per_page: int
+    pages: int
