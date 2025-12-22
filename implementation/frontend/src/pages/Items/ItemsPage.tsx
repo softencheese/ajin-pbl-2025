@@ -111,23 +111,31 @@ export function ItemsPage() {
   };
 
   const handleSubmit = (values: any) => {
+    // Extract values from tags mode (arrays) or use as-is if strings
+    const extractValue = (val: any) => {
+      if (Array.isArray(val)) {
+        return val.length > 0 ? val[0] : undefined;
+      }
+      return val || undefined;
+    };
+
     const payload: ItemCreateRequest = {
-      item_code: values.item_code,
-      item_name: values.item_name,
+      item_code: extractValue(values.item_code),
+      item_name: extractValue(values.item_name),
       item_type: values.item_type,
       unit: values.unit || 'EA',
-      spec: values.spec || undefined,
-      vehicle_model: values.vehicle_model || undefined,
+      spec: extractValue(values.spec),
+      vehicle_model: extractValue(values.vehicle_model),
       default_supplier: values.default_supplier || undefined,
     };
 
     if (editingItem) {
       const updatePayload: ItemUpdateRequest = {
-        item_name: values.item_name,
+        item_name: extractValue(values.item_name),
         item_type: values.item_type,
         unit: values.unit,
-        spec: values.spec || undefined,
-        vehicle_model: values.vehicle_model || undefined,
+        spec: extractValue(values.spec),
+        vehicle_model: extractValue(values.vehicle_model),
         default_supplier: values.default_supplier || undefined,
         is_active: values.is_active !== undefined ? values.is_active : true,
       };
@@ -135,6 +143,70 @@ export function ItemsPage() {
     } else {
       createMutation.mutate(payload);
     }
+  };
+
+  // Get unique item codes from existing items
+  const getItemCodeOptions = () => {
+    if (!itemsData?.items) return [];
+
+    const itemCodes = itemsData.items
+      .map(item => item.item_code)
+      .filter((code): code is string => code != null && code !== '');
+
+    const uniqueCodes = Array.from(new Set(itemCodes));
+
+    return uniqueCodes.map(code => ({
+      value: code,
+      label: code,
+    }));
+  };
+
+  // Get unique item names from existing items
+  const getItemNameOptions = () => {
+    if (!itemsData?.items) return [];
+
+    const itemNames = itemsData.items
+      .map(item => item.item_name)
+      .filter((name): name is string => name != null && name !== '');
+
+    const uniqueNames = Array.from(new Set(itemNames));
+
+    return uniqueNames.map(name => ({
+      value: name,
+      label: name,
+    }));
+  };
+
+  // Get unique specs from existing items
+  const getSpecOptions = () => {
+    if (!itemsData?.items) return [];
+
+    const specs = itemsData.items
+      .map(item => item.spec)
+      .filter((spec): spec is string => spec != null && spec !== '');
+
+    const uniqueSpecs = Array.from(new Set(specs));
+
+    return uniqueSpecs.map(spec => ({
+      value: spec,
+      label: spec,
+    }));
+  };
+
+  // Get unique vehicle models from existing items
+  const getVehicleModelOptions = () => {
+    if (!itemsData?.items) return [];
+
+    const models = itemsData.items
+      .map(item => item.vehicle_model)
+      .filter((model): model is string => model != null && model !== '');
+
+    const uniqueModels = Array.from(new Set(models));
+
+    return uniqueModels.map(model => ({
+      value: model,
+      label: model,
+    }));
   };
 
   const handleExportToCSV = () => {
@@ -385,7 +457,17 @@ export function ItemsPage() {
             label="품목코드"
             rules={[{ required: true, message: '품목코드를 입력하세요' }]}
           >
-            <Input placeholder="예: STEEL-SPCC-1.6T" disabled={!!editingItem} />
+            <Select
+              placeholder="선택 또는 입력하세요"
+              showSearch
+              mode="tags"
+              maxTagCount={1}
+              disabled={!!editingItem}
+              filterOption={(input, option) =>
+                (option?.label?.toString() || '').toLowerCase().includes(input.toLowerCase())
+              }
+              options={getItemCodeOptions()}
+            />
           </Form.Item>
 
           <Form.Item
@@ -393,7 +475,16 @@ export function ItemsPage() {
             label="품목명"
             rules={[{ required: true, message: '품목명을 입력하세요' }]}
           >
-            <Input placeholder="예: SPCC 냉연강판 1.6T" />
+            <Select
+              placeholder="선택 또는 입력하세요"
+              showSearch
+              mode="tags"
+              maxTagCount={1}
+              filterOption={(input, option) =>
+                (option?.label?.toString() || '').toLowerCase().includes(input.toLowerCase())
+              }
+              options={getItemNameOptions()}
+            />
           </Form.Item>
 
           <Form.Item
@@ -420,11 +511,29 @@ export function ItemsPage() {
           </Form.Item>
 
           <Form.Item name="spec" label="규격">
-            <Input placeholder="예: LH, 1.6T, RED 등" />
+            <Select
+              placeholder="선택 또는 입력하세요"
+              showSearch
+              mode="tags"
+              maxTagCount={1}
+              filterOption={(input, option) =>
+                (option?.label?.toString() || '').toLowerCase().includes(input.toLowerCase())
+              }
+              options={getSpecOptions()}
+            />
           </Form.Item>
 
           <Form.Item name="vehicle_model" label="적용 차종">
-            <Input placeholder="예: JX1, NE, K9 등" />
+            <Select
+              placeholder="선택 또는 입력하세요"
+              showSearch
+              mode="tags"
+              maxTagCount={1}
+              filterOption={(input, option) =>
+                (option?.label?.toString() || '').toLowerCase().includes(input.toLowerCase())
+              }
+              options={getVehicleModelOptions()}
+            />
           </Form.Item>
 
           <Form.Item

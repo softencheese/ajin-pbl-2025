@@ -139,6 +139,22 @@ export function LotPalletsPage() {
     return itemsData.items.filter(item => allowedTypes.includes(item.item_type));
   };
 
+  // Get unique suppliers from items
+  const getSupplierOptions = () => {
+    if (!itemsData?.items) return [];
+
+    const suppliers = itemsData.items
+      .map(item => item.default_supplier)
+      .filter((supplier): supplier is string => supplier != null && supplier !== '');
+
+    const uniqueSuppliers = Array.from(new Set(suppliers));
+
+    return uniqueSuppliers.map(supplier => ({
+      value: supplier,
+      label: supplier,
+    }));
+  };
+
   // Calculate palette count when quantity or capacity changes
   const calculatePaletteCount = (quantity: number, capacity: number) => {
     if (processType === 'RAW') {
@@ -200,7 +216,7 @@ export function LotPalletsPage() {
         initialQuantity: values.quantity,
         status: 'STOCK',
         productionDate: values.productionDate.format('YYYY-MM-DD'),
-        supplier: values.supplier,
+        supplier: Array.isArray(values.supplier) ? values.supplier[0] : values.supplier,
         barcode: values.barcode,
         notes: values.notes,
         palettes: [],
@@ -595,29 +611,35 @@ export function LotPalletsPage() {
                     <Select
                       placeholder="선택하세요"
                       showSearch
-                      optionFilterProp="children"
                       filterOption={(input, option) =>
-                        (option?.children as string)?.toLowerCase().includes(input.toLowerCase())
+                        (option?.label?.toString() || '').toLowerCase().includes(input.toLowerCase())
                       }
                       onChange={(value) => {
                         // Auto-fill supplier when item is selected
                         const selectedItem = itemsData?.items.find(item => item.item_code === value);
                         if (selectedItem?.default_supplier) {
-                          form.setFieldsValue({ supplier: selectedItem.default_supplier });
+                          form.setFieldsValue({ supplier: [selectedItem.default_supplier] });
                         }
                       }}
-                    >
-                      {getFilteredItems().map(item => (
-                        <Option key={item.id} value={item.item_code}>
-                          {item.item_code} - {item.item_name}
-                        </Option>
-                      ))}
-                    </Select>
+                      options={getFilteredItems().map(item => ({
+                        value: item.item_code,
+                        label: `${item.item_code} - ${item.item_name}`,
+                      }))}
+                    />
                   </Form.Item>
                 </Col>
                 <Col span={8}>
                   <Form.Item name="supplier" label="공급사" rules={[{ required: true }]}>
-                    <Input placeholder="예: 포스코" />
+                    <Select
+                      placeholder="선택 또는 입력하세요"
+                      showSearch
+                      mode="tags"
+                      maxTagCount={1}
+                      filterOption={(input, option) =>
+                        (option?.label?.toString() || '').toLowerCase().includes(input.toLowerCase())
+                      }
+                      options={getSupplierOptions()}
+                    />
                   </Form.Item>
                 </Col>
               </>
@@ -628,17 +650,14 @@ export function LotPalletsPage() {
                     <Select
                       placeholder="선택하세요"
                       showSearch
-                      optionFilterProp="children"
                       filterOption={(input, option) =>
-                        (option?.children as string)?.toLowerCase().includes(input.toLowerCase())
+                        (option?.label?.toString() || '').toLowerCase().includes(input.toLowerCase())
                       }
-                    >
-                      {getFilteredItems().map(item => (
-                        <Option key={item.id} value={item.item_code}>
-                          {item.item_code} - {item.item_name}
-                        </Option>
-                      ))}
-                    </Select>
+                      options={getFilteredItems().map(item => ({
+                        value: item.item_code,
+                        label: `${item.item_code} - ${item.item_name}`,
+                      }))}
+                    />
                   </Form.Item>
                 </Col>
                 <Col span={4}>
