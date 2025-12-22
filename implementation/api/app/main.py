@@ -9,6 +9,8 @@ from app.core.logging import setup_logging
 from app.middlewares.logging import LoggingMiddleware
 from app.routers import (
     rfid_router, 
+    auth_router,
+    users_router,
     pallets_router, 
     trace_router,
     items_router,
@@ -16,8 +18,6 @@ from app.routers import (
     reader_locations_router,
     lots_router,
     lot_genealogy_router,
-    # rfid_tags_router 삭제됨 - pallets로 통합
-    # rfid_tags_router 삭제됨 - pallets로 통합
     dashboard_router
 )
 from app.core.config import settings
@@ -58,6 +58,8 @@ app.add_middleware(LoggingMiddleware)
 app.mount("/socket.io", sio_app)
 
 # 라우터 등록
+app.include_router(auth_router, prefix="/api/v1/auth", tags=["Auth"])
+app.include_router(users_router, prefix="/api/v1/users", tags=["Users"])
 app.include_router(rfid_router, prefix="/api/v1/rfid", tags=["RFID"])
 app.include_router(pallets_router, prefix="/api/v1/pallets", tags=["Pallets"])
 app.include_router(trace_router, prefix="/api/v1/trace", tags=["Traceability"])
@@ -66,7 +68,6 @@ app.include_router(processes_router, prefix="/api/v1/processes", tags=["Processe
 app.include_router(reader_locations_router, prefix="/api/v1/reader-locations", tags=["Reader Locations"])
 app.include_router(lots_router, prefix="/api/v1/lots", tags=["Lots"])
 app.include_router(lot_genealogy_router, prefix="/api/v1/lot-genealogy", tags=["Lot Genealogy"])
-# rfid_tags_router 삭제됨 - pallets로 통합 (pallets.tag_status 사용)
 app.include_router(dashboard_router, prefix="/api/v1/dashboard", tags=["Dashboard"])
 
 @app.get("/")

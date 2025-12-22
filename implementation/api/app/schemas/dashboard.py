@@ -34,7 +34,7 @@ class ReaderStatus(BaseSchema):
     id: int
     port_name: str
     process_name: Optional[str] = None
-    location_type: str
+    location_type: Optional[str] = None
     status: str = Field(..., description="CONNECTED, DISCONNECTED, ERROR")
     last_scan_time: Optional[datetime] = None
     is_active: bool = True
