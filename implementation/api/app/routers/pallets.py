@@ -33,24 +33,26 @@ def _build_pallet_response(pallet: Pallet, db: Session) -> dict:
         "status": pallet.status,
         "tag_status": pallet.tag_status,
         "quantity": pallet.quantity,
+        "lot_id": pallet.lot_id,  # LOT ID 추가
+        "current_process_id": pallet.current_process_id,  # 공정 ID 추가
         "created_at": pallet.created_at,
         "updated_at": getattr(pallet, 'updated_at', None),
+        "tag_registered_at": pallet.tag_registered_at,
     }
-    
+
     if pallet.lot_id:
         lot = db.query(Lot).filter(Lot.id == pallet.lot_id).first()
         if lot:
             item = db.query(Item).filter(Item.id == lot.item_id).first()
-            # response_data["lot_number"] = lot.lot_number (Schema expects lot_number at root)
             response_data["lot_number"] = lot.lot_number
             if item:
                 response_data["item_code"] = item.item_code
                 response_data["item_name"] = item.item_name
                 response_data["item_type"] = item.item_type
-        
+
     if pallet.current_process:
         response_data["current_process_name"] = pallet.current_process.process_name
-        
+
     return response_data
 
 
@@ -95,6 +97,7 @@ async def list_pallets(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     status: Optional[str] = None,
+    lot_id: Optional[int] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(PermissionChecker("pallets", "read"))
 ):
@@ -102,12 +105,14 @@ async def list_pallets(
     query = db.query(Pallet)
     if status:
         query = query.filter(Pallet.status == status)
-    
+    if lot_id:
+        query = query.filter(Pallet.lot_id == lot_id)
+
     total = query.count()
     items = query.order_by(Pallet.id.desc()).offset((page - 1) * per_page).limit(per_page).all()
-    
+
     responses = [_build_pallet_response(p, db) for p in items]
-    
+
     return {
         "items": responses,
         "total": total,
