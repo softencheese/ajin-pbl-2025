@@ -1,6 +1,36 @@
 -- 품목(Items) 샘플 데이터
 -- 원자재(RAW), 재공품(WIP), 완제품(PRODUCT)
 
+-- Character set 설정 (한글 깨짐 방지)
+SET NAMES utf8mb4;
+SET CHARACTER_SET_CLIENT = utf8mb4;
+SET CHARACTER_SET_CONNECTION = utf8mb4;
+SET CHARACTER_SET_RESULTS = utf8mb4;
+
+-- 기존 샘플 데이터 삭제 (중복 방지)
+DELETE FROM items WHERE item_code LIKE 'STEEL-%'
+   OR item_code LIKE 'AL-%'
+   OR item_code LIKE 'STS-%'
+   OR item_code LIKE 'PP-%'
+   OR item_code LIKE 'ABS-%'
+   OR item_code LIKE '71412-%'
+   OR item_code LIKE '71413-%'
+   OR item_code LIKE '71420-%'
+   OR item_code LIKE '71421-%'
+   OR item_code LIKE '71430-%'
+   OR item_code LIKE '71431-%'
+   OR item_code LIKE '71440-%'
+   OR item_code LIKE '76211-%'
+   OR item_code LIKE '76212-%'
+   OR item_code LIKE '77211-%'
+   OR item_code LIKE '77212-%'
+   OR item_code LIKE '77300-%'
+   OR item_code LIKE '67110-%'
+   OR item_code LIKE '76801-%'
+   OR item_code LIKE '76802-%'
+   OR item_code LIKE '64710-%'
+   OR item_code LIKE '64720-%';
+
 -- ============================================
 -- 원자재 (RAW)
 -- ============================================
