@@ -34,40 +34,42 @@ export function MainLayout() {
 
   // Menu items using the new items API
   const menuItems: MenuProps['items'] = [
-    {
-      key: 'dashboard',
-      icon: <DashboardOutlined />,
-      label: <Link to="/">대시보드</Link>,
-    },
-    {
-      key: 'process-mapping',
-      icon: <SettingOutlined />,
-      label: <Link to="/process-mapping">공정 배치</Link>,
-    },
+    // 임시 주석처리 (화면 개발시 다시 주석 해제)
+    // {
+    //   key: 'dashboard',
+    //   icon: <DashboardOutlined />,
+    //   label: <Link to="/">대시보드</Link>,
+    // },
+    // {
+    //   key: 'process-mapping',
+    //   icon: <SettingOutlined />,
+    //   label: <Link to="/process-mapping">공정 배치</Link>,
+    // },
     {
       key: 'items',
       icon: <DatabaseOutlined />,
       label: <Link to="/items">품목 관리</Link>,
     },
-    {
-      key: 'master',
-      icon: <DatabaseOutlined />,
-      label: '마스터 데이터',
-      children: [
-        {
-          key: 'materials',
-          label: <Link to="/materials">원자재</Link>,
-        },
-        {
-          key: 'parts',
-          label: <Link to="/parts">품번</Link>,
-        },
-        {
-          key: 'pallets',
-          label: <Link to="/pallets">팔레트</Link>,
-        },
-      ],
-    },
+    // 임시 주석처리 (화면 개발시 다시 주석 해제)
+    // {
+    //   key: 'master',
+    //   icon: <DatabaseOutlined />,
+    //   label: '마스터 데이터',
+    //   children: [
+    //     {
+    //       key: 'materials',
+    //       label: <Link to="/materials">원자재</Link>,
+    //     },
+    //     {
+    //       key: 'parts',
+    //       label: <Link to="/parts">품번</Link>,
+    //     },
+    //     {
+    //       key: 'pallets',
+    //       label: <Link to="/pallets">팔레트</Link>,
+    //     },
+    //   ],
+    // },
     {
       key: 'lots',
       icon: <DatabaseOutlined />,
