@@ -15,26 +15,24 @@ import {
   Card,
   Row,
   Col,
-  Collapse,
   Progress,
 } from 'antd';
 import {
   PlusOutlined,
   TagsOutlined,
-  BarcodeScannerOutlined,
-  ExpandOutlined,
-  ShrinkOutlined,
   SearchOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
-import dayjs, { Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
 import { useQuery } from '@tanstack/react-query';
 import { itemApi } from '../../api/items';
+import { lotApi } from '../../api/lots';
+import { palletApi } from '../../api/pallets';
 import type { Item } from '../../types/item';
+import type { Pallet } from '../../types/pallet';
 
 const { Option } = Select;
 const { TextArea } = Input;
-const { Panel } = Collapse;
 
 interface Palette {
   id: string;
@@ -89,6 +87,101 @@ export function LotPalletsPage() {
     queryFn: () => itemApi.getAll({ is_active: true }),
   });
 
+  // Fetch lots from API
+  const { data: lotsApiData, refetch: refetchLots } = useQuery({
+    queryKey: ['lots'],
+    queryFn: () => lotApi.getAll({ per_page: 100 }),
+  });
+
+  // Fetch pallets from API
+  const { data: palletsApiData, refetch: refetchPallets } = useQuery({
+    queryKey: ['pallets'],
+    queryFn: () => palletApi.getAll({ per_page: 100 }),
+  });
+
+  // Transform API data to local format
+  useEffect(() => {
+    if (lotsApiData?.items && palletsApiData?.items) {
+      console.log('🔍 Transforming LOT data...');
+      console.log('Lots:', lotsApiData.items.length, 'Pallets:', palletsApiData.items.length);
+
+      // Debug: Show sample lot IDs and pallet lot_ids
+      if (lotsApiData.items.length > 0) {
+        console.log('📋 Sample LOT IDs:', lotsApiData.items.slice(0, 3).map((l: any) => ({ id: l.id, lot_number: l.lot_number })));
+      }
+      if (palletsApiData.items.length > 0) {
+        console.log('📦 Sample Pallet lot_ids:', palletsApiData.items.slice(0, 5).map((p: Pallet) => ({ pallet_no: p.pallet_no, lot_id: p.lot_id })));
+      }
+
+      const transformedLots: LotData[] = lotsApiData.items.map((lot: any) => {
+        // Find pallets for this lot
+        const lotPallets = palletsApiData.items.filter((p: Pallet) => {
+          const matches = p.lot_id === lot.id;
+          if (matches) {
+            console.log(`  ✅ Pallet ${p.pallet_no} matches LOT ${lot.lot_number} (lot_id: ${p.lot_id} === ${lot.id})`);
+          }
+          return matches;
+        });
+        
+        if (lotPallets.length > 0) {
+          console.log(`LOT ${lot.lot_number} (ID: ${lot.id}) has ${lotPallets.length} pallets`);
+          console.log(`  Pallet details for LOT ${lot.lot_number}:`, lotPallets.map((p: Pallet) => ({
+            pallet_no: p.pallet_no,
+            quantity: p.quantity,
+            rfid_epc: p.rfid_epc,
+            status: p.status,
+            lot_id: p.lot_id
+          })));
+        } else {
+          // Only log for non-RAW lots
+          if (lot.item?.item_type !== 'RAW') {
+            console.log(`⚠️ LOT ${lot.lot_number} (ID: ${lot.id}, Type: ${lot.item?.item_type}) has 0 pallets`);
+          }
+        }
+
+        // Sort pallets by pallet_no or id for consistent ordering
+        lotPallets.sort((a, b) => (a.pallet_no || '').localeCompare(b.pallet_no || ''));
+
+        const palettes: Palette[] = lotPallets.map((p: Pallet, index: number) => ({
+          id: p.pallet_no,
+          paletteNumber: index + 1,
+          quantity: p.quantity || 0,
+          rfidEpc: p.rfid_epc || null,
+          status: p.status || 'Generated',
+          rfidRegisteredAt: p.tag_registered_at,
+        }));
+
+        return {
+          lotNumber: lot.lot_number,
+          itemCode: lot.item?.item_code || '',
+          itemName: lot.item?.item_name || '',
+          itemType: lot.item?.item_type || 'RAW',
+          quantity: lot.quantity,
+          initialQuantity: lot.initial_quantity,
+          status: lot.status,
+          productionDate: lot.production_date,
+          barcode: lot.barcode || lot.lot_number,
+          palettes,
+          paletteCount: palettes.length,
+          rfidRegistered: palettes.filter(p => p.rfidEpc && !p.rfidEpc.startsWith('TEMP-')).length,
+          processName: lot.process_name,
+          workerName: lot.worker_name,
+          supplier: lot.supplier,
+          notes: lot.notes,
+        };
+      });
+
+      console.log('✅ Transformed lots:', transformedLots);
+      console.log('📊 Summary:', {
+        totalLots: transformedLots.length,
+        lotsWithPallets: transformedLots.filter(l => l.paletteCount > 0).length,
+        totalPallets: transformedLots.reduce((sum, l) => sum + l.paletteCount, 0)
+      });
+      setLotData(transformedLots);
+    }
+  }, [lotsApiData, palletsApiData]);
+
+
   // Modals
   const [paletteDetailModal, setPaletteDetailModal] = useState<{
     visible: boolean;
@@ -114,14 +207,14 @@ export function LotPalletsPage() {
   const [filterItemCode, setFilterItemCode] = useState<string>('');
   const [filterDate, setFilterDate] = useState<string>('');
 
-  // LOT counters
-  const [lotCounters, setLotCounters] = useState({
+  // LOT counters (not used for now - generated by backend)
+  const lotCounters = {
     IN: 1,
     SH: 1,
     PR: 1,
     AS: 1,
-  });
-  const [barcodeCounter, setBarcodeCounter] = useState(1);
+  };
+  const barcodeCounter = 1;
 
   // Get filtered items based on process type
   const getFilteredItems = (): Item[] => {
@@ -153,6 +246,23 @@ export function LotPalletsPage() {
       value: supplier,
       label: supplier,
     }));
+  };
+
+  // Get available input lots based on current process type
+  const getAvailableInputLots = () => {
+    if (!lotsApiData?.items) return [];
+
+    // Filter mapping: process type -> required item type and process
+    const inputLotFilters: Record<string, (lot: any) => boolean> = {
+      '2': (lot) => lot.item?.item_type === 'RAW' && lot.quantity > 0, // 샤링: 원자재만
+      '3': (lot) => lot.item?.item_type === 'WIP' && lot.process_id === 2 && lot.quantity > 0, // 프레스: 샤링 공정 WIP만
+      '4': (lot) => lot.item?.item_type === 'WIP' && lot.process_id === 3 && lot.quantity > 0, // 조립: 프레스 공정 WIP만
+    };
+
+    const filterFn = inputLotFilters[processType];
+    if (!filterFn) return [];
+
+    return lotsApiData.items.filter(filterFn);
   };
 
   // Calculate palette count when quantity or capacity changes
@@ -202,81 +312,88 @@ export function LotPalletsPage() {
   };
 
   // Create LOT
-  const handleCreateLot = (values: any) => {
+  const handleCreateLot = async (values: any) => {
     const isRaw = processType === 'RAW';
 
-    if (isRaw) {
-      // Create raw material LOT
-      const lot: LotData = {
-        lotNumber: values.lotNumber,
-        itemCode: values.rawItemId,
-        itemName: 'Raw Material', // In real app, get from selection
-        itemType: 'RAW',
-        quantity: values.quantity,
-        initialQuantity: values.quantity,
-        status: 'STOCK',
-        productionDate: values.productionDate.format('YYYY-MM-DD'),
-        supplier: Array.isArray(values.supplier) ? values.supplier[0] : values.supplier,
-        barcode: values.barcode,
-        notes: values.notes,
-        palettes: [],
-        paletteCount: 0,
-        rfidRegistered: 0,
-      };
+    try {
+      if (isRaw) {
+        // Create raw material LOT via API
+        const selectedItem = itemsData?.items.find(item => item.item_code === values.rawItemId);
 
-      setLotData([...lotData, lot]);
-      setLotCounters({ ...lotCounters, IN: lotCounters.IN + 1 });
-      message.success(`원자재 LOT ${lot.lotNumber} 등록 완료!`);
-    } else {
-      // Create production LOT with palettes
-      const palettes: Palette[] = [];
-      const capacity = values.paletteCapacity;
-      const quantity = values.quantity;
-      const count = Math.ceil(quantity / capacity);
+        if (!selectedItem) {
+          throw new Error('품목을 선택해주세요');
+        }
 
-      for (let i = 1; i <= count; i++) {
-        const paletteQuantity = i === count
-          ? quantity - (capacity * (count - 1))
-          : capacity;
-
-        palettes.push({
-          id: `${values.lotNumber}-PLT-${String(i).padStart(3, '0')}`,
-          paletteNumber: i,
-          quantity: paletteQuantity,
-          rfidEpc: null,
-          status: 'Generated',
+        const createdLot = await lotApi.receiving({
+          item_id: selectedItem.id,
+          quantity: values.quantity,
+          production_date: values.productionDate.format('YYYY-MM-DD'),
+          supplier: Array.isArray(values.supplier) ? values.supplier[0] : values.supplier,
+          notes: values.notes,
         });
+
+        console.log('✅ Raw material LOT created:', createdLot);
+
+        // Refresh LOT data
+        await refetchLots();
+        
+        message.success(`원자재 LOT ${createdLot.lot_number} 등록 완료!`);
+      } else {
+        // Create production LOT via API
+        const selectedItem = itemsData?.items.find(item => item.item_code === values.prodItemId);
+
+        if (!selectedItem) {
+          throw new Error('품목을 선택해주세요');
+        }
+
+        const processIdMap: Record<string, number> = {
+          '2': 2, // SHEARING
+          '3': 3, // PRESS
+          '4': 4, // ASSEMBLY
+        };
+
+        const requestData = {
+          item_id: selectedItem.id,
+          process_id: processIdMap[processType],
+          quantity: values.quantity,
+          production_date: values.productionDate.format('YYYY-MM-DD'),
+          worker_name: values.worker,
+          notes: values.notes,
+          palette_capacity: values.paletteCapacity,
+          qc_passed: false,
+          input_lots: values.inputLot ? [{
+            lot_id: parseInt(values.inputLot),
+            quantity_consumed: values.inputQuantity || 0,
+          }] : undefined,
+        };
+
+        console.log('🚀 Creating LOT with data:', requestData);
+
+        const createdLot = await lotApi.create(requestData);
+
+        console.log('✅ LOT created:', createdLot);
+
+        // Wait a bit for the database transaction to complete and pallets to be created
+        // This ensures the pallets are committed before we refetch
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Refresh data - wait for both to complete
+        console.log('🔄 Refreshing LOT and pallet data...');
+        await Promise.all([refetchLots(), refetchPallets()]);
+        
+        console.log('✅ Data refresh complete');
+        
+        message.success(`생산 LOT ${createdLot.lot_number} 생성 완료! 팔레트 ${Math.ceil(values.quantity / values.paletteCapacity)}개 생성됨`);
       }
 
-      const lot: LotData = {
-        lotNumber: values.lotNumber,
-        itemCode: values.prodItemId,
-        itemName: 'Production Item', // In real app, get from selection
-        itemType: processType === '4' ? 'PRODUCT' : 'WIP',
-        quantity: values.quantity,
-        initialQuantity: values.quantity,
-        status: 'STOCK',
-        productionDate: values.productionDate.format('YYYY-MM-DD'),
-        processName: ['샤링', '프레스', '조립'][parseInt(processType) - 2],
-        workerName: values.worker,
-        barcode: values.barcode,
-        palettes,
-        paletteCount: count,
-        rfidRegistered: 0,
-        inputLot: values.inputLot,
-        inputQuantity: values.inputQuantity,
-        notes: values.notes,
-      };
-
-      setLotData([...lotData, lot]);
-      const prefix = values.lotNumber.split('-')[0] as keyof typeof lotCounters;
-      setLotCounters({ ...lotCounters, [prefix]: lotCounters[prefix] + 1 });
-      message.success(`생산 LOT ${lot.lotNumber} 생성 완료! 팔레트 ${count}개 자동 생성됨`);
+      // Reset form
+      form.resetFields();
+      handleProcessTypeChange('RAW');
+    } catch (error: any) {
+      console.error('❌ LOT 생성 오류:', error);
+      const errorMessage = error.response?.data?.detail || error.message || 'LOT 생성 중 오류가 발생했습니다.';
+      message.error(errorMessage);
     }
-
-    setBarcodeCounter(barcodeCounter + 1);
-    form.resetFields();
-    handleProcessTypeChange('RAW');
   };
 
   // Register RFID
@@ -478,16 +595,16 @@ export function LotPalletsPage() {
     },
   ];
 
-  // Palette table columns
-  const paletteColumns: ColumnsType<Palette> = [
+  // Palette table columns generator
+  const getPaletteColumns = (lot: LotData): ColumnsType<Palette> => [
     {
       title: '팔레트 ID',
       dataIndex: 'id',
       key: 'id',
-      render: (text: string, record: Palette, index: number, lot?: LotData) => (
+      render: (text: string, record: Palette) => (
         <Button
           type="link"
-          onClick={() => setPaletteDetailModal({ visible: true, lot: lot!, palette: record })}
+          onClick={() => setPaletteDetailModal({ visible: true, lot, palette: record })}
         >
           {text}
         </Button>
@@ -517,14 +634,14 @@ export function LotPalletsPage() {
     {
       title: '작업',
       key: 'action',
-      render: (_, record: Palette, index: number, lot?: LotData) =>
+      render: (_, record: Palette) =>
         !record.rfidEpc && (
           <Button
             size="small"
             type="primary"
             onClick={() => setRfidModal({
               visible: true,
-              lotNumber: lot!.lotNumber,
+              lotNumber: lot.lotNumber,
               paletteId: record.id
             })}
           >
@@ -544,11 +661,11 @@ export function LotPalletsPage() {
             processType === 'RAW'
               ? '원자재는 팔레트/RFID 추적이 필요 없습니다. LOT만 생성하여 추적성을 시작합니다.'
               : processType === '2'
-              ? '샤링 공정: 재공품(WIP)을 생산합니다. 팔레트가 자동으로 분할되고 RFID 태그를 등록할 수 있습니다.'
+              ? '샤링 공정: 원자재(RAW)를 투입하여 재공품(WIP)을 생산합니다. 투입 LOT는 선택 사항이며, 팔레트가 자동으로 분할됩니다.'
               : processType === '3'
-              ? '프레스 공정: 재공품(WIP)을 생산합니다. 팔레트가 자동으로 분할되고 RFID 태그를 등록할 수 있습니다.'
+              ? '프레스 공정: 샤링품(WIP)을 투입하여 재공품(WIP)을 생산합니다. 투입 LOT는 선택 사항이며, 팔레트가 자동으로 분할됩니다.'
               : processType === '4'
-              ? '조립 공정: 완제품(PRODUCT)을 생산합니다. 팔레트가 자동으로 분할되고 RFID 태그를 등록할 수 있습니다.'
+              ? '조립 공정: 프레스품(WIP)을 투입하여 완제품(PRODUCT)을 생산합니다. 투입 LOT는 선택 사항이며, 팔레트가 자동으로 분할됩니다.'
               : '생산 LOT 생성 시 팔레트가 자동으로 분할되고, RFID 태그를 등록할 수 있습니다.'
           }
           type="info"
@@ -578,18 +695,6 @@ export function LotPalletsPage() {
             </Col>
 
             <Col span={6}>
-              <Form.Item name="lotNumber" label="LOT 번호 (자동 생성)">
-                <Input disabled style={{ backgroundColor: '#d4edda', fontWeight: 600 }} />
-              </Form.Item>
-            </Col>
-
-            <Col span={6}>
-              <Form.Item name="barcode" label="바코드 (자동 생성)">
-                <Input disabled style={{ backgroundColor: '#d4edda', fontWeight: 600 }} />
-              </Form.Item>
-            </Col>
-
-            <Col span={6}>
               <Form.Item name="quantity" label="수량" rules={[{ required: true }]}>
                 <InputNumber
                   min={1}
@@ -601,6 +706,20 @@ export function LotPalletsPage() {
                 />
               </Form.Item>
             </Col>
+
+            <Col span={6}>
+              <Form.Item name="productionDate" label={processType === 'RAW' ? '입고일' : '생산일'} rules={[{ required: true }]}>
+                <DatePicker style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+
+            {processType !== 'RAW' && (
+              <Col span={6}>
+                <Form.Item name="worker" label="작업자" rules={[{ required: true }]}>
+                  <Input placeholder="예: 김철수" />
+                </Form.Item>
+              </Col>
+            )}
           </Row>
 
           <Row gutter={16}>
@@ -677,29 +796,38 @@ export function LotPalletsPage() {
                     <Input value={paletteCount} disabled style={{ backgroundColor: '#d4edda', fontWeight: 600 }} />
                   </Form.Item>
                 </Col>
-                <Col span={8}>
-                  <Form.Item name="worker" label="작업자" rules={[{ required: true }]}>
-                    <Input placeholder="예: 김철수" />
-                  </Form.Item>
-                </Col>
               </>
             )}
-
-            <Col span={8}>
-              <Form.Item name="productionDate" label={processType === 'RAW' ? '입고일' : '생산일'} rules={[{ required: true }]}>
-                <DatePicker style={{ width: '100%' }} />
-              </Form.Item>
-            </Col>
           </Row>
 
           {processType !== 'RAW' && (
             <Row gutter={16}>
               <Col span={12}>
-                <Form.Item name="inputLot" label="투입 원자재/중간품 LOT">
-                  <Select placeholder="선택하세요">
-                    {lotData.filter(l => l.quantity > 0).map(l => (
-                      <Option key={l.lotNumber} value={l.lotNumber}>
-                        {l.lotNumber} - {l.itemCode} ({l.quantity}개 재고)
+                <Form.Item
+                  name="inputLot"
+                  label={
+                    processType === '2' ? '투입 원자재 LOT' :
+                    processType === '3' ? '투입 샤링품 LOT' :
+                    processType === '4' ? '투입 프레스품 LOT' :
+                    '투입 LOT'
+                  }
+                >
+                  <Select
+                    placeholder={
+                      processType === '2' ? '원자재 LOT를 선택하세요' :
+                      processType === '3' ? '샤링품 LOT를 선택하세요' :
+                      processType === '4' ? '프레스품 LOT를 선택하세요' :
+                      '선택하세요'
+                    }
+                    allowClear
+                    showSearch
+                    filterOption={(input, option) =>
+                      (option?.children?.toString() || '').toLowerCase().includes(input.toLowerCase())
+                    }
+                  >
+                    {getAvailableInputLots().map((lot: any) => (
+                      <Option key={lot.id} value={lot.id}>
+                        {lot.lot_number} - {lot.item?.item_code} ({lot.quantity}개 재고)
                       </Option>
                     ))}
                   </Select>
@@ -796,13 +924,7 @@ export function LotPalletsPage() {
           expandedRowRender: (record) => (
             <Table
               dataSource={record.palettes}
-              columns={paletteColumns.map(col => ({
-                ...col,
-                render: col.render
-                  ? (text: any, palette: Palette, index: number) =>
-                      col.render!(text, palette, index, record)
-                  : undefined,
-              }))}
+              columns={getPaletteColumns(record)}
               rowKey="id"
               pagination={false}
               size="small"
@@ -1065,7 +1187,7 @@ function BulkRfidRegistration({
               title: '상태',
               key: 'status',
               width: 60,
-              render: (_, record, index) =>
+              render: (_, __, index) =>
                 index < currentIndex ? '✅' : index === currentIndex ? '⏳' : '⏸️',
             },
             { title: 'LOT', dataIndex: 'lotNumber', key: 'lot' },
