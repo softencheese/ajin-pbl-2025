@@ -19,6 +19,7 @@ services:
       - ./implementation/database/init:/docker-entrypoint-initdb.d # 초기화 SQL
     networks:
       - ajin_network
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpassword}" ]
       interval: 10s
@@ -33,7 +34,7 @@ services:
     container_name: ajin_rfid_api
     restart: unless-stopped
     environment:
-      DATABASE_URL: mysql+pymysql://${MYSQL_USER:-ajin_user}:${MYSQL_PASSWORD:-ajin_password}@db:3306/${MYSQL_DATABASE:-ajin_rfid}
+      DATABASE_URL: mysql+pymysql://${MYSQL_USER:-ajin_user}:${MYSQL_PASSWORD:-ajin_password}@db:3306/${MYSQL_DATABASE:-ajin_rfid}?charset=utf8mb4
       API_HOST: 0.0.0.0
       API_PORT: 8000
       CORS_ORIGINS: http://localhost:5173,http://localhost:3000
