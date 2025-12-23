@@ -2,6 +2,12 @@
 -- RFID 기반 팔레트 추적 시스템 데이터베이스 스키마
 -- 정규화 버전 (7개 테이블)
 
+-- Character set 설정 (한글 깨짐 방지)
+SET NAMES utf8mb4;
+SET CHARACTER_SET_CLIENT = utf8mb4;
+SET CHARACTER_SET_CONNECTION = utf8mb4;
+SET CHARACTER_SET_RESULTS = utf8mb4;
+
 -- ============================================
 -- 마스터 테이블 (3개)
 -- ============================================
@@ -159,6 +165,12 @@ CREATE TABLE pallet_histories (
 -- ============================================
 -- 초기 데이터 INSERT
 -- ============================================
+
+-- Character set 재확인 (INSERT 전)
+SET NAMES utf8mb4;
+SET CHARACTER_SET_CLIENT = utf8mb4;
+SET CHARACTER_SET_CONNECTION = utf8mb4;
+SET CHARACTER_SET_RESULTS = utf8mb4;
 
 -- 공정 마스터 데이터
 INSERT INTO processes (process_code, process_name, process_order, production_line) VALUES

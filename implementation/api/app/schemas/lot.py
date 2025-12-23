@@ -30,6 +30,7 @@ class LotCreate(LotBase):
     process_id: int = Field(..., description="공정 ID")
     supplier: Optional[str] = Field(None, description="공급사")
     input_lots: Optional[List["InputLotInfo"]] = Field(None, description="투입 LOT 정보 목록")
+    palette_capacity: Optional[int] = Field(None, description="팔레트당 적재량 (팔레트 자동 생성용)")
 
 
 class InputLotInfo(BaseModel):
