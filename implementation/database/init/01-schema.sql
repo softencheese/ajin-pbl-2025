@@ -2,6 +2,10 @@
 -- RFID 기반 팔레트 추적 시스템 데이터베이스 스키마
 -- 정규화 버전 (7개 테이블)
 
+-- UTF-8 인코딩 설정
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
+
 -- ============================================
 -- 마스터 테이블 (3개)
 -- ============================================
@@ -22,7 +26,7 @@ CREATE TABLE items (
     INDEX idx_item_code (item_code),
     INDEX idx_item_type (item_type),
     INDEX idx_vehicle_model (vehicle_model)
-) COMMENT '통합 품목 마스터 (원자재, 재공품, 완제품)';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT '통합 품목 마스터 (원자재, 재공품, 완제품)';
 
 -- 2. 공정 마스터
 CREATE TABLE processes (
@@ -37,7 +41,7 @@ CREATE TABLE processes (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uk_process_order (process_order),
     INDEX idx_process_code (process_code)
-) COMMENT '공정 마스터';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT '공정 마스터';
 
 -- 3. RFID 리더기 위치 마스터
 CREATE TABLE rfid_reader_locations (
@@ -53,7 +57,7 @@ CREATE TABLE rfid_reader_locations (
     FOREIGN KEY (process_id) REFERENCES processes(id),
     INDEX idx_port_name (port_name),
     INDEX idx_process_location (process_id, location_type)
-) COMMENT 'RFID 리더기 위치 매핑';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'RFID 리더기 위치 매핑';
 
 -- ============================================
 -- LOT 관리 테이블 (2개)
@@ -82,7 +86,7 @@ CREATE TABLE lots (
     INDEX idx_item_id (item_id),
     INDEX idx_production_date (production_date),
     INDEX idx_status (status)
-) COMMENT '통합 LOT 관리 (원자재, 중간품, 완제품 모두 포함)';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT '통합 LOT 관리 (원자재, 중간품, 완제품 모두 포함)';
 
 -- 5. LOT 족보 (투입-산출 관계, 추적성 핵심)
 CREATE TABLE lot_genealogy (
@@ -99,7 +103,7 @@ CREATE TABLE lot_genealogy (
     INDEX idx_input_lot (input_lot_id),
     INDEX idx_output_lot (output_lot_id),
     INDEX idx_process (process_id)
-) COMMENT 'LOT 족보 (투입-산출 관계, 추적성 핵심)';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'LOT 족보 (투입-산출 관계, 추적성 핵심)';
 
 -- ============================================
 -- RFID 추적 테이블 (2개) - rfid_tags를 pallets에 통합
@@ -126,7 +130,7 @@ CREATE TABLE pallets (
     INDEX idx_status (status),
     INDEX idx_tag_status (tag_status),
     INDEX idx_lot (lot_id)
-) COMMENT '팔레트 - RFID 태그 통합 관리 (기존 rfid_tags 흡수)';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT '팔레트 - RFID 태그 통합 관리 (기존 rfid_tags 흡수)';
 
 -- 7. 팔레트 이력 (불변 로그)
 CREATE TABLE pallet_histories (
@@ -152,7 +156,7 @@ CREATE TABLE pallet_histories (
     INDEX idx_lot_id (lot_id),
     INDEX idx_scan_time (scan_time),
     INDEX idx_process_id (process_id)
-) COMMENT '팔레트 상태 변경 이력 (불변 로그)';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT '팔레트 상태 변경 이력 (불변 로그)';
 
 -- (rfid_tags 테이블 삭제됨 - pallets.tag_status로 통합)
 
@@ -184,7 +188,7 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_username (username)
-) COMMENT '사용자 관리';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT '사용자 관리';
 
 -- 기본 Admin 사용자 생성
 -- 비밀번호: admin123 (bcrypt 해싱됨)
@@ -386,3 +390,29 @@ RFID 추적 (2개):
 2. 입고 시 LOT 생성 (lots에 lot_number 자동 생성)
 3. 샤링 투입 시 lot_genealogy에 관계 기록
 */
+
+-- -- 스키마 정의 완료
+
+-- ('SHEARING', '샤링', 1, '400T'),
+-- 샤링 공정 리더기 등록
+INSERT INTO rfid_reader_locations (port_name, process_id, location_type, description) 
+SELECT 'COM00_GEN', id, 'IN', '샤링 공정 - 입고 리더기' FROM processes WHERE process_code = 'SHEARING'
+UNION ALL
+SELECT 'COM00_REG', id, 'OUT', '샤링 공정 - 출고 리더기' FROM processes WHERE process_code = 'SHEARING';
+
+-- 테스트 데이터 삽입
+-- 테스트 품목 생성
+INSERT INTO items (item_code, item_name, item_type, unit) 
+VALUES ('TEST-SHEARING-001', '샤링 테스트 제품', 'WIP', 'EA');
+
+-- LOT 생성 (바코드와 RFID EPC 동일하게)
+INSERT INTO lots (item_id, barcode, lot_number, production_date, quantity, initial_quantity, process_id) 
+SELECT id, '1D886511091080', 'LOT-TEST-001', CURDATE(), 100, 100, 
+       (SELECT id FROM processes WHERE process_code = 'SHEARING')
+FROM items WHERE item_code = 'TEST-SHEARING-001';
+
+-- 팔레트 생성 (RFID EPC 설정)
+INSERT INTO pallets (pallet_no, lot_id, rfid_epc, current_process_id, status) 
+SELECT 'PLT-TEST-001', l.id, '1D886511091080', 
+       (SELECT id FROM processes WHERE process_code = 'SHEARING'), 'Empty'
+FROM lots l WHERE l.lot_number = 'LOT-TEST-001';
