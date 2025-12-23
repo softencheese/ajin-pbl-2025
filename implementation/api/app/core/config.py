@@ -1,7 +1,7 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
-    DATABASE_URL: str = "mysql+pymysql://ajin_user:ajin_password@localhost:3306/ajin_rfid"
+    DATABASE_URL: str = "mysql+pymysql://ajin_user:ajin_password@localhost:3306/ajin_rfid?charset=utf8mb4"
     API_SECRET_KEY: str = "secret"
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000
