@@ -40,11 +40,11 @@ def create_processes(db: Session):
     """공정 마스터 데이터 생성 (5개)"""
     print("\n📦 Creating processes...")
     processes = [
-        {"process_code": "RECEIVING", "process_name": "입고", "process_order": 0, "production_line": "입고장"},
-        {"process_code": "SHEARING", "process_name": "샤링", "process_order": 1, "production_line": "400T"},
-        {"process_code": "PRESS", "process_name": "프레스", "process_order": 2, "production_line": "1500T"},
-        {"process_code": "ASSEMBLY", "process_name": "조립", "process_order": 3, "production_line": "조립라인"},
-        {"process_code": "SHIPPING", "process_name": "출하", "process_order": 4, "production_line": "출하장"},
+        {"process_code": "RECEIVING", "process_name": "입고", "process_order": 0, "production_line": "입고장", "allowed_item_types": "RAW"},
+        {"process_code": "SHEARING", "process_name": "샤링", "process_order": 1, "production_line": "400T", "allowed_item_types": "RAW", "is_first_process": True},
+        {"process_code": "PRESS", "process_name": "프레스", "process_order": 2, "production_line": "1500T", "allowed_item_types": "WIP"},
+        {"process_code": "ASSEMBLY", "process_name": "조립", "process_order": 3, "production_line": "조립라인", "allowed_item_types": "WIP,PRODUCT"},
+        {"process_code": "SHIPPING", "process_name": "출하", "process_order": 4, "production_line": "출하장", "allowed_item_types": "PRODUCT"},
     ]
 
     for p_data in processes:
@@ -168,6 +168,8 @@ def create_reader_locations(db: Session):
         # 출하: IN/OUT
         {"port_name": "SHIPPING-IN", "process_id": shipping.id if shipping else None, "location_type": "IN", "description": "출하장 투입"},
         {"port_name": "SHIPPING-OUT", "process_id": shipping.id if shipping else None, "location_type": "FINISH", "description": "출하장 완료"},
+        # 휴대용 리더기: 재고 확인용 (FIFO 검증, 재고 조회)
+        {"port_name": "HANDHELD-01", "process_id": None, "location_type": None, "description": "휴대용 재고 확인 리더기"},
     ]
 
     for l_data in locations:
