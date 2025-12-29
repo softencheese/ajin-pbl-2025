@@ -32,17 +32,21 @@ export function ItemsPage() {
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [searchText, setSearchText] = useState('');
   const [itemTypeFilter, setItemTypeFilter] = useState<string>('');
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(20);
   const [form] = Form.useForm();
   const queryClient = useQueryClient();
 
   // Fetch items
   const { data: itemsData, isLoading, error } = useQuery({
-    queryKey: ['items', searchText, itemTypeFilter],
+    queryKey: ['items', searchText, itemTypeFilter, page, perPage],
     queryFn: () =>
       itemApi.getAll({
         search: searchText,
         item_type: itemTypeFilter || undefined,
         is_active: true,
+        page: page,
+        per_page: perPage,
       }),
     retry: 1,
   });
@@ -403,14 +407,20 @@ export function ItemsPage() {
           placeholder="품목코드, 품목명으로 검색"
           prefix={<SearchOutlined />}
           value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
+          onChange={(e) => {
+            setSearchText(e.target.value);
+            setPage(1); // Reset to first page on search
+          }}
           style={{ width: 300 }}
           allowClear
         />
         <Select
           placeholder="품목 유형"
           value={itemTypeFilter}
-          onChange={setItemTypeFilter}
+          onChange={(value) => {
+            setItemTypeFilter(value);
+            setPage(1); // Reset to first page on filter change
+          }}
           style={{ width: 150 }}
           allowClear
         >
@@ -432,6 +442,10 @@ export function ItemsPage() {
           total: itemsData?.total || 0,
           showSizeChanger: true,
           showTotal: (total) => `총 ${total}개`,
+          onChange: (page, pageSize) => {
+            setPage(page);
+            setPerPage(pageSize);
+          },
         }}
         scroll={{ x: 1200 }}
       />
