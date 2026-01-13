@@ -25,4 +25,9 @@ export const processApi = {
   async delete(id: number) {
     await apiClient.delete(`/processes/${id}`);
   },
+
+  async getConnectionStatus() {
+    const { data } = await apiClient.get<Record<string, { connected: boolean; active_readers: number; total_readers: number }>>('/processes/connection-status');
+    return data;
+  },
 };

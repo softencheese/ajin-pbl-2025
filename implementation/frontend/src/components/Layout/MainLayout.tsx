@@ -24,6 +24,7 @@ export function MainLayout() {
     if (path.startsWith('/materials')) return 'materials';
     if (path.startsWith('/items')) return 'items';
     if (path.startsWith('/parts')) return 'parts';
+    if (path.startsWith('/processes')) return 'processes';
     if (path.startsWith('/lots/pallets')) return 'lots-pallets';
     if (path.startsWith('/pallets')) return 'pallets';
     if (path.startsWith('/monitoring')) return 'monitoring';
@@ -40,36 +41,16 @@ export function MainLayout() {
     //   icon: <DashboardOutlined />,
     //   label: <Link to="/">대시보드</Link>,
     // },
-    // {
-    //   key: 'process-mapping',
-    //   icon: <SettingOutlined />,
-    //   label: <Link to="/process-mapping">공정 배치</Link>,
-    // },
     {
       key: 'items',
       icon: <DatabaseOutlined />,
       label: <Link to="/items">품목 관리</Link>,
     },
-    // 임시 주석처리 (화면 개발시 다시 주석 해제)
-    // {
-    //   key: 'master',
-    //   icon: <DatabaseOutlined />,
-    //   label: '마스터 데이터',
-    //   children: [
-    //     {
-    //       key: 'materials',
-    //       label: <Link to="/materials">원자재</Link>,
-    //     },
-    //     {
-    //       key: 'parts',
-    //       label: <Link to="/parts">품번</Link>,
-    //     },
-    //     {
-    //       key: 'pallets',
-    //       label: <Link to="/pallets">팔레트</Link>,
-    //     },
-    //   ],
-    // },
+    {
+      key: 'processes',
+      icon: <SettingOutlined />,
+      label: <Link to="/processes">공정 관리</Link>,
+    },
     {
       key: 'lots',
       icon: <DatabaseOutlined />,

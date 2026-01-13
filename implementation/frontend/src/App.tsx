@@ -9,6 +9,7 @@ import { PlaceholderPage } from './pages/PlaceholderPage';
 import { LotPalletsPage } from './pages/LOTs/LotPalletsPage';
 import { LotTrackingPage } from './pages/Traceability/LotTrackingPage';
 import { ItemsPage } from './pages/Items/ItemsPage';
+import { ProcessManagementPage } from './pages/Processes/ProcessManagementPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,6 +39,7 @@ function App() {
               path="parts"
               element={<PlaceholderPage title="품번 관리" subtitle="품번(Part) 데이터를 관리합니다." />}
             />
+            <Route path="processes" element={<ProcessManagementPage />} />
             <Route path="lots/pallets" element={<LotPalletsPage />} />
             <Route
               path="pallets"

@@ -25,4 +25,13 @@ export const readerLocationApi = {
   async delete(id: number) {
     await apiClient.delete(`/reader-locations/${id}`);
   },
+
+  //UI 테스트 위해서 만든 코드 
+  async testConnection(portName: string) {
+    const { data } = await apiClient.post<{ success: boolean; message: string; data?: any }>(
+      '/reader-locations/test-connection',
+      { port_name: portName }
+    );
+    return data;
+  },
 };

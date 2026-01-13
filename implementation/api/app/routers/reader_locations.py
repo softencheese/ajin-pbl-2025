@@ -148,8 +148,8 @@ async def delete_reader_location(
 
 @router.put("/{id}/register", response_model=ReaderLocationResponse)
 async def register_reader_location(
-    id: int, 
-    data: ReaderLocationUpdate, 
+    id: int,
+    data: ReaderLocationUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(PermissionChecker("reader_locations", "write"))
 ):
@@ -159,20 +159,87 @@ async def register_reader_location(
     ).first()
     if not location:
         raise HTTPException(status_code=404, detail="Reader location not found")
-    
+
     # 공정 ID와 위치 타입은 필수
     if data.process_id is None or data.location_type is None:
          raise HTTPException(status_code=400, detail="Process ID and Location Type are required for registration")
 
     location.process_id = data.process_id
     location.location_type = data.location_type
-    
+
     if data.description:
         location.description = data.description
-        
+
     if data.is_active is not None:
         location.is_active = data.is_active
-    
+
     db.commit()
     db.refresh(location)
     return location
+
+
+@router.post("/test-connection")
+async def test_reader_connection(
+    data: dict,
+    db: Session = Depends(get_db)
+):
+    """
+    RFID 리더기 연결 테스트
+
+    현재는 시뮬레이션 모드로, 실제 하드웨어 연결을 테스트하지 않고
+    포트명 형식만 검증합니다.
+    """
+    port_name = data.get("port_name")
+    if not port_name:
+        raise HTTPException(status_code=400, detail="port_name is required")
+
+    # 포트명 형식 검증
+    import re
+
+    # COM 포트 (Windows)
+    if re.match(r'^COM\d+$', port_name):
+        return {
+            "success": True,
+            "message": f"포트 {port_name}에 대한 연결 테스트가 성공했습니다 (시뮬레이션)",
+            "data": {
+                "port_name": port_name,
+                "port_type": "COM (Windows Serial)",
+                "status": "simulated_ok"
+            }
+        }
+
+    # Unix 시리얼 포트
+    elif re.match(r'^/dev/(tty|cu)\w+$', port_name):
+        return {
+            "success": True,
+            "message": f"포트 {port_name}에 대한 연결 테스트가 성공했습니다 (시뮬레이션)",
+            "data": {
+                "port_name": port_name,
+                "port_type": "Unix Serial",
+                "status": "simulated_ok"
+            }
+        }
+
+    # 네트워크 포트 (IP:PORT)
+    elif re.match(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$', port_name):
+        return {
+            "success": True,
+            "message": f"포트 {port_name}에 대한 연결 테스트가 성공했습니다 (시뮬레이션)",
+            "data": {
+                "port_name": port_name,
+                "port_type": "Network (TCP/IP)",
+                "status": "simulated_ok"
+            }
+        }
+
+    # 알 수 없는 포트 형식
+    else:
+        return {
+            "success": False,
+            "message": f"알 수 없는 포트 형식입니다. COM3, /dev/ttyUSB0, 또는 192.168.1.100:8080 형식을 사용하세요.",
+            "data": {
+                "port_name": port_name,
+                "port_type": "Unknown",
+                "status": "invalid_format"
+            }
+        }
