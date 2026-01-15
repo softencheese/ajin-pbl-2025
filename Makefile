@@ -4,13 +4,14 @@
 
 help:
 	@echo "Available commands:"
-	@echo "  make setup       - Initialize environment (create .env, install dependencies)"
-	@echo "  make up          - Start all services with Docker Compose"
-	@echo "  make down        - Stop all services"
-	@echo "  make logs        - View service logs"
-	@echo "  make clean       - Remove temporary files (__pycache__, etc.)"
-	@echo "  make deep-clean  - Remove ALL generated files (venv, node_modules, data, .env)"
-	@echo "  make test        - Run backend tests"
+	@echo "  make setup             - Initialize environment (create .env, install dependencies)"
+	@echo "  make up                - Start all services with Docker Compose"
+	@echo "  make down              - Stop all services"
+	@echo "  make logs              - View service logs"
+	@echo "  make clean             - Remove temporary files (__pycache__, etc.)"
+	@echo "  make deep-clean        - Remove ALL generated files (venv, node_modules, data, .env)"
+	@echo "  make test              - Run backend tests"
+	@echo "  make virt-reader-run   - Run virtual RFID reader simulation"
 
 setup:
 	@echo "Initializing environment..."
@@ -36,6 +37,9 @@ test-cov:
 	@echo "Running tests with coverage..."
 	@cd implementation/api && . venv/bin/activate && pytest tests/ -v --cov=app
 
+virt-reader-run:
+	@echo "Running virtual RFID reader simulation..."
+	@cd ./implementation/evirt-reader && make
 clean:
 	@echo "Cleaning temporary files..."
 	@find . -type d -name "__pycache__" -exec rm -rf {} +
