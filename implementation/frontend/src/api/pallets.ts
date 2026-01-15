@@ -2,8 +2,20 @@ import { apiClient } from './client';
 import type { Pallet, PalletCreateRequest } from '../types/pallet';
 
 export const palletApi = {
-  async getAll(params?: { status?: string; process_id?: number; search?: string }) {
-    const { data } = await apiClient.get<Pallet[]>('/pallets', { params });
+  async getAll(params?: {
+    status?: string;
+    process_id?: number;
+    search?: string;
+    page?: number;
+    per_page?: number;
+  }) {
+    const { data } = await apiClient.get<{
+      items: Pallet[];
+      total: number;
+      page: number;
+      per_page: number;
+      pages: number;
+    }>('/pallets', { params });
     return data;
   },
 

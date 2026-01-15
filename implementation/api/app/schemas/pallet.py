@@ -20,6 +20,8 @@ class PalletResponse(BaseModel):
     status: str = Field(default="Generated", description="팔레트 상태")
     tag_status: str = Field(default="AVAILABLE", description="RFID 태그 상태 (AVAILABLE, IN_USE, DAMAGED)")
     quantity: int = Field(default=0, description="현재 적재 수량")
+    lot_id: Optional[int] = Field(None, description="연결된 LOT ID")
+    current_process_id: Optional[int] = Field(None, description="현재 공정 ID")
     tag_registered_at: Optional[datetime] = None
     tag_deregistered_at: Optional[datetime] = None
     created_at: datetime

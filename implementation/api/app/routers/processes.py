@@ -44,7 +44,7 @@ async def list_processes(
 
 @router.get("/{id}", response_model=ProcessResponse)
 async def get_process(
-    id: int, 
+    id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(PermissionChecker("processes", "read"))
 ):
@@ -188,3 +188,41 @@ async def delete_process(
     
     db.commit()
     return {"success": True, "message": "공정이 삭제되었습니다"}
+
+@router.get("/connection-status", response_model=dict)
+async def get_processes_connection_status(
+    db: Session = Depends(get_db)
+):
+    """
+    모든 공정의 RFID 리더기 연결 상태 조회
+
+    반환 형식:
+    {
+        "1": {"connected": true, "active_readers": 2, "total_readers": 3},
+        "2": {"connected": false, "active_readers": 0, "total_readers": 1},
+        ...
+    }
+    """
+    from app.models.rfid import RFIDReaderLocation
+
+    processes = db.query(Process).all()
+    status = {}
+
+    for process in processes:
+        # 해당 공정의 리더기 조회
+        readers = db.query(RFIDReaderLocation).filter(
+            RFIDReaderLocation.process_id == process.id
+        ).all()
+
+        total_readers = len(readers)
+        active_readers = sum(1 for r in readers if r.is_active)
+
+        # 활성화된 리더기가 1개 이상 있으면 연결됨으로 간주
+        status[str(process.id)] = {
+            "connected": active_readers > 0,
+            "active_readers": active_readers,
+            "total_readers": total_readers
+        }
+
+    return status
+

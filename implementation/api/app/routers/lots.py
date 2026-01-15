@@ -309,6 +309,61 @@ async def create_lot(
         
         db.commit()
     
+    # 팔레트 자동 생성 (palette_capacity가 제공된 경우)
+    if data.palette_capacity and data.palette_capacity > 0:
+        from app.models.pallet import Pallet
+        import logging
+        logger = logging.getLogger(__name__)
+
+        # 필요한 팔레트 수 계산
+        num_pallets = (lot.quantity + data.palette_capacity - 1) // data.palette_capacity
+        logger.info(f"🎯 Creating {num_pallets} pallets for LOT {lot.lot_number} (qty: {lot.quantity}, capacity: {data.palette_capacity})")
+
+        # 팔레트 번호 카운터 조회 (오늘 생성된 팔레트 수)
+        today_str = lot.production_date.strftime("%y%m%d")
+        pallet_no_pattern = f"PLT-{today_str}-%"
+        last_pallet = db.query(Pallet).filter(
+            Pallet.pallet_no.like(pallet_no_pattern)
+        ).order_by(Pallet.pallet_no.desc()).first()
+
+        if last_pallet:
+            try:
+                # Extract sequence from "PLT-YYMMDD-SSSS"
+                last_seq = int(last_pallet.pallet_no.split('-')[-1])
+                pallet_seq = last_seq + 1
+                logger.info(f"📦 Last pallet: {last_pallet.pallet_no}, starting from seq: {pallet_seq}")
+            except (ValueError, IndexError):
+                pallet_seq = 1
+                logger.warning(f"⚠️ Could not parse last pallet number, starting from 1")
+        else:
+            pallet_seq = 1
+            logger.info(f"📦 No existing pallets for today, starting from seq: 1")
+
+        # 팔레트 생성
+        created_pallets = []
+        for i in range(num_pallets):
+            pallet_quantity = min(data.palette_capacity, lot.quantity - i * data.palette_capacity)
+            pallet_no = f"PLT-{today_str}-{pallet_seq:04d}"
+
+            # RFID EPC 생성 (임시로 팔레트 번호 사용, 실제로는 RFID 태그 등록 시 업데이트됨)
+            rfid_epc = f"TEMP-{pallet_no}"
+
+            pallet = Pallet(
+                pallet_no=pallet_no,
+                rfid_epc=rfid_epc,
+                lot_id=lot.id,
+                quantity=pallet_quantity,
+                status="Stock",
+                tag_status="AVAILABLE"
+            )
+            db.add(pallet)
+            created_pallets.append(pallet_no)
+            pallet_seq += 1
+            logger.info(f"  ✅ Created pallet {pallet_no} with quantity {pallet_quantity}")
+
+        db.commit()
+        logger.info(f"💾 Committed {len(created_pallets)} pallets to database: {created_pallets}")
+    
     return LotResponse(
         id=lot.id,
         lot_number=lot.lot_number,

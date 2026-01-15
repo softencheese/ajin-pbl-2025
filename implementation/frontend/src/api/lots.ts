@@ -9,8 +9,22 @@ import type {
 } from '../types/lot';
 
 export const lotApi = {
-  async getAll(params?: { search?: string; process_id?: number; part_id?: number }) {
-    const { data } = await apiClient.get<Lot[]>('/lots', { params });
+  async getAll(params?: {
+    search?: string;
+    process_id?: number;
+    part_id?: number;
+    page?: number;
+    per_page?: number;
+    item_type?: string;
+    status?: string;
+  }) {
+    const { data } = await apiClient.get<{
+      items: Lot[];
+      total: number;
+      page: number;
+      per_page: number;
+      pages: number;
+    }>('/lots', { params });
     return data;
   },
 
@@ -21,6 +35,18 @@ export const lotApi = {
 
   async create(payload: LotCreateRequest) {
     const { data } = await apiClient.post<Lot>('/lots', payload);
+    return data;
+  },
+
+  async receiving(payload: {
+    item_id: number;
+    quantity: number;
+    production_date: string;
+    supplier?: string;
+    barcode?: string;
+    notes?: string;
+  }) {
+    const { data } = await apiClient.post<Lot>('/lots/receiving', payload);
     return data;
   },
 

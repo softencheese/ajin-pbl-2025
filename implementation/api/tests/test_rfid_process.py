@@ -1,17 +1,20 @@
 from fastapi.testclient import TestClient
 from datetime import datetime
 
+import uuid
+
 def test_rfid_scan_in_success(client: TestClient):
+    uid = str(uuid.uuid4())[:8]
     # 1. Setup Data
     # Process
-    proc_res = client.post("/api/v1/processes/", json={"process_code": "PROC-SCAN", "process_name": "Scan Process", "process_type": "Manufacturing", "process_order": 3})
+    proc_res = client.post("/api/v1/processes/", json={"process_code": f"PROC-SCAN-{uid}", "process_name": "Scan Process", "process_type": "Manufacturing", "process_order": 990})
     proc_id = proc_res.json()["id"]
 
     # Reader (IN)
-    client.post("/api/v1/reader-locations/", json={"port_name": "COM_IN", "process_id": proc_id, "location_type": "IN", "description": "IN Reader"})
+    client.post("/api/v1/reader-locations/", json={"port_name": f"COM_IN_{uid}", "process_id": proc_id, "location_type": "IN", "description": "IN Reader"})
 
     # Item & Lot & Pallet
-    item_res = client.post("/api/v1/items/", json={"item_code": "ITEM-SCAN", "item_name": "Scan Item", "item_type": "RAW"})
+    item_res = client.post("/api/v1/items/", json={"item_code": f"ITEM-SCAN-{uid}", "item_name": "Scan Item", "item_type": "RAW"})
     item_id = item_res.json()["id"]
     
     lot_res = client.post("/api/v1/lots/receiving", json={
@@ -21,40 +24,44 @@ def test_rfid_scan_in_success(client: TestClient):
     })
     lot_id = lot_res.json()["id"]
     
-    pallet_res = client.post("/api/v1/pallets", json={"pallet_no": "PAL-SCAN", "rfid_epc": "EPC-SCAN", "status": "Empty"})
+    # Pallet
+    epc = f"EPC-SCAN-{uid}"
+    pallet_res = client.post("/api/v1/pallets", json={"pallet_no": f"PAL-SCAN-{uid}", "rfid_epc": epc, "status": "Empty"})
     pallet_id = pallet_res.json()["id"]
     
-    # Link Pallet to Lot
+    # Link Pallet to Lot (Status -> Stock)
     link_res = client.put(f"/api/v1/pallets/{pallet_id}/link-lot", json={"lot_id": lot_id})
     assert link_res.status_code == 200
     
+    # Scan at IN (Stock -> Consuming)
     response = client.post(
         "/api/v1/rfid/scan",
         json={
             "type": "SCAN",
-            "port_name": "COM_IN",
-            "epc": "EPC-SCAN",
+            "port_name": f"COM_IN_{uid}",
+            "epc": epc,
             "scan_time": datetime.now().isoformat()
         }
     )
-    # If Lot is needed for Empty -> Stock, this might fail or error.
-    # If Pallet is Empty and Scanned at IN, it might expect to be assigned a Lot (which is done by linking).
-    # If RFID Auto-assignment is implemented, maybe that's how?
-    # For now, just assert 200.
     assert response.status_code == 200
+    data = response.json()
+    assert data["success"] is True
+    # IN 스캔 -> Consuming (투입)
+    assert data["pallet"]["current_status"] == "Consuming"
 
 def test_rfid_scan_unknown_tag(client: TestClient):
+    uid = str(uuid.uuid4())[:8]
     # Setup Reader First
-    proc_res = client.post("/api/v1/processes/", json={"process_code": "PROC-UNKNOWN", "process_name": "Unknown Proc", "process_type": "Manufacturing", "process_order": 4})
+    proc_res = client.post("/api/v1/processes/", json={"process_code": f"PROC-UNKN-{uid}", "process_name": "Unknown Proc", "process_type": "Manufacturing", "process_order": 999})
     proc_id = proc_res.json()["id"]
-    client.post("/api/v1/reader-locations/", json={"port_name": "COM_UNKNOWN", "process_id": proc_id, "location_type": "IN", "description": "Reader"})
+    client.post("/api/v1/reader-locations/", json={"port_name": f"COM_UNKN_{uid}", "process_id": proc_id, "location_type": "IN", "description": "Reader"})
 
     response = client.post(
         "/api/v1/rfid/scan",
         json={
             "type": "SCAN",
-            "port_name": "COM_UNKNOWN",
-            "epc": "EPC-UNKNOWN-TAG",
+            "port_name": f"COM_UNKN_{uid}",
+            "epc": f"EPC-UNKN-{uid}",
             "scan_time": datetime.now().isoformat()
         }
     )

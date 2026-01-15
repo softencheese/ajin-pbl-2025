@@ -5,7 +5,10 @@ import type { PalletCreateRequest } from '../types/pallet';
 export function usePallets(params?: Parameters<typeof palletApi.getAll>[0]) {
   return useQuery({
     queryKey: ['pallets', params],
-    queryFn: () => palletApi.getAll(params),
+    queryFn: async () => {
+      const response = await palletApi.getAll(params);
+      return response.items;
+    },
   });
 }
 
