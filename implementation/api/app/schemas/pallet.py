@@ -61,3 +61,25 @@ class PalletTagStatusUpdate(BaseModel):
     """RFID 태그 상태 변경"""
     tag_status: str = Field(..., description="새 태그 상태 (AVAILABLE, IN_USE, DAMAGED)")
     reason: Optional[str] = Field(None, description="변경 사유")
+
+
+class FIFOQueueItem(BaseModel):
+    """FIFO 대기열 항목"""
+    queue_position: int = Field(..., description="대기열 순서 (1부터 시작)")
+    pallet_id: int
+    pallet_no: str
+    rfid_epc: str
+    lot_no: Optional[str] = None
+    item_code: Optional[str] = None
+    item_name: Optional[str] = None
+    created_at: datetime
+    scan_status: str = Field(..., description="스캔 상태 (WAITING, OK, VIOLATION)")
+    scan_time: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class FIFOQueueResponse(BaseModel):
+    """FIFO 대기열 응답"""
+    items: List[FIFOQueueItem]
+    total: int

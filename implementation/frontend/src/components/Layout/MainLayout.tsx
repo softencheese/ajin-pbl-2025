@@ -9,6 +9,7 @@ import {
   MonitorOutlined,
   SearchOutlined,
   InboxOutlined,
+  FieldTimeOutlined,
 } from '@ant-design/icons';
 
 const { Header, Sider, Content } = Layout;
@@ -28,6 +29,7 @@ export function MainLayout() {
     if (path.startsWith('/lots/pallets')) return 'lots-pallets';
     if (path.startsWith('/pallets')) return 'pallets';
     if (path.startsWith('/monitoring')) return 'monitoring';
+    if (path.startsWith('/fifo')) return 'fifo';
     if (path.startsWith('/traceability')) return 'traceability';
     if (path.startsWith('/inventory')) return 'inventory';
     return 'dashboard';
@@ -61,6 +63,11 @@ export function MainLayout() {
           label: <Link to="/lots/pallets">LOT-팔레트-RFID</Link>,
         },
       ],
+    },
+    {
+      key: 'fifo',
+      icon: <FieldTimeOutlined />,
+      label: <Link to="/fifo">FIFO 모니터링</Link>,
     },
     {
       key: 'traceability',

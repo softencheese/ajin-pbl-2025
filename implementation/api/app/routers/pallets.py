@@ -15,7 +15,9 @@ from app.schemas.pallet import (
     PalletListResponse,
     PalletLinkLot,
     PalletStatusUpdate,
-    PalletTagStatusUpdate
+    PalletTagStatusUpdate,
+    FIFOQueueResponse,
+    FIFOQueueItem
 )
 
 from app.core.permissions import PermissionChecker
@@ -119,6 +121,63 @@ async def list_pallets(
         "page": page,
         "per_page": per_page,
         "pages": (total + per_page - 1) // per_page
+    }
+
+
+@router.get("/fifo-queue", response_model=FIFOQueueResponse)
+async def get_fifo_queue(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("pallets", "read"))
+):
+    """
+    FIFO 대기열 조회 (권한: pallets:read)
+
+    Stock 상태 팔레트를 created_at 순서로 정렬하여 반환
+    각 팔레트의 스캔 상태 (대기/완료/위반) 포함
+    """
+    # Stock 상태 팔레트를 created_at 오름차순으로 조회
+    stock_pallets = db.query(Pallet).filter(
+        Pallet.status == "Stock"
+    ).order_by(Pallet.created_at.asc()).all()
+
+    fifo_items = []
+    for idx, pallet in enumerate(stock_pallets, start=1):
+        # 최근 IN 위치 스캔 이력 조회
+        recent_scan = db.query(PalletHistory).filter(
+            PalletHistory.pallet_id == pallet.id,
+            PalletHistory.location_type == "IN"
+        ).order_by(PalletHistory.scan_time.desc()).first()
+
+        scan_status = "WAITING"  # 기본값
+        scan_time = None
+
+        if recent_scan:
+            scan_time = recent_scan.scan_time
+            # notes에 "FIFO 위반" 문구가 있으면 VIOLATION
+            if recent_scan.notes and "FIFO 위반" in recent_scan.notes:
+                scan_status = "VIOLATION"
+            else:
+                scan_status = "OK"
+
+        lot = db.query(Lot).filter(Lot.id == pallet.lot_id).first() if pallet.lot_id else None
+        item = db.query(Item).filter(Item.id == lot.item_id).first() if lot else None
+
+        fifo_items.append({
+            "queue_position": idx,
+            "pallet_id": pallet.id,
+            "pallet_no": pallet.pallet_no,
+            "rfid_epc": pallet.rfid_epc,
+            "lot_no": lot.lot_number if lot else None,
+            "item_code": item.item_code if item else None,
+            "item_name": item.item_name if item else None,
+            "created_at": pallet.created_at,
+            "scan_status": scan_status,
+            "scan_time": scan_time
+        })
+
+    return {
+        "items": fifo_items,
+        "total": len(fifo_items)
     }
 
 
@@ -246,10 +305,10 @@ async def update_pallet_status(
     pallet = db.query(Pallet).filter(Pallet.id == id).first()
     if not pallet:
         raise HTTPException(status_code=404, detail="팔레트를 찾을 수 없습니다")
-    
+
     previous_status = pallet.status
     pallet.status = data.status
-    
+
     history = PalletHistory(
         pallet_id=pallet.id,
         lot_id=pallet.lot_id,
@@ -261,16 +320,16 @@ async def update_pallet_status(
         worker_name="Admin",
         notes=f"Status changed to {data.status}. Reason: {data.reason}"
     )
-    
+
     db.add(history)
     db.commit()
     db.refresh(pallet)
-    
+
     await sio_server.emit('pallet_updated', {
         'pallet_id': pallet.id,
         'pallet_no': pallet.pallet_no,
         'status': pallet.status,
         'tag_status': pallet.tag_status
     })
-    
+
     return _build_pallet_response(pallet, db)

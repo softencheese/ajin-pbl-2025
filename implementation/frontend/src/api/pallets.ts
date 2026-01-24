@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { Pallet, PalletCreateRequest } from '../types/pallet';
+import type { Pallet, PalletCreateRequest, FIFOQueueItem } from '../types/pallet';
 
 export const palletApi = {
   async getAll(params?: {
@@ -36,6 +36,14 @@ export const palletApi = {
 
   async updateStatus(id: number, status: string, reason?: string) {
     const { data } = await apiClient.put(`/pallets/${id}/status`, { status, reason });
+    return data;
+  },
+
+  async getFIFOQueue() {
+    const { data } = await apiClient.get<{
+      items: FIFOQueueItem[];
+      total: number;
+    }>('/pallets/fifo-queue');
     return data;
   },
 };

@@ -42,3 +42,18 @@ export interface PalletCreateRequest {
   pallet_no: string;
   rfid_epc: string;
 }
+
+export type FIFOScanStatus = 'WAITING' | 'OK' | 'VIOLATION';
+
+export interface FIFOQueueItem {
+  queue_position: number;
+  pallet_id: number;
+  pallet_no: string;
+  rfid_epc: string;
+  lot_no?: string;
+  item_code?: string;
+  item_name?: string;
+  created_at: string;
+  scan_status: FIFOScanStatus;
+  scan_time?: string;
+}
