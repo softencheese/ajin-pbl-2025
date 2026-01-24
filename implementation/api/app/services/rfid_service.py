@@ -143,6 +143,11 @@ class RFIDService:
             location.last_scan_time = scan_time
             
             # 이력 기록
+            notes = None
+            if fifo_warning and location.location_type == "IN":
+                oldest = fifo_warning.oldest_stock
+                notes = f"FIFO 위반: {oldest.get('pallet_no', 'N/A')} (생성일: {oldest.get('created_at', 'N/A')}) 먼저 출고 필요"
+
             history = PalletHistory(
                 pallet_id=pallet.id,
                 lot_id=pallet.lot_id,
@@ -153,7 +158,8 @@ class RFIDService:
                 new_status=next_status,
                 event_type=f"{scan_type}_SCAN",
                 scan_time=scan_time,
-                worker_name="System"
+                worker_name="System",
+                notes=notes
             )
             self.db.add(history)
             
@@ -191,7 +197,18 @@ class RFIDService:
                 "port_name": location.port_name,
                 "success": True
             })
-            
+
+            # FIFO 전용 이벤트 발송 (IN 위치에서만, Stock 팔레트를 스캔한 경우)
+            if location.location_type == "IN" and previous_status == "Stock":
+                await sio_server.emit('fifo_scan', {
+                    'pallet_id': pallet.id,
+                    'pallet_no': pallet.pallet_no,
+                    'lot_no': pallet.lot.lot_number if pallet.lot else None,
+                    'scan_time': scan_time.isoformat(),
+                    'is_violation': fifo_warning is not None,
+                    'status': 'VIOLATION' if fifo_warning else 'OK'
+                })
+
             return ScanResponse(
                 success=True,
                 pallet=pallet_info,
@@ -268,31 +285,33 @@ class RFIDService:
         return None
     
     def _validate_fifo(self, pallet: Pallet, location: RFIDReaderLocation) -> FIFOWarning | None:
-        """FIFO 검증 - 더 오래된 재고가 있는지 확인"""
-        if pallet.status != "Stock" or not pallet.lot:
+        """FIFO 검증 - 전체 팔레트 기준으로 더 오래된 재고가 있는지 확인"""
+        if pallet.status != "Stock":
             return None
-        
-        # 동일 품번의 더 오래된 Stock 상태 팔레트 조회
-        # Lot.part_id -> Lot.item_id
-        older_stock = self.db.query(Pallet).join(Lot).filter(
+
+        # 전체 Stock 상태 팔레트 중 더 오래된 것 조회 (품목 구분 없음)
+        # created_at이 같으면 ID가 작은 것이 먼저 생성된 것으로 간주
+        older_stock = self.db.query(Pallet).filter(
             Pallet.status == "Stock",
-            Lot.item_id == pallet.lot.item_id,
-            Lot.production_date < pallet.lot.production_date,
             Pallet.id != pallet.id
-        ).first()
-        
+        ).filter(
+            (Pallet.created_at < pallet.created_at) |
+            ((Pallet.created_at == pallet.created_at) & (Pallet.id < pallet.id))
+        ).order_by(Pallet.created_at.asc(), Pallet.id.asc()).first()
+
         if older_stock:
-            days_old = (date.today() - older_stock.lot.production_date).days
+            days_old = (datetime.now() - older_stock.created_at).days
             return FIFOWarning(
                 type="FIFO_VIOLATION",
                 message="더 오래된 재고가 있습니다. 확인 후 진행하세요.",
                 oldest_stock={
-                    "lot_no": older_stock.lot.lot_number,
-                    "production_date": older_stock.lot.production_date.isoformat(),
+                    "pallet_no": older_stock.pallet_no,
+                    "lot_no": older_stock.lot.lot_number if older_stock.lot else None,
+                    "created_at": older_stock.created_at.isoformat(),
                     "days_old": days_old
                 }
             )
-        
+
         return None
     
     def _get_pre_hold_status(self, pallet_id: int) -> str:

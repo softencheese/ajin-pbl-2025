@@ -10,6 +10,7 @@ import { LotPalletsPage } from './pages/LOTs/LotPalletsPage';
 import { LotTrackingPage } from './pages/Traceability/LotTrackingPage';
 import { ItemsPage } from './pages/Items/ItemsPage';
 import { ProcessManagementPage } from './pages/Processes/ProcessManagementPage';
+import { FIFOMonitoringPage } from './pages/FIFO/FIFOMonitoringPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -46,6 +47,7 @@ function App() {
               element={<PlaceholderPage title="팔레트 관리" subtitle="팔레트와 RFID 태그를 관리합니다." />}
             />
             <Route path="monitoring" element={<MonitoringPage />} />
+            <Route path="fifo" element={<FIFOMonitoringPage />} />
             <Route path="traceability" element={<LotTrackingPage />} />
             <Route
               path="inventory"
