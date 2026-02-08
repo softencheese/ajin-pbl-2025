@@ -16,6 +16,7 @@ import {
   Row,
   Col,
   Progress,
+  Descriptions,
 } from 'antd';
 import {
   PlusOutlined,
@@ -41,6 +42,7 @@ interface Palette {
   rfidEpc: string | null;
   status: string;
   rfidRegisteredAt?: string;
+  rfidDeregisteredAt?: string;
 }
 
 interface LotData {
@@ -149,6 +151,7 @@ export function LotPalletsPage() {
           rfidEpc: p.rfid_epc || null,
           status: p.status || 'Generated',
           rfidRegisteredAt: p.tag_registered_at,
+          rfidDeregisteredAt: p.tag_deregistered_at,
         }));
 
         return {
@@ -163,7 +166,7 @@ export function LotPalletsPage() {
           barcode: lot.barcode || lot.lot_number,
           palettes,
           paletteCount: palettes.length,
-          rfidRegistered: palettes.filter(p => p.rfidEpc && !p.rfidEpc.startsWith('TEMP-')).length,
+          rfidRegistered: palettes.filter(p => p.rfidEpc).length,
           processName: lot.process_name,
           workerName: lot.worker_name,
           supplier: lot.supplier,
@@ -530,11 +533,11 @@ export function LotPalletsPage() {
       width: 150,
     },
     {
-      title: '수량',
+      title: '수량/초기수량',
       dataIndex: 'quantity',
       key: 'quantity',
-      width: 100,
-      render: (qty: number) => `${qty}개`,
+      width: 120,
+      render: (qty: number, record: LotData) => `${qty}/${record.initialQuantity}개`,
     },
     {
       title: '팔레트 수',
@@ -570,6 +573,12 @@ export function LotPalletsPage() {
   // Palette table columns generator
   const getPaletteColumns = (lot: LotData): ColumnsType<Palette> => [
     {
+      title: '팔레트 번호',
+      dataIndex: 'paletteNumber',
+      key: 'paletteNumber',
+      render: (num: number) => `#${num}`,
+    },
+      {
       title: '팔레트 ID',
       dataIndex: 'id',
       key: 'id',
@@ -583,12 +592,6 @@ export function LotPalletsPage() {
       ),
     },
     {
-      title: '팔레트 번호',
-      dataIndex: 'paletteNumber',
-      key: 'paletteNumber',
-      render: (num: number) => `#${num}`,
-    },
-    {
       title: '수량',
       dataIndex: 'quantity',
       key: 'quantity',
@@ -597,17 +600,10 @@ export function LotPalletsPage() {
     {
       title: 'RFID 상태',
       key: 'rfidStatus',
-      render: (_, record: Palette) => (
-        <Tag color={record.rfidEpc ? 'success' : 'default'}>
-          {record.rfidEpc ? '등록완료' : '미등록'}
-        </Tag>
-      ),
-    },
-    {
-      title: '작업',
-      key: 'action',
       render: (_, record: Palette) =>
-        !record.rfidEpc && (
+        record.rfidEpc ? (
+          <Tag color="success">등록완료</Tag>
+        ) : (
           <Button
             size="small"
             type="primary"
@@ -620,6 +616,50 @@ export function LotPalletsPage() {
             RFID 등록
           </Button>
         ),
+    },
+    {
+      title: '태그 등록 시각',
+      dataIndex: 'rfidRegisteredAt',
+      key: 'rfidRegisteredAt',
+      render: (value: string) => value || '-',
+    },
+    {
+      title: '태그 해제 시각',
+      dataIndex: 'rfidDeregisteredAt',
+      key: 'rfidDeregisteredAt',
+      render: (value: string) => value || '-',
+    },
+    {
+      title: '팔레트 상태',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status: string) => {
+        const statusMap: Record<string, { color: string; label: string }> = {
+          Generated: { color: 'default', label: '생성됨' },
+          Empty: { color: 'default', label: '비어있음' },
+          Stock: { color: 'blue', label: '재고' },
+          Consuming: { color: 'orange', label: '소비중' },
+          Producing: { color: 'purple', label: '생산중' },
+          Finished: { color: 'green', label: '완료' },
+          Deregistered: { color: 'default', label: '해제됨' },
+          Hold: { color: 'gold', label: '보류' },
+          Defect: { color: 'red', label: '불량' },
+        };
+        const info = statusMap[status] || { color: 'default', label: status };
+        return <Tag color={info.color}>{info.label}</Tag>;
+      },
+    },
+    {
+      title: '상세 정보',
+      key: 'detail',
+      render: (_, record: Palette) => (
+        <Button
+          size="small"
+          onClick={() => setPaletteDetailModal({ visible: true, lot, palette: record })}
+        >
+          상세 정보
+        </Button>
+      ),
     },
   ];
 
@@ -939,40 +979,54 @@ export function LotPalletsPage() {
       >
         {paletteDetailModal.palette && paletteDetailModal.lot && (
           <div>
-            <h3>팔레트 기본 정보</h3>
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
-                <strong>팔레트 ID:</strong> {paletteDetailModal.palette.id}
-              </div>
-              <div style={{ padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
-                <strong>팔레트 번호:</strong> #{paletteDetailModal.palette.paletteNumber}
-              </div>
-              <div style={{ padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
-                <strong>소속 LOT:</strong> {paletteDetailModal.lot.lotNumber}
-              </div>
-              <div style={{ padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
-                <strong>수량:</strong> {paletteDetailModal.palette.quantity}개
-              </div>
-            </div>
+            <Descriptions column={1} bordered size="small">
+              <Descriptions.Item label="팔레트 ID">{paletteDetailModal.palette.id}</Descriptions.Item>
+              <Descriptions.Item label="팔레트 번호">#{paletteDetailModal.palette.paletteNumber}</Descriptions.Item>
+              <Descriptions.Item label="소속 LOT">{paletteDetailModal.lot.lotNumber}</Descriptions.Item>
+              <Descriptions.Item label="수량">{paletteDetailModal.palette.quantity}개</Descriptions.Item>
+              <Descriptions.Item label="팔레트 상태">
+                {(() => {
+                  const statusMap: Record<string, { color: string; label: string }> = {
+                    Generated: { color: 'default', label: '생성됨' },
+                    Empty: { color: 'default', label: '비어있음' },
+                    Stock: { color: 'blue', label: '재고' },
+                    Consuming: { color: 'orange', label: '소비중' },
+                    Producing: { color: 'purple', label: '생산중' },
+                    Finished: { color: 'green', label: '완료' },
+                    Deregistered: { color: 'default', label: '해제됨' },
+                    Hold: { color: 'gold', label: '보류' },
+                    Defect: { color: 'red', label: '불량' },
+                  };
+                  const info = statusMap[paletteDetailModal.palette.status] || { color: 'default', label: paletteDetailModal.palette.status };
+                  return <Tag color={info.color}>{info.label}</Tag>;
+                })()}
+              </Descriptions.Item>
+            </Descriptions>
 
-            {paletteDetailModal.palette.rfidEpc ? (
-              <Alert
-                message="RFID 등록 완료"
-                description={
-                  <div>
-                    <div><strong>RFID EPC:</strong> {paletteDetailModal.palette.rfidEpc}</div>
-                    <div><strong>등록 일시:</strong> {paletteDetailModal.palette.rfidRegisteredAt}</div>
-                  </div>
-                }
-                type="success"
-                showIcon
-              />
-            ) : (
+            <Descriptions title="RFID 정보" column={1} bordered size="small" style={{ marginTop: 16 }}>
+              <Descriptions.Item label="RFID 상태">
+                {paletteDetailModal.palette.rfidEpc ? (
+                  <Tag color="success">등록완료</Tag>
+                ) : (
+                  <Tag color="default">미등록</Tag>
+                )}
+              </Descriptions.Item>
+              {paletteDetailModal.palette.rfidEpc && (
+                <>
+                  <Descriptions.Item label="RFID EPC">{paletteDetailModal.palette.rfidEpc}</Descriptions.Item>
+                  <Descriptions.Item label="태그 등록 시각">{paletteDetailModal.palette.rfidRegisteredAt || '-'}</Descriptions.Item>
+                  <Descriptions.Item label="태그 해제 시각">{paletteDetailModal.palette.rfidDeregisteredAt || '-'}</Descriptions.Item>
+                </>
+              )}
+            </Descriptions>
+
+            {!paletteDetailModal.palette.rfidEpc && (
               <Alert
                 message="RFID 매칭 필요"
                 description="이 팔레트에 RFID가 등록되지 않았습니다."
                 type="warning"
                 showIcon
+                style={{ marginTop: 16 }}
                 action={
                   <Button
                     size="small"
