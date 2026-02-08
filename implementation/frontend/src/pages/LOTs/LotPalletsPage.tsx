@@ -752,8 +752,6 @@ export function LotPalletsPage() {
                     <Select
                       placeholder="선택 또는 입력하세요"
                       showSearch
-                      mode="tags"
-                      maxTagCount={1}
                       filterOption={(input, option) =>
                         (option?.label?.toString() || '').toLowerCase().includes(input.toLowerCase())
                       }
