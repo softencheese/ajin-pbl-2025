@@ -5,6 +5,7 @@ export const palletApi = {
   async getAll(params?: {
     status?: string;
     process_id?: number;
+    lot_id?: number;
     search?: string;
     page?: number;
     per_page?: number;
