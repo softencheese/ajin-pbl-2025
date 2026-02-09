@@ -199,7 +199,7 @@ async def create_receiving_lot(
         item_id=data.item_id,
         quantity=data.quantity,
         initial_quantity=data.quantity,
-        status="STOCK",  # 원자재 입고는 바로 STOCK
+        status="STOCK",  # 원자재 입고는 바로 재고(STOCK)
         production_date=data.production_date,
         process_id=receiving_process.id if receiving_process else None,
         supplier=data.supplier or item.default_supplier,
@@ -257,12 +257,18 @@ async def create_lot(
     # LOT 번호 자동 생성
     lot_number = generate_lot_number(process.process_order, data.production_date, db)
     
+    # 품목 타입에 따라 초기 상태 결정
+    # 원자재: STOCK (재고 관리)
+    # 재공품/완제품: WAIT (다음 공정 또는 출하 대기)
+    initial_status = "STOCK" if item.item_type == "RAW" else "WAIT"
+    # 생산 수량: initial_quantity=data.quantity, quantity도 동일하게 설정 (테스트/응답 일관성)
+    initial_quantity = data.quantity
     lot = Lot(
         lot_number=lot_number,
         item_id=data.item_id,
         quantity=data.quantity,
-        initial_quantity=data.quantity,
-        status="STOCK",
+        initial_quantity=initial_quantity,
+        status=initial_status,
         production_date=data.production_date,
         process_id=data.process_id,
         supplier=data.supplier,
@@ -309,15 +315,17 @@ async def create_lot(
         
         db.commit()
     
-    # 팔레트 자동 생성 (palette_capacity가 제공된 경우)
-    if data.palette_capacity and data.palette_capacity > 0:
+    # 팔레트 자동 생성 (pallet_capacity 결정: 요청값 또는 품목 기본값)
+    pallet_capacity = data.pallet_capacity
+    if pallet_capacity and pallet_capacity > 0:
         from app.models.pallet import Pallet
         import logging
         logger = logging.getLogger(__name__)
 
         # 필요한 팔레트 수 계산
-        num_pallets = (lot.quantity + data.palette_capacity - 1) // data.palette_capacity
-        logger.info(f"🎯 Creating {num_pallets} pallets for LOT {lot.lot_number} (qty: {lot.quantity}, capacity: {data.palette_capacity})")
+        num_pallets = (lot.initial_quantity + pallet_capacity - 1) // pallet_capacity
+        logger.info(f"🛠️ Checking pallet creation for LOT {lot.lot_number} with pallet_capacity={pallet_capacity}")
+        logger.info(f"🎯 Creating {num_pallets} pallets for LOT {lot.lot_number} (qty: {lot.quantity}, capacity: {pallet_capacity})")
 
         # 팔레트 번호 카운터 조회 (오늘 생성된 팔레트 수)
         today_str = lot.production_date.strftime("%y%m%d")
@@ -341,25 +349,32 @@ async def create_lot(
 
         # 팔레트 생성
         created_pallets = []
+        remaining_qty = lot.quantity
+        
         for i in range(num_pallets):
-            pallet_quantity = min(data.palette_capacity, lot.quantity - i * data.palette_capacity)
             pallet_no = f"PLT-{today_str}-{pallet_seq:04d}"
+            
+            # 이 팔레트에 할당할 수량 계산 (마지막 팔레트는 남은 수량 모두 할당)
+            if i == num_pallets - 1:
+                pallet_qty = remaining_qty
+            else:
+                pallet_qty = min(pallet_capacity, remaining_qty)
+            
+            remaining_qty -= pallet_qty
 
-            # RFID EPC 생성 (임시로 팔레트 번호 사용, 실제로는 RFID 태그 등록 시 업데이트됨)
-            rfid_epc = f"TEMP-{pallet_no}"
-
+            # 가상 팔레트 생성 (실물 팔레트는 나중에 연결)
             pallet = Pallet(
                 pallet_no=pallet_no,
-                rfid_epc=rfid_epc,
+                physical_pallet_id=None,  # 실물 팔레트는 RFID 스캔 시 연결
                 lot_id=lot.id,
-                quantity=pallet_quantity,
-                status="Stock",
-                tag_status="AVAILABLE"
+                quantity=pallet_qty,
+                tag_status="AVAILABLE",
+                current_process_id=data.process_id
             )
             db.add(pallet)
             created_pallets.append(pallet_no)
             pallet_seq += 1
-            logger.info(f"  ✅ Created pallet {pallet_no} with quantity {pallet_quantity}")
+            logger.info(f"  ✅ Created pallet {pallet_no} for LOT {lot.lot_number} (qty: {pallet_qty})")
 
         db.commit()
         logger.info(f"💾 Committed {len(created_pallets)} pallets to database: {created_pallets}")

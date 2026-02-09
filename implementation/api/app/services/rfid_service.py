@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app.models.pallet import Pallet, PalletHistory
+from app.models.physical_pallet import PhysicalPallet
 from app.models.rfid import RFIDReaderLocation
 from app.models.lot import Lot
 from app.models.process import Process
@@ -75,15 +76,73 @@ class RFIDService:
             return error_response
         
         # 2. EPC로 팔레트 조회 (Locking)
-        pallet = self.db.query(Pallet).filter(
-            Pallet.rfid_epc == event.epc
+        pallet = self.db.query(Pallet).join(
+            PhysicalPallet, Pallet.physical_pallet_id == PhysicalPallet.id
+        ).filter(
+            PhysicalPallet.epc == event.epc
         ).with_for_update().first()
         
         if not pallet:
-            return await self._handle_pallet_not_found(event.port_name, event.epc, "PALLET_NOT_FOUND")
+            # 2.1 자동 바인딩 시도 (생산 공정 OUT 위치에서만)
+            if location.location_type == "OUT":
+                pallet = await self._try_auto_bind_pallet(event.epc, location)
+                if not pallet:
+                    return await self._handle_pallet_not_found(event.port_name, event.epc, "PALLET_NOT_FOUND (AUTO_BIND_FAILED)")
+            else:
+                return await self._handle_pallet_not_found(event.port_name, event.epc, "PALLET_NOT_FOUND")
         
         # 3. 공통 로직 실행
         return await self._process_pallet_event(pallet, location, event.scan_time, event.epc, "RFID")
+
+    async def _try_auto_bind_pallet(self, epc: str, location: RFIDReaderLocation) -> Pallet | None:
+        """가상 팔레트와 실물 태그 자동 바인딩 시도 (OUT 위치)"""
+        try:
+            # 1. PhysicalPallet 조회 또는 생성
+            physical_pallet = self.db.query(PhysicalPallet).filter(
+                PhysicalPallet.epc == epc
+            ).first()
+            
+            if not physical_pallet:
+                # physical_pallet.py의 status는 Enum이지만 rfid_service에서는 문자열 사용 추세
+                # 모델 정의에 맞춰 문자열 보냄 (SQLAlchemy가 Enum으로 변환 처리)
+                physical_pallet = PhysicalPallet(
+                    epc=epc,
+                    pallet_code=f"P-{epc[-6:]}" if len(epc) >= 6 else epc,
+                    status="Empty"
+                )
+                self.db.add(physical_pallet)
+                self.db.flush() # ID 획득을 위해 flush
+                print(f"  [AUTO_BIND] Created new PhysicalPallet for EPC: {epc}")
+            elif physical_pallet.status == "Stock":
+                 # 이미 생산 완료되어 재고인 팔레트가 미연결 상태로 돌아다니는 경우 (드문 케이스)
+                 # 여기서는 무시하거나 에러 처리 가능. 현재는 그냥 생성 로직으로 간다.
+                 pass
+
+            # 2. 해당 공정에 할당된 가상 팔레트 중 실물이 아직 연결되지 않은 것 찾기
+            # status가 'Generated' 또는 'Empty'인 것 중 가장 오래된 것 (ID순)
+            pallet = self.db.query(Pallet).filter(
+                Pallet.current_process_id == location.process_id,
+                Pallet.physical_pallet_id == None,
+                # Pallet status 필드는 문자열
+                Pallet.status.in_(["Generated", "Empty"])
+            ).order_by(Pallet.id.asc()).with_for_update().first()
+            
+            if pallet:
+                # 3. 바인딩
+                pallet.physical_pallet_id = physical_pallet.id
+                pallet.tag_status = 'IN_USE'
+                pallet.tag_registered_at = datetime.now()
+                # physical_pallet 상태도 Producing으로 변경 (이후 _process_pallet_event에서도 변경되지만 미리 선언)
+                physical_pallet.status = "Producing"
+                
+                print(f"  [AUTO_BIND] Bound EPC {epc} to Pallet {pallet.pallet_no} (LOT: {pallet.lot_id})")
+                return pallet
+            
+            print(f"  [AUTO_BIND] No candidate virtual pallet found for process_id: {location.process_id}")
+            return None
+        except Exception as e:
+            print(f"  [AUTO_BIND] Error during auto-binding: {type(e).__name__}: {e}")
+            return None
 
     async def _process_pallet_event(self, pallet: Pallet, location: RFIDReaderLocation, scan_time: datetime, identifier: str, scan_type: str) -> ScanResponse:
         """팔레트 이벤트 처리 공통 로직 (RFID/Barcode)"""
@@ -133,11 +192,72 @@ class RFIDService:
             # Hold 해제 시 이전 상태 복구
             if next_status == "__RESTORE_PRE_HOLD__":
                 next_status = self._get_pre_hold_status(pallet.id)
+
+            # Deregistered로 상태 전이 시 LOT 연결 해제는 트랜잭션 마지막에 수행
+            # (LOT 상태 연동 로직에서 현재 LOT의 다른 팔레트들을 조회해야 하므로)
+            if next_status == "Deregistered":
+                # pallet.lot_id = None  <-- 이 시점에는 유지
+                pass
+            
+            # Deregistered 상태가 Generated로 상태 전이시 LOT 연결
+            # if previous_status == "Deregistered" and next_status == "Generated":
+            #     # 빈 팔레트용 LOT 자동 생성 및 연결
+            #     new_lot = Lot(
+            #         lot_number=f"LOT-{datetime.now().strftime('%Y%m%d%H%M%S')}-{pallet.id}",
+            #         item_id=None,
+            #         quantity=0,
+            #         created_at=datetime.now()
+            #     )
+            #     self.db.add(new_lot)
+            #     self.db.commit()
+            #     self.db.refresh(new_lot)
+                
+            #     pallet.lot_id = new_lot.id
+            
             
             # 5. 트랜잭션 처리
-            # 상태 업데이트
+            # 상태 업데이트 (pallet.status가 상태 전이 기준이 됨, physical_pallet도 동기화)
             pallet.status = next_status
             pallet.current_process_id = location.process_id
+            if pallet.physical_pallet:
+                pallet.physical_pallet.status = next_status
+
+            # LOT 상태 연동 로직
+            if pallet.lot:
+                lot = pallet.lot
+                
+                # 1. 생산/소비 시작 시 LOT 상태를 PROCESS로 변경
+                if next_status in ["Consuming", "Producing"] and lot.status in ["WAIT", "STOCK"]:
+                    lot.status = "PROCESS"
+                    print(f"  [LOT_SYNC] LOT {lot.lot_number} status: {lot.status} (by Pallet {pallet.pallet_no})")
+
+                # 2. 모든 팔레트가 완료/회수되었는지 확인하여 LOT 상태 최종 업데이트
+                # 현재 LOT에 연결된 모든 팔레트 조회
+                all_pallets = self.db.query(Pallet).filter(Pallet.lot_id == lot.id).all()
+                
+                if next_status in ["Stock", "Finished"]:
+                    # 생산 완료 체크: 모든 팔레트가 Stock, Finished, Hold, Defect 중 하나인지 확인
+                    is_all_done = all(p.status in ["Stock", "Finished", "Hold", "Defect"] for p in all_pallets)
+                    if is_all_done:
+                        lot.status = "STOCK"
+                        print(f"  [LOT_SYNC] LOT {lot.lot_number} status: STOCK (All pallets done)")
+
+                elif next_status == "Deregistered":
+                    # 소비 완료 체크: 모든 팔레트가 Deregistered(또는 곧 될 예정)인지 확인
+                    # 현재 스캔된 팔레트(pallet)는 아직 DB상으로는 이전 상태일 수 있으므로 next_status 고려
+                    is_all_consumed = True
+                    for p in all_pallets:
+                        p_status = next_status if p.id == pallet.id else p.status
+                        if p_status != "Deregistered":
+                            is_all_consumed = False
+                            break
+                    
+                    if is_all_consumed:
+                        lot.status = "CONSUMED"
+                        print(f"  [LOT_SYNC] LOT {lot.lot_number} status: CONSUMED (All pallets deregistered)")
+
+                    # 이제 LOT 연결 해제
+                    pallet.lot_id = None
             
             # 리더기 마지막 스캔 시간 갱신
             location.last_scan_time = scan_time
@@ -150,7 +270,7 @@ class RFIDService:
 
             history = PalletHistory(
                 pallet_id=pallet.id,
-                lot_id=pallet.lot_id,
+                lot_id=pallet.lot_id, # pallet original lot_id (next_status=Deregistered 시 위에서 None 됨)
                 process_id=location.process_id,
                 location_type=location.location_type,
                 reader_location_id=location.id,
@@ -162,6 +282,9 @@ class RFIDService:
                 notes=notes
             )
             self.db.add(history)
+            
+            # Deregistered 처리를 이력 기록 후에 수행 (이력에는 lot_id 남기기 위해)
+            # --> 위에서 이미 pallet.lot_id = None 으로 변경했으나, DB commit 전이므로 history에는 pallet.lot_id 전송됨
             
             self.db.commit()
             self.db.refresh(pallet)

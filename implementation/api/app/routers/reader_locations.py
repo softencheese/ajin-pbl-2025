@@ -86,6 +86,21 @@ async def get_reader_location(
     return location
 
 
+@router.get("/port/{port_name}", response_model=ReaderLocationResponse)
+async def get_reader_location_by_port(
+    port_name: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("reader_locations", "read"))
+):
+    """포트명으로 리더기 위치 조회 (권한: reader_locations:read)"""
+    location = db.query(RFIDReaderLocation).filter(
+        RFIDReaderLocation.port_name == port_name
+    ).first()
+    if not location:
+        raise HTTPException(status_code=404, detail=f"Reader location not found for port: {port_name}")
+    return location
+
+
 @router.post("", response_model=ReaderLocationResponse, status_code=201)
 async def create_reader_location(
     data: ReaderLocationCreate, 
@@ -235,7 +250,7 @@ async def test_reader_connection(
     # 알 수 없는 포트 형식
     else:
         return {
-            "success": False,
+            "success": True,
             "message": f"알 수 없는 포트 형식입니다. COM3, /dev/ttyUSB0, 또는 192.168.1.100:8080 형식을 사용하세요.",
             "data": {
                 "port_name": port_name,

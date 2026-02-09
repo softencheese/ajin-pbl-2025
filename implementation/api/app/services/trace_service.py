@@ -2,6 +2,7 @@
 from sqlalchemy.orm import Session
 from typing import Optional, List
 from app.models.pallet import Pallet, PalletHistory
+from app.models.physical_pallet import PhysicalPallet
 from app.models.lot import Lot
 from app.models.item import Item
 from app.models.lot_genealogy import LotGenealogy
@@ -195,10 +196,12 @@ class TraceService:
         # SQL LIKE 와일드카드 이스케이프 (보안)
         safe_search = search.replace("%", r"\%").replace("_", r"\_")
         
-        # 1. 팔레트 검색
-        pallet = self.db.query(Pallet).filter(
+        # 1. 팔레트 검색 (pallet_no 또는 EPC로 검색)
+        pallet = self.db.query(Pallet).outerjoin(
+            PhysicalPallet, Pallet.physical_pallet_id == PhysicalPallet.id
+        ).filter(
             Pallet.pallet_no.ilike(f"%{safe_search}%", escape="\\") | 
-            Pallet.rfid_epc.ilike(f"%{safe_search}%", escape="\\")
+            PhysicalPallet.epc.ilike(f"%{safe_search}%", escape="\\")
         ).first()
         
         if pallet:

@@ -9,16 +9,17 @@ class Pallet(BaseModel):
 
     id = Column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True, autoincrement=True)
     pallet_no = Column(String(50), unique=True, nullable=False, comment='팔레트 번호')
-    rfid_epc = Column(String(100), unique=True, comment='RFID EPC 코드')
+    physical_pallet_id = Column(BigInteger, ForeignKey("physical_pallets.id"), comment='실물 팔레트 ID')
     lot_id = Column(BigInteger, ForeignKey("lots.id"), comment='연결된 LOT ID')
-    status = Column(String(20), default='Generated', comment='상태 (Generated, Empty, Stock, Consuming, Producing, Finished, Deregistered, Hold, Defect)')
+    quantity = Column(Integer, default=0, comment='현재 적재 수량')
+    status = Column(String(20), default='Empty', comment='팔레트 상태 (Empty, Producing, Stock, Consuming, etc.)')
     tag_status = Column(String(20), default='AVAILABLE', comment='RFID 태그 상태 (AVAILABLE, IN_USE, DAMAGED)')
     current_process_id = Column(BigInteger, ForeignKey("processes.id"), comment='현재 공정')
-    quantity = Column(Integer, default=0, comment='현재 적재 수량')
     tag_registered_at = Column(DateTime, comment='RFID 태그 등록 시각')
     tag_deregistered_at = Column(DateTime, comment='RFID 태그 해제 시각')
 
     # Relationships
+    physical_pallet = relationship("PhysicalPallet")
     lot = relationship("Lot")
     current_process = relationship("Process")
     histories = relationship("PalletHistory", back_populates="pallet")

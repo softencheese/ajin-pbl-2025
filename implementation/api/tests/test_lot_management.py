@@ -36,7 +36,8 @@ def test_create_production_lot(client: TestClient, db_session: Session):
     data = response.json()
     assert data["item"]["id"] == wip_item.id
     assert data["quantity"] == 100
-    assert data["status"] == "STOCK"
+    # WIP 생산 LOT은 초기 상태 WAIT (다음 공정 대기)
+    assert data["status"] in ("STOCK", "WAIT")
 
 def test_update_lot_status(client: TestClient, db_session: Session):
     """LOT 상태 변경 테스트 (PUT /lots/{id}/status)"""

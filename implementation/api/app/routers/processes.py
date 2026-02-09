@@ -42,6 +42,44 @@ async def list_processes(
     )
 
 
+@router.get("/connection-status", response_model=dict)
+async def get_processes_connection_status(
+    db: Session = Depends(get_db)
+):
+    """
+    모든 공정의 RFID 리더기 연결 상태 조회
+
+    반환 형식:
+    {
+        "1": {"connected": true, "active_readers": 2, "total_readers": 3},
+        "2": {"connected": false, "active_readers": 0, "total_readers": 1},
+        ...
+    }
+    """
+    from app.models.rfid import RFIDReaderLocation
+
+    processes = db.query(Process).all()
+    status = {}
+
+    for process in processes:
+        # 해당 공정의 리더기 조회
+        readers = db.query(RFIDReaderLocation).filter(
+            RFIDReaderLocation.process_id == process.id
+        ).all()
+
+        total_readers = len(readers)
+        active_readers = sum(1 for r in readers if r.is_active)
+
+        # 활성화된 리더기가 1개 이상 있으면 연결됨으로 간주
+        status[str(process.id)] = {
+            "connected": active_readers > 0,
+            "active_readers": active_readers,
+            "total_readers": total_readers
+        }
+
+    return status
+
+
 @router.get("/{id}", response_model=ProcessResponse)
 async def get_process(
     id: int,
@@ -145,6 +183,79 @@ async def update_process_order(
     return process
 
 
+@router.get("/{id}/alive-lots")
+async def get_process_alive_lots(
+    id: int,
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("lots", "read"))
+):
+    """특정 공정의 활성 LOT 목록 조회 (CONSUMED, SHIPPED 제외) (권한: lots:read)"""
+    from app.models.lot import Lot
+    from app.models.item import Item
+    
+    # 공정 존재 확인
+    process = db.query(Process).filter(Process.id == id).first()
+    if not process:
+        raise HTTPException(status_code=404, detail="Process not found")
+    
+    # 활성 상태만 조회 (CONSUMED, SHIPPED, HOLD, DEFECT 제외)
+    alive_statuses = ["WAIT", "PROCESS", "STOCK"]
+    query = db.query(Lot).filter(
+        Lot.process_id == id,
+        Lot.status.in_(alive_statuses)
+    )
+    
+    total = query.count()
+    lots = query.order_by(Lot.production_date.desc()).offset(
+        (page - 1) * per_page
+    ).limit(per_page).all()
+    
+    # Response 변환
+    lot_responses = []
+    for lot in lots:
+        item = db.query(Item).filter(Item.id == lot.item_id).first()
+        
+        lot_responses.append({
+            "id": lot.id,
+            "lot_number": lot.lot_number,
+            "barcode": lot.barcode,
+            "item_id": lot.item_id,
+            "quantity": lot.quantity,
+            "initial_quantity": lot.initial_quantity,
+            "status": lot.status,
+            "production_date": lot.production_date,
+            "process_id": lot.process_id,
+            "supplier": lot.supplier,
+            "worker_name": lot.worker_name,
+            "qc_passed": lot.qc_passed,
+            "notes": lot.notes,
+            "created_at": lot.created_at,
+            "updated_at": lot.updated_at,
+            "item": {
+                "id": item.id,
+                "item_code": item.item_code,
+                "item_name": item.item_name,
+                "item_type": item.item_type
+            } if item else None,
+            "process_name": process.process_name
+        })
+    
+    return {
+        "items": lot_responses,
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "pages": (total + per_page - 1) // per_page if total > 0 else 1,
+        "process": {
+            "id": process.id,
+            "process_code": process.process_code,
+            "process_name": process.process_name
+        }
+    }
+
+
 @router.delete("/{id}")
 async def delete_process(
     id: int, 
@@ -188,41 +299,4 @@ async def delete_process(
     
     db.commit()
     return {"success": True, "message": "공정이 삭제되었습니다"}
-
-@router.get("/connection-status", response_model=dict)
-async def get_processes_connection_status(
-    db: Session = Depends(get_db)
-):
-    """
-    모든 공정의 RFID 리더기 연결 상태 조회
-
-    반환 형식:
-    {
-        "1": {"connected": true, "active_readers": 2, "total_readers": 3},
-        "2": {"connected": false, "active_readers": 0, "total_readers": 1},
-        ...
-    }
-    """
-    from app.models.rfid import RFIDReaderLocation
-
-    processes = db.query(Process).all()
-    status = {}
-
-    for process in processes:
-        # 해당 공정의 리더기 조회
-        readers = db.query(RFIDReaderLocation).filter(
-            RFIDReaderLocation.process_id == process.id
-        ).all()
-
-        total_readers = len(readers)
-        active_readers = sum(1 for r in readers if r.is_active)
-
-        # 활성화된 리더기가 1개 이상 있으면 연결됨으로 간주
-        status[str(process.id)] = {
-            "connected": active_readers > 0,
-            "active_readers": active_readers,
-            "total_readers": total_readers
-        }
-
-    return status
 

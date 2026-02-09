@@ -13,6 +13,7 @@ from app.models.item import Item
 from app.models.rfid import RFIDReaderLocation
 from app.models.lot import Lot
 from app.models.pallet import Pallet
+from app.models.physical_pallet import PhysicalPallet
 
 
 def init_db():
@@ -128,7 +129,7 @@ def create_items(db: Session):
                 "spec": f"{spec}, 완제품" if spec else "완제품"
             })
 
-    all_items = raw_items + wip_items[:15] + product_items[:15]
+    all_items = raw_items + wip_items + product_items
     
     for i_data in all_items:
         existing = db.query(Item).filter(Item.item_code == i_data["item_code"]).first()
@@ -157,18 +158,27 @@ def create_reader_locations(db: Session):
     shipping = db.query(Process).filter(Process.process_code == "SHIPPING").first()
     
     locations = [
-        # 샤링: OUT만
-        {"port_name": "SHEARING-OUT", "process_id": shearing.id if shearing else None, "location_type": "OUT", "description": "샤링 400T 배출"},
-        # 프레스: IN/OUT
-        {"port_name": "PRESS-IN", "process_id": press.id if press else None, "location_type": "IN", "description": "프레스 1500T 투입"},
-        {"port_name": "PRESS-OUT", "process_id": press.id if press else None, "location_type": "OUT", "description": "프레스 1500T 배출"},
-        # 조립: IN/OUT
-        {"port_name": "ASSEMBLY-IN", "process_id": assembly.id if assembly else None, "location_type": "IN", "description": "조립라인 투입"},
-        {"port_name": "ASSEMBLY-OUT", "process_id": assembly.id if assembly else None, "location_type": "OUT", "description": "조립라인 배출"},
-        # 출하: IN/OUT
-        {"port_name": "SHIPPING-IN", "process_id": shipping.id if shipping else None, "location_type": "IN", "description": "출하장 투입"},
-        {"port_name": "SHIPPING-OUT", "process_id": shipping.id if shipping else None, "location_type": "FINISH", "description": "출하장 완료"},
-        # 휴대용 리더기: 재고 확인용 (FIFO 검증, 재고 조회)
+        # COM00: RECEIVING (No specific readers usually, but placeholder)
+        # COM01: 샤링
+        {"port_name": "COM01-OUT", "process_id": shearing.id if shearing else None, "location_type": "OUT", "description": "샤링 배출"},
+        {"port_name": "SHEARING-OUT", "process_id": shearing.id if shearing else None, "location_type": "OUT", "description": "샤링 배출 (별칭)"},
+        # COM02: 프레스
+        {"port_name": "COM02-REG", "process_id": press.id if press else None, "location_type": "REG", "description": "프레스 등록"},
+        {"port_name": "COM02-IN", "process_id": press.id if press else None, "location_type": "IN", "description": "프레스 투입"},
+        {"port_name": "PRESS-IN", "process_id": press.id if press else None, "location_type": "IN", "description": "프레스 투입 (별칭)"},
+        {"port_name": "COM02-OUT", "process_id": press.id if press else None, "location_type": "OUT", "description": "프레스 배출"},
+        {"port_name": "PRESS-OUT", "process_id": press.id if press else None, "location_type": "OUT", "description": "프레스 배출 (별칭)"},
+        # COM03: 조립
+        {"port_name": "COM03-REG", "process_id": assembly.id if assembly else None, "location_type": "REG", "description": "조립 등록"},
+        {"port_name": "COM03-IN", "process_id": assembly.id if assembly else None, "location_type": "IN", "description": "조립 투입"},
+        {"port_name": "ASSEMBLY-IN", "process_id": assembly.id if assembly else None, "location_type": "IN", "description": "조립 투입 (별칭)"},
+        {"port_name": "COM03-OUT", "process_id": assembly.id if assembly else None, "location_type": "OUT", "description": "조립 배출"},
+        {"port_name": "ASSEMBLY-OUT", "process_id": assembly.id if assembly else None, "location_type": "OUT", "description": "조립 배출 (별칭)"},
+        # COM04: 출하
+        {"port_name": "COM04-REG", "process_id": shipping.id if shipping else None, "location_type": "REG", "description": "출하 등록"},
+        {"port_name": "COM04-IN", "process_id": shipping.id if shipping else None, "location_type": "IN", "description": "출하 투입"},
+        {"port_name": "COM04-OUT", "process_id": shipping.id if shipping else None, "location_type": "FINISH", "description": "출하 완료"},
+        # 휴대용 리더기
         {"port_name": "HANDHELD-01", "process_id": None, "location_type": None, "description": "휴대용 재고 확인 리더기"},
     ]
 
@@ -309,21 +319,26 @@ def create_pallets(db: Session):
             pallet_no = f"PLT-{str(pallet_idx).zfill(5)}"
             rfid_epc = f"E280116020005{str(pallet_idx).zfill(7)}"
             
+            # 1. 실물 팔레트 먼저 생성
+            status_map = {"STOCK": "Stock", "PROCESS": "Producing", "WAIT": "Empty"}
+            status = status_map.get(lot.status, "Empty")
+            
+            pp = db.query(PhysicalPallet).filter(PhysicalPallet.epc == rfid_epc).first()
+            if not pp:
+                pp = PhysicalPallet(
+                    epc=rfid_epc,
+                    pallet_code=f"P-{str(pallet_idx).zfill(5)}",
+                    status=status
+                )
+                db.add(pp)
+                db.flush()
+
+            # 2. 가상 팔레트 생성 및 연결
             existing = db.query(Pallet).filter(Pallet.pallet_no == pallet_no).first()
             if not existing:
-                # LOT 상태에 따른 팔레트 상태 결정
-                if lot.status == "STOCK":
-                    status = "Stock"
-                elif lot.status == "PROCESS":
-                    status = "Producing"
-                elif lot.status == "WAIT":
-                    status = "Empty"
-                else:
-                    status = "Empty"
-                
                 pallet = Pallet(
                     pallet_no=pallet_no,
-                    rfid_epc=rfid_epc,
+                    physical_pallet_id=pp.id,
                     lot_id=lot.id if status != "Empty" else None,
                     status=status,
                     tag_status="IN_USE" if status != "Empty" else "AVAILABLE",
@@ -338,14 +353,27 @@ def create_pallets(db: Session):
     for i in range(20):
         pallet_no = f"PLT-E{str(i+1).zfill(4)}"
         rfid_epc = f"E280116020009{str(i+1).zfill(7)}"
+        status = "Empty"
         
+        # 1. 실물 팔레트 먼저 생성
+        pp = db.query(PhysicalPallet).filter(PhysicalPallet.epc == rfid_epc).first()
+        if not pp:
+            pp = PhysicalPallet(
+                epc=rfid_epc,
+                pallet_code=f"PE-{str(i+1).zfill(4)}",
+                status=status
+            )
+            db.add(pp)
+            db.flush()
+
+        # 2. 가상 팔레트 생성 및 연결
         existing = db.query(Pallet).filter(Pallet.pallet_no == pallet_no).first()
         if not existing:
             pallet = Pallet(
                 pallet_no=pallet_no,
-                rfid_epc=rfid_epc,
+                physical_pallet_id=pp.id,
                 lot_id=None,
-                status="Empty",
+                status=status,
                 tag_status="AVAILABLE",
                 current_process_id=None,
                 quantity=0,

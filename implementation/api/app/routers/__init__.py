@@ -2,6 +2,7 @@ from app.routers.rfid import router as rfid_router
 from app.routers.auth import router as auth_router
 from app.routers.users import router as users_router
 from app.routers.pallets import router as pallets_router
+from app.routers.physical_pallets import router as physical_pallets_router
 from app.routers.trace import router as trace_router
 from app.routers.items import router as items_router
 from app.routers.processes import router as processes_router

@@ -24,8 +24,12 @@ def test_link_lot_to_pallet(client: TestClient, db_session: Session):
     """팔레트에 LOT 연결 테스트 (PUT /pallets/{id}/link-lot)"""
     # 1. Create Data
     uid = str(uuid.uuid4())[:8]
-    # Create Pallet
-    p = Pallet(pallet_no=f"PLT-L-{uid}", rfid_epc=f"EPC-L-{uid}", status="Empty")
+    # Create PhysicalPallet + Pallet
+    from app.models.physical_pallet import PhysicalPallet
+    pp = PhysicalPallet(epc=f"EPC-L-{uid}", pallet_code=f"PLT-L-{uid}", status="Empty")
+    db_session.add(pp)
+    db_session.flush()
+    p = Pallet(pallet_no=f"PLT-L-{uid}", physical_pallet_id=pp.id, status="Empty")
     db_session.add(p)
     
     # Create Lot (any item)

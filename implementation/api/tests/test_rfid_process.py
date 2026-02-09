@@ -7,8 +7,14 @@ def test_rfid_scan_in_success(client: TestClient):
     uid = str(uuid.uuid4())[:8]
     # 1. Setup Data
     # Process
-    proc_res = client.post("/api/v1/processes/", json={"process_code": f"PROC-SCAN-{uid}", "process_name": "Scan Process", "process_type": "Manufacturing", "process_order": 990})
+    proc_res = client.post("/api/v1/processes/", json={
+        "process_code": f"PROC-SCAN-{uid}",
+        "process_name": "Scan Process",
+        "process_order": 990,
+    })
     proc_id = proc_res.json()["id"]
+    # 공정에 RAW 허용 설정 (오투입 검증 통과)
+    client.put(f"/api/v1/processes/{proc_id}", json={"allowed_item_types": "RAW"})
 
     # Reader (IN)
     client.post("/api/v1/reader-locations/", json={"port_name": f"COM_IN_{uid}", "process_id": proc_id, "location_type": "IN", "description": "IN Reader"})

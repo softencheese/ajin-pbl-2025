@@ -38,10 +38,14 @@ def test_barcode_scan_success(client: TestClient, db_session: Session):
     db_session.add(lot)
     db_session.commit()
     
-    # 3. 팔레트 생성 및 LOT 연결
+    # 3. 팔레트 생성 및 LOT 연결 (PhysicalPallet + Pallet)
+    from app.models.physical_pallet import PhysicalPallet
+    pp = PhysicalPallet(epc=f"EPC-BAR-{uid}", pallet_code=f"PLT-BAR-{uid}", status="Stock")
+    db_session.add(pp)
+    db_session.flush()
     pallet = Pallet(
         pallet_no=f"PLT-BAR-{uid}",
-        rfid_epc=f"EPC-BAR-{uid}",
+        physical_pallet_id=pp.id,
         status="Stock",
         lot_id=lot.id
     )
@@ -99,16 +103,20 @@ def test_barcode_scan_at_out_location(client: TestClient, db_session: Session):
     db_session.add(lot)
     db_session.commit()
     
-    # 팔레트 생성 (Consuming 상태로 시작)
+    # 팔레트 생성 (Consuming 상태로 시작, PhysicalPallet + Pallet)
+    from app.models.physical_pallet import PhysicalPallet
+    pp = PhysicalPallet(epc=f"EPC-OUT-{uid}", pallet_code=f"PLT-OUT-{uid}", status="Consuming")
+    db_session.add(pp)
+    db_session.flush()
     pallet = Pallet(
         pallet_no=f"PLT-OUT-{uid}",
-        rfid_epc=f"EPC-OUT-{uid}",
-        status="Consuming",  # 이미 투입 중 상태
+        physical_pallet_id=pp.id,
+        status="Consuming",
         lot_id=lot.id
     )
     db_session.add(pallet)
     db_session.commit()
-    
+
     # OUT 리더기에서 스캔 -> Stock으로 전이
     response = client.post("/api/v1/rfid/scan-barcode", json={
         "barcode": lot.barcode,

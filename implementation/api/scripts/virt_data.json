@@ -1,0 +1,278 @@
+{
+    "processes": [
+        {
+            "id": 1,
+            "process_code": "RECEIVING",
+            "process_name": "입고",
+            "process_order": 0,
+            "production_line": "입고장",
+            "allowed_item_types": "RAW",
+            "is_first_process": true
+        },
+        {
+            "id": 2,
+            "process_code": "SHEARING",
+            "process_name": "샤링",
+            "process_order": 1,
+            "production_line": "400T",
+            "allowed_item_types": "RAW",
+            "is_first_process": true
+        },
+        {
+            "id": 3,
+            "process_code": "PRESS",
+            "process_name": "프레스",
+            "process_order": 2,
+            "production_line": "1500T",
+            "allowed_item_types": "WIP"
+        },
+        {
+            "id": 4,
+            "process_code": "ASSEMBLY",
+            "process_name": "조립",
+            "process_order": 3,
+            "production_line": "조립라인",
+            "allowed_item_types": "WIP,PRODUCT"
+        },
+        {
+            "id": 5,
+            "process_code": "SHIPPING",
+            "process_name": "출하",
+            "process_order": 4,
+            "production_line": "출하장",
+            "allowed_item_types": "PRODUCT"
+        }
+    ],
+    "vehicles": [
+        "JX1",
+        "NE",
+        "K9",
+        "GN7",
+        "EV9"
+    ],
+    "item": [
+        {
+            "id": 1,
+            "item_code": "COIL-SPCC-16",
+            "item_name": "원자재A",
+            "type": "RAW"
+        },
+        {
+            "id": 2,
+            "code": "71411",
+            "item_name": "반제품A-샤링",
+            "vehicle_model": "JX1",
+            "unit": "EA",
+            "spec_suffix": "LH",
+            "type": "WIP",
+            "pallette-capacity": 10,
+            "child": [
+                {
+                    "id": 1,
+                    "quantity": 1
+                }
+            ],
+            "process_id": 2
+        },
+        {
+            "id": 3,
+            "code": "71412",
+            "item_name": "반제품A-프레스",
+            "vehicle_model": "JX1",
+            "unit": "EA",
+            "spec_suffix": "LH",
+            "type": "WIP",
+            "pallette-capacity": 10,
+            "child": [
+                {
+                    "id": 2,
+                    "quantity": 1
+                }
+            ],
+            "process_id": 3
+        },
+        {
+            "id": 4,
+            "code": "71413",
+            "item_name": "반제품A-조립",
+            "vehicle_model": "JX1",
+            "unit": "EA",
+            "spec_suffix": "LH",
+            "type": "WIP",
+            "pallette-capacity": 10,
+            "child": [
+                {
+                    "id": 3,
+                    "quantity": 1
+                }
+            ],
+            "process_id": 4
+        },
+        {
+            "id": 5,
+            "code": "ASSY-76211",
+            "item_name": "완제품A",
+            "vehicle_model": "JX1",
+            "unit": "EA",
+            "spec_suffix": "LH",
+            "type": "PRODUCT",
+            "pallette-capacity": 10,
+            "child": [
+                {
+                    "id": 4,
+                    "quantity": 1
+                }
+            ],
+            "process_id": 5
+        }
+    ],
+    "reader": {
+        "num-reader": 4,
+        "reader-info": [
+            {
+                "prot-name": "COM00",
+                "process-id": 1,
+                "cycle-time": 0,
+                "inner": []
+            },
+            {
+                "prot-name": "COM01",
+                "process-id": 2,
+                "cycle-time": 3,
+                "inner": [
+                    {
+                        "prefix-name": "OUT",
+                        "description": "샤링 400T 배출"
+                    }
+                ]
+            },
+            {
+                "prot-name": "COM02",
+                "process-id": 3,
+                "cycle-time": 2,
+                "inner": [
+                    {
+                        "prefix-name": "REG",
+                        "description": "프레스 임시 등록"
+                    },
+                    {
+                        "prefix-name": "IN",
+                        "description": "프레스 1500T 투입"
+                    },
+                    {
+                        "prefix-name": "OUT",
+                        "description": "프레스 1500T 배출"
+                    }
+                ]
+            },
+            {
+                "prot-name": "COM03",
+                "process-id": 4,
+                "cycle-time": 2,
+                "inner": [
+                    {
+                        "prefix-name": "REG",
+                        "description": "조립 임시 등록"
+                    },
+                    {
+                        "prefix-name": "IN",
+                        "description": "조립라인 투입"
+                    },
+                    {
+                        "prefix-name": "OUT",
+                        "description": "조립라인 배출"
+                    }
+                ]
+            },
+            {
+                "prot-name": "COM04",
+                "process-id": 5,
+                "cycle-time": 3,
+                "inner": [
+                    {
+                        "prefix-name": "REG",
+                        "description": "출하 임시 등록"
+                    },
+                    {
+                        "prefix-name": "IN",
+                        "description": "출하장 투입"
+                    },
+                    {
+                        "prefix-name": "OUT",
+                        "description": "출하장 배출"
+                    }
+                ]
+            }
+        ]
+    },
+    "pallette-data": [
+        {
+            "item_id": 1,
+            "pallettes": [
+                [
+                    "E2 80 11 60 20 00 50 01",
+                    "Empty"
+                ],
+                [
+                    "E2 80 11 60 20 00 50 02",
+                    "Empty"
+                ],
+                [
+                    "E2 80 11 60 20 00 50 03",
+                    "Empty"
+                ]
+            ]
+        },
+        {
+            "item_id": 2,
+            "pallettes": [
+                [
+                    "E2 80 11 60 20 00 50 04",
+                    "Empty"
+                ],
+                [
+                    "E2 80 11 60 20 00 50 05",
+                    "Empty"
+                ],
+                [
+                    "E2 80 11 60 20 00 50 06",
+                    "Empty"
+                ]
+            ]
+        },
+        {
+            "item_id": 3,
+            "pallettes": [
+                [
+                    "E2 80 11 60 20 00 50 07",
+                    "Empty"
+                ],
+                [
+                    "E2 80 11 60 20 00 50 08",
+                    "Empty"
+                ],
+                [
+                    "E2 80 11 60 20 00 50 09",
+                    "Empty"
+                ]
+            ]
+        },
+        {
+            "item_id": 4,
+            "pallettes": [
+                [
+                    "E2 80 11 60 20 00 50 0A",
+                    "Empty"
+                ],
+                [
+                    "E2 80 11 60 20 00 50 0B",
+                    "Empty"
+                ],
+                [
+                    "E2 80 11 60 20 00 50 0C",
+                    "Empty"
+                ]
+            ]
+        }
+    ]
+}
