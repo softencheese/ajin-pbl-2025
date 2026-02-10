@@ -12,6 +12,7 @@ import { LotTrackingPage } from './pages/Traceability/LotTrackingPage';
 import { ItemsPage } from './pages/Items/ItemsPage';
 import { ProcessManagementPage } from './pages/Processes/ProcessManagementPage';
 import { FIFOMonitoringPage } from './pages/FIFO/FIFOMonitoringPage';
+import { NotFoundPage } from './pages/NotFoundPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -55,6 +56,7 @@ function App() {
               path="inventory"
               element={<PlaceholderPage title="재고 현황" subtitle="Stock 상태의 팔레트를 조회합니다." />}
             />
+            <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>
       </BrowserRouter>
