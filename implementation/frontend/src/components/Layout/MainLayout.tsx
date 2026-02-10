@@ -21,29 +21,24 @@ export function MainLayout() {
   const selectedKey = useMemo(() => {
     const path = location.pathname;
     if (path === '/') return 'dashboard';
-    if (path.startsWith('/process-mapping')) return 'process-mapping';
-    if (path.startsWith('/materials')) return 'materials';
-    if (path.startsWith('/items')) return 'items';
-    if (path.startsWith('/parts')) return 'parts';
-    if (path.startsWith('/processes')) return 'processes';
-    if (path.startsWith('/lots/pallets')) return 'lots-pallets';
-    if (path.startsWith('/lots/history')) return 'lots-history';
-    if (path.startsWith('/pallets')) return 'pallets';
-    if (path.startsWith('/monitoring')) return 'monitoring';
-    if (path.startsWith('/fifo')) return 'fifo';
-    if (path.startsWith('/traceability')) return 'traceability';
-    if (path.startsWith('/inventory')) return 'inventory';
-    return 'dashboard';
+    else if (path.startsWith('/items')) return 'items';
+    else if (path.startsWith('/processes')) return 'processes';
+    else if (path.startsWith('/lots/pallets')) return 'lots-pallets';
+    else if (path.startsWith('/lots/history')) return 'lots-history';
+    else if (path.startsWith('/pallets')) return 'pallets';
+    else if (path.startsWith('/fifo')) return 'fifo';
+    else if (path.startsWith('/traceability')) return 'traceability';
+    else
+      return 'dashboard';
   }, [location.pathname]);
 
   // Menu items using the new items API
   const menuItems: MenuProps['items'] = [
-    // 임시 주석처리 (화면 개발시 다시 주석 해제)
-    // {
-    //   key: 'dashboard',
-    //   icon: <DashboardOutlined />,
-    //   label: <Link to="/">대시보드</Link>,
-    // },
+    {
+      key: 'dashboard',
+      icon: <DashboardOutlined />,
+      label: <Link to="/">대시보드</Link>,
+    },
     {
       key: 'items',
       icon: <DatabaseOutlined />,

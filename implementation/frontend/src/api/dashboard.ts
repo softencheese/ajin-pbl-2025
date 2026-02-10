@@ -1,19 +1,19 @@
 import { apiClient } from './client';
-import type { DashboardStats, ProcessSummary, RecentActivity } from '../types/dashboard';
+import type { DashboardStats, ProcessStatusList, RecentActivityResponse } from '../types/dashboard';
 
 export const dashboardApi = {
   async getStats() {
-    const { data } = await apiClient.get<DashboardStats>('/dashboard/stats');
+    const { data } = await apiClient.get<DashboardStats>('/dashboard/summary');
     return data;
   },
 
-  async getProcessSummary() {
-    const { data } = await apiClient.get<ProcessSummary[]>('/dashboard/process-summary');
+  async getProcessStatus() {
+    const { data } = await apiClient.get<ProcessStatusList>('/dashboard/process-status');
     return data;
   },
 
-  async getRecentActivity(limit: number = 20) {
-    const { data } = await apiClient.get<RecentActivity[]>('/dashboard/recent-activity', {
+  async getRecentActivities(limit: number = 20) {
+    const { data } = await apiClient.get<RecentActivityResponse>('/dashboard/recent-activities', {
       params: { limit }
     });
     return data;
