@@ -345,12 +345,9 @@ async def create_lot(
             pallet_quantity = min(data.palette_capacity, lot.quantity - i * data.palette_capacity)
             pallet_no = f"PLT-{today_str}-{pallet_seq:04d}"
 
-            # RFID EPC 생성 (임시로 팔레트 번호 사용, 실제로는 RFID 태그 등록 시 업데이트됨)
-            rfid_epc = f"TEMP-{pallet_no}"
-
             pallet = Pallet(
                 pallet_no=pallet_no,
-                rfid_epc=rfid_epc,
+                rfid_epc=None,  # RFID는 실제 태그 등록 시에만 설정
                 lot_id=lot.id,
                 quantity=pallet_quantity,
                 status="Stock",
