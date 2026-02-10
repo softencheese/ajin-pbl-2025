@@ -213,6 +213,13 @@ export function ItemsPage() {
     }));
   };
 
+  // 하나의 값만 유지하는 핸들러
+  const handleSingleTagChange = (fieldName: string) => (value: string[]) => {
+    // 마지막으로 선택/입력된 값만 유지
+    const lastValue = value.length > 0 ? [value[value.length - 1]] : [];
+    form.setFieldsValue({ [fieldName]: lastValue });
+  };
+
   const handleExportToCSV = () => {
     if (!itemsData || itemsData.items.length === 0) {
       message.warning('내보낼 데이터가 없습니다.');
@@ -477,6 +484,7 @@ export function ItemsPage() {
               mode="tags"
               maxTagCount={1}
               disabled={!!editingItem}
+              onChange={handleSingleTagChange('item_code')}
               filterOption={(input, option) =>
                 (option?.label?.toString() || '').toLowerCase().includes(input.toLowerCase())
               }
@@ -494,6 +502,7 @@ export function ItemsPage() {
               showSearch
               mode="tags"
               maxTagCount={1}
+              onChange={handleSingleTagChange('item_name')}
               filterOption={(input, option) =>
                 (option?.label?.toString() || '').toLowerCase().includes(input.toLowerCase())
               }
@@ -530,6 +539,7 @@ export function ItemsPage() {
               showSearch
               mode="tags"
               maxTagCount={1}
+              onChange={handleSingleTagChange('spec')}
               filterOption={(input, option) =>
                 (option?.label?.toString() || '').toLowerCase().includes(input.toLowerCase())
               }
@@ -543,6 +553,7 @@ export function ItemsPage() {
               showSearch
               mode="tags"
               maxTagCount={1}
+              onChange={handleSingleTagChange('vehicle_model')}
               filterOption={(input, option) =>
                 (option?.label?.toString() || '').toLowerCase().includes(input.toLowerCase())
               }
