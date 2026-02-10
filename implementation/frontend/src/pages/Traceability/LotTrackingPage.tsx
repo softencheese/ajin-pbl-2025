@@ -402,7 +402,7 @@ export function LotTrackingPage() {
   // Table columns
   const columns: ColumnsType<LotTraceData> = [
     {
-      title: '1품명',
+      title: '품명',
       dataIndex: 'itemName',
       key: 'itemName',
       width: 200,
