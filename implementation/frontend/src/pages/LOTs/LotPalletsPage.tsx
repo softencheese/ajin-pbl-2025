@@ -17,6 +17,7 @@ import {
   Col,
   Progress,
   Descriptions,
+  Spin,
 } from 'antd';
 import {
   PlusOutlined,
@@ -25,7 +26,7 @@ import {
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { itemApi } from '../../api/items';
 import { lotApi } from '../../api/lots';
 import { palletApi } from '../../api/pallets';
@@ -99,6 +100,47 @@ export function LotPalletsPage() {
   const { data: palletsApiData, refetch: refetchPallets } = useQuery({
     queryKey: ['pallets'],
     queryFn: () => palletApi.getAll({ per_page: 100 }),
+  });
+
+  // State for tracking status update loading
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+
+  // Mutation for updating pallet status
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ palletNo, status }: { palletNo: string; status: string }) => {
+      // Find the pallet ID from palletNo
+      const pallet = palletsApiData?.items.find(p => p.pallet_no === palletNo);
+      if (!pallet) throw new Error('팔레트를 찾을 수 없습니다.');
+      return palletApi.updateStatus(pallet.id, status);
+    },
+    onMutate: ({ palletNo }) => {
+      setUpdatingStatus(palletNo);
+    },
+    onSuccess: (_, { palletNo, status }) => {
+      // Update local state
+      setLotData(prevData => prevData.map(lot => ({
+        ...lot,
+        palettes: lot.palettes.map(p =>
+          p.id === palletNo ? { ...p, status } : p
+        ),
+      })));
+      // Update modal state if open
+      if (paletteDetailModal.palette?.id === palletNo) {
+        setPaletteDetailModal(prev => ({
+          ...prev,
+          palette: prev.palette ? { ...prev.palette, status } : null,
+        }));
+      }
+      message.success('팔레트 상태가 변경되었습니다.');
+      refetchPallets();
+    },
+    onError: (error: any) => {
+      const errorMsg = error?.response?.data?.detail || '상태 변경에 실패했습니다.';
+      message.error(errorMsg);
+    },
+    onSettled: () => {
+      setUpdatingStatus(null);
+    },
   });
 
   // Transform API data to local format
@@ -933,6 +975,18 @@ export function LotPalletsPage() {
         dataSource={filteredData}
         columns={lotColumns}
         rowKey="lotNumber"
+        onRow={(record) => ({
+          onClick: () => {
+            if (record.palettes.length > 0) {
+              const isExpanded = expandedRowKeys.includes(record.lotNumber);
+              setExpandedRowKeys(isExpanded
+                ? expandedRowKeys.filter(key => key !== record.lotNumber)
+                : [...expandedRowKeys, record.lotNumber]
+              );
+            }
+          },
+          style: record.palettes.length > 0 ? { cursor: 'pointer' } : undefined,
+        })}
         expandable={{
           expandedRowKeys,
           onExpand: (expanded, record) => {
@@ -984,22 +1038,55 @@ export function LotPalletsPage() {
               <Descriptions.Item label="팔레트 번호">#{paletteDetailModal.palette.paletteNumber}</Descriptions.Item>
               <Descriptions.Item label="소속 LOT">{paletteDetailModal.lot.lotNumber}</Descriptions.Item>
               <Descriptions.Item label="수량">{paletteDetailModal.palette.quantity}개</Descriptions.Item>
-              <Descriptions.Item label="팔레트 상태">
-                {(() => {
-                  const statusMap: Record<string, { color: string; label: string }> = {
-                    Generated: { color: 'default', label: '생성됨' },
-                    Empty: { color: 'default', label: '비어있음' },
-                    Stock: { color: 'blue', label: '재고' },
-                    Consuming: { color: 'orange', label: '소비중' },
-                    Producing: { color: 'purple', label: '생산중' },
-                    Finished: { color: 'green', label: '완료' },
-                    Deregistered: { color: 'default', label: '해제됨' },
-                    Hold: { color: 'gold', label: '보류' },
-                    Defect: { color: 'red', label: '불량' },
-                  };
-                  const info = statusMap[paletteDetailModal.palette.status] || { color: 'default', label: paletteDetailModal.palette.status };
-                  return <Tag color={info.color}>{info.label}</Tag>;
-                })()}
+              </Descriptions>
+
+            <Descriptions title="팔레트 상태 변경" column={1} bordered size="small" style={{ marginTop: 16 }}>
+              <Descriptions.Item label="상태 변경">
+                <Space>
+                  <Select
+                    value={paletteDetailModal.palette.status}
+                    onChange={(newStatus) => {
+                      updateStatusMutation.mutate({
+                        palletNo: paletteDetailModal.palette!.id,
+                        status: newStatus,
+                      });
+                    }}
+                    disabled={updatingStatus === paletteDetailModal.palette.id}
+                    style={{ width: 160 }}
+                    optionLabelProp="label"
+                  >
+                    <Option value="Generated" label={<Tag color="default">생성됨</Tag>}>
+                      <Tag color="default">생성됨</Tag> Generated
+                    </Option>
+                    <Option value="Empty" label={<Tag color="default">비어있음</Tag>}>
+                      <Tag color="default">비어있음</Tag> Empty
+                    </Option>
+                    <Option value="Stock" label={<Tag color="blue">재고</Tag>}>
+                      <Tag color="blue">재고</Tag> Stock
+                    </Option>
+                    <Option value="Consuming" label={<Tag color="orange">소비중</Tag>}>
+                      <Tag color="orange">소비중</Tag> Consuming
+                    </Option>
+                    <Option value="Producing" label={<Tag color="purple">생산중</Tag>}>
+                      <Tag color="purple">생산중</Tag> Producing
+                    </Option>
+                    <Option value="Finished" label={<Tag color="green">완료</Tag>}>
+                      <Tag color="green">완료</Tag> Finished
+                    </Option>
+                    <Option value="Deregistered" label={<Tag color="default">해제됨</Tag>}>
+                      <Tag color="default">해제됨</Tag> Deregistered
+                    </Option>
+                    <Option value="Hold" label={<Tag color="gold">보류</Tag>}>
+                      <Tag color="gold">보류</Tag> Hold
+                    </Option>
+                    <Option value="Defect" label={<Tag color="red">불량</Tag>}>
+                      <Tag color="red">불량</Tag> Defect
+                    </Option>
+                  </Select>
+                  {updatingStatus === paletteDetailModal.palette.id && (
+                    <Spin size="small" />
+                  )}
+                </Space>
               </Descriptions.Item>
             </Descriptions>
 
