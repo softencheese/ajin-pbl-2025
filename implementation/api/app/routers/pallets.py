@@ -10,6 +10,7 @@ from app.models.physical_pallet import PhysicalPallet, PalletStatus
 from app.core.socket import sio_server
 from app.models.lot import Lot
 from app.models.item import Item
+from app.services.lot_service import sync_lot_status_and_quantity
 from app.schemas.pallet import (
     PalletCreate,
     PalletUpdate,
@@ -321,6 +322,9 @@ async def link_lot(
     if pallet.physical_pallet:
         pallet.physical_pallet.status = "Stock"
 
+    # LOT 동기화 (AI_README 규칙 적용)
+    sync_lot_status_and_quantity(pallet.lot_id, db)
+
     # 수량은 lot에 이미 있음 (pallet에는 quantity 필드 없음)
     link_quantity = getattr(data, 'quantity', None) if getattr(data, 'quantity', None) is not None else lot.quantity
     
@@ -382,7 +386,10 @@ async def update_pallet_status(
     # physical_pallet의 status 변경 (문자열 -> Enum)
     previous_status = pallet.physical_pallet.status.value if hasattr(pallet.physical_pallet.status, 'value') else pallet.physical_pallet.status
     try:
-        pallet.physical_pallet.status = PalletStatus(data.status) if data.status in [e.value for e in PalletStatus] else pallet.physical_pallet.status
+        new_status_enum = PalletStatus(data.status) if data.status in [e.value for e in PalletStatus] else pallet.physical_pallet.status
+        pallet.physical_pallet.status = new_status_enum
+        # virtual pallet 상태도 동기화
+        pallet.status = data.status
     except (ValueError, TypeError):
         pass
 
@@ -399,6 +406,11 @@ async def update_pallet_status(
     )
 
     db.add(history)
+    
+    # LOT 동기화 (AI_README 규칙 적용)
+    if pallet.lot_id:
+        sync_lot_status_and_quantity(pallet.lot_id, db)
+
     db.commit()
     db.refresh(pallet)
 

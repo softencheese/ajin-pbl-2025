@@ -1,6 +1,6 @@
 """LOT 족보(Genealogy) 라우터"""
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.models.lot import Lot
@@ -17,6 +17,48 @@ from app.core.permissions import PermissionChecker
 from app.models.user import User
 
 router = APIRouter()
+
+
+@router.get("/history", response_model=list[LotGenealogyWithDetails])
+def get_genealogy_history(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("lots", "read"))
+):
+    """모든 LOT 족보 이력 조회 (권한: lots:read)"""
+    # Join queries to get details
+    LotIn = aliased(Lot)
+    LotOut = aliased(Lot)
+    ItemIn = aliased(Item)
+    ItemOut = aliased(Item)
+
+    query = db.query(
+        LotGenealogy.id,
+        LotIn.lot_number.label("input_lot_number"),
+        ItemIn.item_code.label("input_item_code"),
+        ItemIn.item_type.label("input_item_type"),
+        LotOut.lot_number.label("output_lot_number"),
+        ItemOut.item_code.label("output_item_code"),
+        ItemOut.item_type.label("output_item_type"),
+        Process.process_name.label("process_name"),
+        LotGenealogy.quantity_consumed.label("quantity_consumed"),
+        LotGenealogy.created_at.label("created_at")
+    ).outerjoin(LotIn, LotGenealogy.input_lot_id == LotIn.id) \
+     .outerjoin(ItemIn, LotIn.item_id == ItemIn.id) \
+     .outerjoin(LotOut, LotGenealogy.output_lot_id == LotOut.id) \
+     .outerjoin(ItemOut, LotOut.item_id == ItemOut.id) \
+     .outerjoin(Process, LotGenealogy.process_id == Process.id) \
+     .order_by(LotGenealogy.created_at.desc())
+
+    return query.all()
+
+
+@router.get("/all", response_model=list[LotGenealogyResponse])
+def get_all_lot_genealogy(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("lots", "read"))
+):
+    """모든 LOT 족보 원본 데이터 조회 (권한: lots:read)"""
+    return db.query(LotGenealogy).all()
 
 
 @router.get("/{lot_id}")
@@ -43,7 +85,8 @@ def get_lot_genealogy(
                 "lot_number": parent_lot.lot_number,
                 "item_code": parent_item.item_code,
                 "item_type": parent_item.item_type,
-                "quantity_consumed": g.quantity_consumed
+                "quantity_consumed": g.quantity_consumed,
+                "process_name": g.process.process_name if g.process else "Unknown"
             })
     
     # 자식 LOT 조회 (이 LOT가 사용된 LOT들)
@@ -57,7 +100,8 @@ def get_lot_genealogy(
                 "lot_number": child_lot.lot_number,
                 "item_code": child_item.item_code,
                 "item_type": child_item.item_type,
-                "quantity_consumed": g.quantity_consumed
+                "quantity_consumed": g.quantity_consumed,
+                "process_name": g.process.process_name if g.process else "Unknown"
             })
     
     return {

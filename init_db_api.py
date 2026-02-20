@@ -270,64 +270,54 @@ def create_reader_locations(client: APIClient, data: dict):
 
 
 def create_lots(client: APIClient, data: dict):
-    """LOT 생성"""
     print("\n" + "="*60)
     print("📦 LOT 생성")
     print("="*60)
-    
+
     created_count = 0
     skipped_count = 0
     today = date.today()
-    
-    # 품목 정보 조회
+
     items = client.get("/api/v1/items", params={"per_page": 100})
     item_dict = {item["item_code"]: item for item in items.get("items", [])}
-    
-    # RAW LOT 생성 (최근 3일)
+
     print("\n[원자재 LOT - RAW]")
-    for i, raw in enumerate(data["raw_items"]):
+    for raw in data["raw_items"]:
         item = item_dict.get(raw["item_code"])
         if not item:
-            print(f"  ⚠️  품목을 찾을 수 없음: {raw['item_code']}")
+            print(f"  ⚠️  품목 없음: {raw['item_code']}")
             continue
-        
-        for d in range(1):
-        # for d in range(3):
-            prod_date = today - timedelta(days=d)
-            
-            # 원자재 입고 API 사용
-            lot_data = {
-                "item_id": item["id"],
-                "quantity": 1000,
-                "production_date": prod_date.isoformat(),
-                "supplier": item.get("default_supplier", ""),
-                "notes": f"초기 시딩 데이터 (Day-{d})"
-            }
-            
-            try:
-                result = client.post("/api/v1/lots/receiving", lot_data)
-                print(f"  ✅ {result['lot_number']} (수량: 1000) - ID: {result['id']}, Status: {result['status']}")
-                created_count += 1
-            except requests.exceptions.HTTPError as e:
-                print(f"  ❌ {item['item_code']} Day-{d} - 오류: {e.response.text}")
-    
-    # WIP LOT 생성
+
+        lot_data = {
+            "item_id": item["id"],
+            "quantity": 1000,
+            "production_date": today.isoformat(),
+            "supplier": item.get("default_supplier", ""),
+            "notes": "초기 시딩 데이터"
+        }
+
+        try:
+            result = client.post("/api/v1/lots/receiving", lot_data)
+            print(f"  ✅ {result['lot_number']} - ID: {result['id']}")
+            created_count += 1
+
+        except requests.exceptions.HTTPError as e:
+            print(f"  ❌ {raw['item_code']} - 오류: {e.response.text}")
+
     print("\n[재공품 LOT - WIP]")
-    for w in data["wip_items"]:
-        item_code = f"{w['code']}-{w['vehicle_model']}-SH"
+    for wip in data["wip_items"]:
+        item_code = f"{wip['code']}-{wip['vehicle_model']}-SH"
         item = item_dict.get(item_code)
         if not item:
-            print(f"  ⚠️  품목을 찾을 수 없음: {item_code}")
+            print(f"  ⚠️  품목 없음: {item_code}")
             continue
-        
-        # 아이템의 process_id 사용 (없으면 기본값 사용)
-        process_id = w.get("process_id")
-        if not process_id:
-            print(f"  ⚠️  {item_code} - process_id가 지정되지 않음")
-            skipped_count += 1
-            continue        
 
-        # WIP LOT 생성
+        process_id = wip.get("process_id")
+        if not process_id:
+            print(f"  ⚠️  {item_code} - process_id 없음")
+            skipped_count += 1
+            continue
+
         lot_data = {
             "item_id": item["id"],
             "quantity": 100,
@@ -336,33 +326,32 @@ def create_lots(client: APIClient, data: dict):
             "worker_name": "가공담당",
             "qc_passed": True,
             "notes": "초기 시딩 데이터 (WIP)",
-            "pallet_capacity": 20
+            "pallet_capacity": wip.get("pallette-capacity", 50)
         }
-        
+
         try:
             result = client.post("/api/v1/lots", lot_data)
-            print(f"  ✅ {result['lot_number']} (수량: 100) - ID: {result['id']}, Status: {result['status']}")
+            lot_id = result['id']
+            print(f"  ✅ {result['lot_number']} - ID: {lot_id}")
             created_count += 1
+
         except requests.exceptions.HTTPError as e:
             print(f"  ❌ {item_code} - 오류: {e.response.text}")
-    
-    # PRODUCT LOT 생성
+
     print("\n[완제품 LOT - PRODUCT]")
-    for p in data["product_items"]:
-        item_code = f"{p['code']}-{p['vehicle_model']}"
+    for prod in data["product_items"]:
+        item_code = f"{prod['code']}-{prod['vehicle_model']}"
         item = item_dict.get(item_code)
         if not item:
-            print(f"  ⚠️  품목을 찾을 수 없음: {item_code}")
+            print(f"  ⚠️  품목 없음: {item_code}")
             continue
-        
-        # 아이템의 process_id 사용
-        process_id = p.get("process_id")
+
+        process_id = prod.get("process_id")
         if not process_id:
-            print(f"  ⚠️  {item_code} - process_id가 지정되지 않음")
+            print(f"  ⚠️  {item_code} - process_id 없음")
             skipped_count += 1
             continue
-        
-        # PRODUCT LOT 생성
+
         lot_data = {
             "item_id": item["id"],
             "quantity": 50,
@@ -371,16 +360,18 @@ def create_lots(client: APIClient, data: dict):
             "worker_name": "조립담당",
             "qc_passed": True,
             "notes": "초기 시딩 데이터 (PRODUCT)",
-            "pallet_capacity": 20
+            "pallet_capacity": prod.get("pallette-capacity", 50)
         }
-        
+
         try:
             result = client.post("/api/v1/lots", lot_data)
-            print(f"  ✅ {result['lot_number']} (수량: 50) - ID: {result['id']}, Status: {result['status']}")
+            lot_id = result['id']
+            print(f"  ✅ {result['lot_number']} - ID: {lot_id}")
             created_count += 1
+
         except requests.exceptions.HTTPError as e:
             print(f"  ❌ {item_code} - 오류: {e.response.text}")
-    
+
     print(f"\n총 {created_count}개 생성, {skipped_count}개 스킵")
 
 

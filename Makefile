@@ -51,11 +51,11 @@ clean:
 fclean: clean
 	@echo "Performing deep clean (removing data and environments)..."
 	@docker-compose down -v 2>/dev/null || true
-	@rm -rf implementation/data
-	@rm -rf implementation/api/venv
-	@rm -rf implementation/frontend/node_modules
-	@rm -rf implementation/api/logs
-	@rm -rf implementation/backups
+	@sudo rm -rf implementation/data
+	@sudo rm -rf implementation/api/venv
+	@sudo rm -rf implementation/frontend/node_modules
+	@sudo rm -rf implementation/api/logs
+	@sudo rm -rf implementation/backups
 	@echo "Deep clean complete. System is factory reset."
 
 db_clean:

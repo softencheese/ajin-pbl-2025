@@ -1,0 +1,1869 @@
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=('E280116020005003', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005003
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  => result=('E280116020005001', 'Stock')
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Consuming (api)
+  => result=('E280116020005001', 'Consuming')
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Generated (api)
+  epc=E280116020005005, status=Generated (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Generated (api)
+  => result=('E280116020005004', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005004
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Producing (api)
+  => result=('E280116020005004', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005004
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Stock (api)
+  => result=('E280116020005002', 'Stock')
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Consuming (api)
+  => result=('E280116020005002', 'Consuming')
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Generated (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Generated (api)
+  => result=('E280116020005005', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005005
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Producing (api)
+  => result=('E280116020005005', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005005
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Empty (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Empty (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Empty (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Empty (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=('E280116020005006', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005006
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  => result=('E280116020005001', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Producing (api)
+  => result=('E280116020005001', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Generated (api)
+  => result=('E280116020005002', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005002
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Producing (api)
+  => result=('E280116020005002', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005002
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Generated (api)
+  epc=E280116020005005, status=Generated (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Generated (api)
+  => result=('E280116020005004', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005004
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Producing (api)
+  => result=('E280116020005004', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005004
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Generated (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Generated (api)
+  => result=('E280116020005005', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005005
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Producing (api)
+  => result=('E280116020005005', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005005
+[find_pallette] item_ids=[4], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  epc=E280116020005008, status=Generated (api)
+  epc=E280116020005009, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[4], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  => result=('E280116020005007', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005007
+[find_pallette] item_ids=[4], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Producing (api)
+  => result=('E280116020005007', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005007
+[find_pallette] item_ids=[4], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Finished (api)
+  epc=E280116020005008, status=Generated (api)
+  epc=E280116020005009, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[4], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Finished (api)
+  epc=E280116020005008, status=Generated (api)
+  => result=('E280116020005008', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005008
+[find_pallette] item_ids=[4], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Finished (api)
+  epc=E280116020005008, status=Generated (api)
+  epc=E280116020005009, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[4], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Finished (api)
+  epc=E280116020005008, status=Generated (api)
+  => result=('E280116020005008', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005008
+[find_pallette] item_ids=[4], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Finished (api)
+  epc=E280116020005008, status=Generated (api)
+  epc=E280116020005009, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[4], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Finished (api)
+  epc=E280116020005008, status=Generated (api)
+  => result=('E280116020005008', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005008
+[find_pallette] item_ids=[4], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  epc=E280116020005008, status=Generated (api)
+  epc=E280116020005009, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[4], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  => result=('E280116020005007', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005007
+[find_pallette] item_ids=[4], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Producing (api)
+  => result=('E280116020005007', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005007
+[find_pallette] item_ids=[4], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  epc=E280116020005008, status=Generated (api)
+  epc=E280116020005009, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[4], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  => result=('E280116020005007', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005007
+[find_pallette] item_ids=[3], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Generated (api)
+  epc=E280116020005005, status=Generated (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Generated (api)
+  epc=E280116020005005, status=Generated (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Generated (api)
+  epc=E280116020005005, status=Generated (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Generated (api)
+  epc=E280116020005005, status=Generated (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  => result=('E280116020005001', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  => result=('E280116020005001', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  => result=('E280116020005001', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005001
+[find_pallette] item_ids=[4], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  epc=E280116020005008, status=Generated (api)
+  epc=E280116020005009, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[4], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  => result=('E280116020005007', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005007
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  => result=('E280116020005001', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Producing (api)
+  => result=('E280116020005001', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Generated (api)
+  => result=('E280116020005002', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005002
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Producing (api)
+  => result=('E280116020005002', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005002
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=('E280116020005003', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005003
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Generated (api)
+  epc=E280116020005005, status=Generated (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Generated (api)
+  => result=('E280116020005004', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005004
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  => result=('E280116020005001', 'Stock')
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Generated (api)
+  epc=E280116020005005, status=Generated (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Generated (api)
+  => result=('E280116020005004', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005004
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Consuming (api)
+  => result=('E280116020005001', 'Consuming')
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Producing (api)
+  => result=('E280116020005004', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005004
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Stock (api)
+  => result=('E280116020005002', 'Stock')
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Producing (api)
+  => result=('E280116020005004', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005004
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Generated (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Generated (api)
+  => result=('E280116020005005', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005005
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Producing (api)
+  => result=('E280116020005005', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005005
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=('E280116020005006', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005006
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Consuming (api)
+  => result=('E280116020005002', 'Consuming')
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=('E280116020005006', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005006
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Empty (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Empty (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=('E280116020005006', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005006
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=('E280116020005006', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005006
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Empty (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Empty (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=('E280116020005006', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005006
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Empty (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Empty (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=('E280116020005006', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005006
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=('E280116020005006', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005006
+[find_pallette] item_ids=[3], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  => result=('E280116020005004', 'Stock')
+[find_pallette] item_ids=[3], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Consuming (api)
+  => result=('E280116020005004', 'Consuming')
+[find_pallette] item_ids=[4], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  epc=E280116020005008, status=Generated (api)
+  epc=E280116020005009, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[4], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  => result=('E280116020005007', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005007
+[find_pallette] item_ids=[4], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  epc=E280116020005008, status=Generated (api)
+  epc=E280116020005009, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[4], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  => result=('E280116020005007', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005007
+[find_pallette] item_ids=[3], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Empty (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Empty (api)
+  epc=E280116020005005, status=Stock (api)
+  => result=('E280116020005005', 'Stock')
+[find_pallette] item_ids=[3], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Empty (api)
+  epc=E280116020005005, status=Consuming (api)
+  => result=('E280116020005005', 'Consuming')
+[find_pallette] item_ids=[4], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  epc=E280116020005008, status=Generated (api)
+  epc=E280116020005009, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[4], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  => result=('E280116020005007', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005007
+[find_pallette] item_ids=[4], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  epc=E280116020005008, status=Generated (api)
+  epc=E280116020005009, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[4], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  => result=('E280116020005007', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005007
+[find_pallette] item_ids=[3], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Empty (api)
+  epc=E280116020005005, status=Empty (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Empty (api)
+  epc=E280116020005005, status=Empty (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[4], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  epc=E280116020005008, status=Generated (api)
+  epc=E280116020005009, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[4], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  => result=('E280116020005007', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005007
+[find_pallette] item_ids=[3], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Empty (api)
+  epc=E280116020005005, status=Empty (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Empty (api)
+  epc=E280116020005005, status=Empty (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[4], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  epc=E280116020005008, status=Generated (api)
+  epc=E280116020005009, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[4], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  => result=('E280116020005007', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005007
+[find_pallette] item_ids=[4], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  epc=E280116020005008, status=Generated (api)
+  epc=E280116020005009, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[4], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  => result=('E280116020005007', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005007
+[find_pallette] item_ids=[4], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  epc=E280116020005008, status=Generated (api)
+  epc=E280116020005009, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[4], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  => result=('E280116020005007', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005007
+[find_pallette] item_ids=[3], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Empty (api)
+  epc=E280116020005005, status=Empty (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Empty (api)
+  epc=E280116020005005, status=Empty (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[4], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  epc=E280116020005008, status=Generated (api)
+  epc=E280116020005009, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[4], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  => result=('E280116020005007', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005007
+[find_pallette] item_ids=[4], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  epc=E280116020005008, status=Generated (api)
+  epc=E280116020005009, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[4], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  => result=('E280116020005007', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005007
+[find_pallette] item_ids=[4], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  epc=E280116020005008, status=Generated (api)
+  epc=E280116020005009, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[4], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  => result=('E280116020005007', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005007
+[find_pallette] item_ids=[4], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  epc=E280116020005008, status=Generated (api)
+  epc=E280116020005009, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[4], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  => result=('E280116020005007', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005007
+[find_pallette] item_ids=[4], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  epc=E280116020005008, status=Generated (api)
+  epc=E280116020005009, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[4], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  => result=('E280116020005007', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005007
+[find_pallette] item_ids=[4], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  epc=E280116020005008, status=Generated (api)
+  epc=E280116020005009, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[4], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  => result=('E280116020005007', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005007
+[find_pallette] item_ids=[4], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  epc=E280116020005008, status=Generated (api)
+  epc=E280116020005009, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[4], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  => result=('E280116020005007', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005007
+[find_pallette] item_ids=[4], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  epc=E280116020005008, status=Generated (api)
+  epc=E280116020005009, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[4], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  => result=('E280116020005007', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005007
+[find_pallette] item_ids=[1], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  item_id=1 -> 로컈 팔레트 없음
+  => result=None
+[find_pallette] item_ids=[1], target={'Stock'}, pallettes keys=[2, 3, 4]
+  item_id=1 -> 로컈 팔레트 없음
+  => result=None
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  => result=('E280116020005001', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Producing (api)
+  => result=('E280116020005001', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Generated (api)
+  => result=('E280116020005002', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005002
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Producing (api)
+  => result=('E280116020005002', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005002
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  => result=('E280116020005001', 'Stock')
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Generated (api)
+  epc=E280116020005005, status=Generated (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Generated (api)
+  => result=('E280116020005004', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005004
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Consuming (api)
+  => result=('E280116020005001', 'Consuming')
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Producing (api)
+  => result=('E280116020005004', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005004
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  => result=('E280116020005001', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Producing (api)
+  => result=('E280116020005001', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Generated (api)
+  => result=('E280116020005002', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005002
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Producing (api)
+  => result=('E280116020005002', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005002
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Generated (api)
+  epc=E280116020005005, status=Generated (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Generated (api)
+  => result=('E280116020005004', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005004
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  => result=('E280116020005001', 'Stock')
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Generated (api)
+  epc=E280116020005005, status=Generated (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Generated (api)
+  => result=('E280116020005004', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005004
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Consuming (api)
+  => result=('E280116020005001', 'Consuming')
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Producing (api)
+  => result=('E280116020005004', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005004
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Generated (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Generated (api)
+  => result=('E280116020005005', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005005
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Stock (api)
+  => result=('E280116020005002', 'Stock')
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Generated (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Generated (api)
+  => result=('E280116020005005', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005005
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Consuming (api)
+  => result=('E280116020005002', 'Consuming')
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Producing (api)
+  => result=('E280116020005005', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005005
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Empty (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Empty (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=('E280116020005006', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005006
+[find_pallette] item_ids=[3], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  => result=('E280116020005004', 'Stock')
+[find_pallette] item_ids=[4], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  epc=E280116020005008, status=Generated (api)
+  epc=E280116020005009, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[4], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Generated (api)
+  => result=('E280116020005007', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005007
+[find_pallette] item_ids=[3], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Consuming (api)
+  => result=('E280116020005004', 'Consuming')
+[find_pallette] item_ids=[4], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Producing (api)
+  => result=('E280116020005007', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005007
+[find_pallette] item_ids=[3], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Empty (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Empty (api)
+  epc=E280116020005005, status=Stock (api)
+  => result=('E280116020005005', 'Stock')
+[find_pallette] item_ids=[4], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Finished (api)
+  epc=E280116020005008, status=Generated (api)
+  epc=E280116020005009, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[4], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Finished (api)
+  epc=E280116020005008, status=Generated (api)
+  => result=('E280116020005008', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005008
+[find_pallette] item_ids=[3], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Empty (api)
+  epc=E280116020005005, status=Consuming (api)
+  => result=('E280116020005005', 'Consuming')
+[find_pallette] item_ids=[4], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Finished (api)
+  epc=E280116020005008, status=Generated (api)
+  epc=E280116020005009, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[4], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Finished (api)
+  epc=E280116020005008, status=Generated (api)
+  => result=('E280116020005008', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005008
+[find_pallette] item_ids=[3], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Empty (api)
+  epc=E280116020005005, status=Empty (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Empty (api)
+  epc=E280116020005005, status=Empty (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[4], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Finished (api)
+  epc=E280116020005008, status=Generated (api)
+  epc=E280116020005009, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[4], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005007, status=Finished (api)
+  epc=E280116020005008, status=Generated (api)
+  => result=('E280116020005008', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005008
+[find_pallette] item_ids=[1], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  item_id=1 -> 로컈 팔레트 없음
+  => result=None
+[find_pallette] item_ids=[1], target={'Stock'}, pallettes keys=[2, 3, 4]
+  item_id=1 -> 로컈 팔레트 없음
+  => result=None
+[find_pallette] item_ids=[1], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  item_id=1 -> 로컈 팔레트 없음
+  => result=None
+[find_pallette] item_ids=[1], target={'Stock'}, pallettes keys=[2, 3, 4]
+  item_id=1 -> 로컈 팔레트 없음
+  => result=None
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  => result=('E280116020005001', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Producing (api)
+  => result=('E280116020005001', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Generated (api)
+  => result=('E280116020005002', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005002
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Producing (api)
+  => result=('E280116020005002', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005002
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=('E280116020005003', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005003
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  => result=('E280116020005001', 'Stock')
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Generated (api)
+  epc=E280116020005005, status=Generated (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Generated (api)
+  => result=('E280116020005004', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005004
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Consuming (api)
+  => result=('E280116020005001', 'Consuming')
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Producing (api)
+  => result=('E280116020005004', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005004
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Stock (api)
+  => result=('E280116020005002', 'Stock')
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Generated (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Generated (api)
+  => result=('E280116020005005', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005005
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Consuming (api)
+  => result=('E280116020005002', 'Consuming')
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Producing (api)
+  => result=('E280116020005005', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005005
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Empty (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Empty (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=('E280116020005006', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005006
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Empty (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Empty (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=('E280116020005006', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005006
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=('E280116020005006', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005006
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=('E280116020005006', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005006
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=('E280116020005006', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005006
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  => result=('E280116020005001', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Producing (api)
+  => result=('E280116020005001', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Generated (api)
+  => result=('E280116020005002', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005002
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Producing (api)
+  => result=('E280116020005002', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005002
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=('E280116020005003', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005003
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  => result=('E280116020005001', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Producing (api)
+  => result=('E280116020005001', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Generated (api)
+  => result=('E280116020005002', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005002
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Producing (api)
+  => result=('E280116020005002', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005002
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  => result=('E280116020005001', 'Stock')
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Generated (api)
+  epc=E280116020005005, status=Generated (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Generated (api)
+  => result=('E280116020005004', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005004
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Consuming (api)
+  => result=('E280116020005001', 'Consuming')
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Producing (api)
+  => result=('E280116020005004', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005004
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Stock (api)
+  => result=('E280116020005002', 'Stock')
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Generated (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Generated (api)
+  => result=('E280116020005005', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005005
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Producing (api)
+  => result=('E280116020005005', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005005
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Consuming (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  => result=('E280116020005001', 'Empty')
+[send_rfid O] START: Empty->Producing epc=E280116020005001
+[find_pallette] item_ids=[1], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  item_id=1 -> 로컈 팔레트 없음
+  => result=None
+[find_pallette] item_ids=[1], target={'Stock'}, pallettes keys=[2, 3, 4]
+  item_id=1 -> 로컈 팔레트 없음
+  => result=None
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Consuming (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  => result=('E280116020005001', 'Empty')
+[send_rfid O] START: Empty->Producing epc=E280116020005001
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=('E280116020005006', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005006
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Consuming (api)
+  => result=('E280116020005002', 'Consuming')
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Stock (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=('E280116020005006', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005006
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  => result=('E280116020005001', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Producing (api)
+  => result=('E280116020005001', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Generated (api)
+  => result=('E280116020005002', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005002
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Producing (api)
+  => result=('E280116020005002', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005002
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  => result=('E280116020005001', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Producing (api)
+  => result=('E280116020005001', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Generated (api)
+  => result=('E280116020005002', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005002
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Producing (api)
+  => result=('E280116020005002', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005002
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  => result=('E280116020005001', 'Stock')
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Generated (api)
+  epc=E280116020005005, status=Generated (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Generated (api)
+  => result=('E280116020005004', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005004
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Stock (api)
+  => result=('E280116020005002', 'Stock')
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Producing (api)
+  => result=('E280116020005004', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005004
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  => result=('E280116020005001', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Producing (api)
+  => result=('E280116020005001', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  => result=('E280116020005001', 'Stock')
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Generated (api)
+  epc=E280116020005005, status=Generated (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Generated (api)
+  => result=('E280116020005004', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005004
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Producing (api)
+  => result=('E280116020005004', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005004
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Generated (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Stock (api)
+  epc=E280116020005005, status=Generated (api)
+  => result=('E280116020005005', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005005
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  => result=('E280116020005001', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Producing (api)
+  => result=('E280116020005001', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  => result=('E280116020005001', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Producing (api)
+  => result=('E280116020005001', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  => result=('E280116020005001', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Producing (api)
+  => result=('E280116020005001', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Generated (api)
+  => result=('E280116020005002', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005002
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Producing (api)
+  => result=('E280116020005002', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005002
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=('E280116020005003', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005003
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=('E280116020005003', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005003
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  => result=('E280116020005001', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Producing (api)
+  => result=('E280116020005001', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Generated (api)
+  => result=('E280116020005002', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005002
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Producing (api)
+  => result=('E280116020005002', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005002
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=('E280116020005003', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005003
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  => result=('E280116020005001', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Producing (api)
+  => result=('E280116020005001', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Generated (api)
+  => result=('E280116020005002', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005002
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Producing (api)
+  => result=('E280116020005002', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005002
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=('E280116020005003', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005003
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Producing (api)
+  => result=('E280116020005003', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005003
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Stock (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Stock (api)
+  => result=None
+[send_rfid O] No candidate: all pallets in non-actionable status
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Stock (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Stock (api)
+  => result=None
+[send_rfid O] No candidate: all pallets in non-actionable status
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Stock (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Stock (api)
+  => result=None
+[send_rfid O] No candidate: all pallets in non-actionable status
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Stock (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Stock (api)
+  => result=None
+[send_rfid O] No candidate: all pallets in non-actionable status
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Stock (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Stock (api)
+  => result=None
+[send_rfid O] No candidate: all pallets in non-actionable status
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Stock (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Stock (api)
+  => result=None
+[send_rfid O] No candidate: all pallets in non-actionable status
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  => result=('E280116020005001', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Producing (api)
+  => result=('E280116020005001', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  => result=('E280116020005001', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Producing (api)
+  => result=('E280116020005001', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Generated (api)
+  => result=('E280116020005002', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005002
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Producing (api)
+  => result=('E280116020005002', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005002
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=('E280116020005003', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005003
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Producing (api)
+  => result=('E280116020005003', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005003
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Stock (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Generated', 'Empty'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Stock (api)
+  => result=None
+[send_rfid O] No candidate: all pallets in non-actionable status
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  => result=('E280116020005001', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Producing (api)
+  => result=('E280116020005001', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Generated (api)
+  => result=('E280116020005002', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005002
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Producing (api)
+  => result=('E280116020005002', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005002
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=('E280116020005003', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005003
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Producing (api)
+  => result=('E280116020005003', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005003
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Stock (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Stock (api)
+  => result=None
+[send_rfid O] No candidate: all pallets in non-actionable status
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Stock (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Stock'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  => result=('E280116020005001', 'Stock')
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Generated (api)
+  epc=E280116020005005, status=Generated (api)
+  epc=E280116020005006, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[3], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Generated (api)
+  => result=('E280116020005004', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005004
+[find_pallette] item_ids=[2], target={'Consuming'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Consuming (api)
+  => result=('E280116020005001', 'Consuming')
+[find_pallette] item_ids=[3], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005004, status=Producing (api)
+  => result=('E280116020005004', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005004
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Stock (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  => result=('E280116020005001', 'Empty')
+[send_rfid O] START: Empty->Producing epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  epc=E280116020005002, status=Stock (api)
+  epc=E280116020005003, status=Stock (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Empty (api)
+  => result=('E280116020005001', 'Empty')
+[send_rfid O] START: Empty->Producing epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Generated (api)
+  => result=('E280116020005001', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Producing (api)
+  => result=('E280116020005001', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005001
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Generated (api)
+  epc=E280116020005003, status=Generated (api)
+  => result=None
+[find_pallette] item_ids=[2], target={'Empty', 'Generated'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Generated (api)
+  => result=('E280116020005002', 'Generated')
+[send_rfid O] START: Generated->Producing epc=E280116020005002
+[find_pallette] item_ids=[2], target={'Producing'}, pallettes keys=[2, 3, 4]
+  epc=E280116020005001, status=Stock (api)
+  epc=E280116020005002, status=Producing (api)
+  => result=('E280116020005002', 'Producing')
+[send_rfid O] END: Producing->Stock/Finished epc=E280116020005002

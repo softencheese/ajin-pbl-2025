@@ -72,13 +72,15 @@ export function MonitoringPage() {
   };
 
   const statusColorMap: Record<string, string> = {
+    Generated: 'default',
+    Empty: 'default',
     Stock: 'green',
     Consuming: 'orange',
     Producing: 'blue',
     Finished: 'purple',
+    Deregistered: 'default',
     Hold: 'gold',
     Defect: 'red',
-    Empty: 'default',
   };
 
   const palletColumns = [

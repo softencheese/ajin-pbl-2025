@@ -73,7 +73,8 @@ CREATE TABLE lots (
     barcode VARCHAR(100) COMMENT '실물 바코드 번호 (라벨 스캔용)',
     item_id BIGINT NOT NULL COMMENT '품목 ID',
     quantity INT NOT NULL COMMENT '현재 수량',
-    initial_quantity INT NOT NULL COMMENT '초기 수량',
+    initial_quantity INT NOT NULL COMMENT '초기 수량 (목표)',
+    produced_quantity INT NOT NULL DEFAULT 0 COMMENT '누적 생산 수량',
     status ENUM('WAIT', 'PROCESS', 'STOCK', 'CONSUMED', 'SHIPPED', 'HOLD', 'DEFECT') DEFAULT 'WAIT' COMMENT 'LOT 상태',
     production_date DATE NOT NULL COMMENT '생산일 또는 입고일',
     process_id BIGINT COMMENT '생성된 공정 ID',
@@ -118,7 +119,6 @@ CREATE TABLE physical_pallets (
     rfid_epc VARCHAR(100) UNIQUE NOT NULL COMMENT 'RFID EPC 코드 (고유)',
     pallet_code VARCHAR(50) UNIQUE NOT NULL COMMENT '팔레트 실물 코드',
     item_id BIGINT COMMENT '기본 적재 품목 ID',
-    status ENUM('Generated', 'Empty', 'Stock', 'Consuming', 'Producing', 'Finished', 'Deregistered', 'Hold', 'Defect') DEFAULT 'Generated' COMMENT '팔레트 상태 (9가지)',
     description VARCHAR(200) COMMENT '팔레트 설명',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -126,7 +126,6 @@ CREATE TABLE physical_pallets (
     INDEX idx_item_id (item_id),
     INDEX idx_epc (rfid_epc),
     INDEX idx_pallet_code (pallet_code),
-    INDEX idx_status (status)
 ) COMMENT '실물 팔레트 정보';
 
 -- 6-1. 가상 팔레트 (RFID 태그 통합 - 기존 rfid_tags 테이블 흡수)
@@ -136,7 +135,8 @@ CREATE TABLE pallets (
     physical_pallet_id BIGINT COMMENT '실물 팔레트 ID',
     lot_id BIGINT COMMENT '연결된 LOT ID',
     quantity INT DEFAULT 0 COMMENT '현재 적재 수량',
-    tag_status ENUM('AVAILABLE', 'IN_USE', 'DAMAGED') DEFAULT 'AVAILABLE' COMMENT 'RFID 태그 상태 (기존 rfid_tags.status 통합)',
+    status ENUM('Generated', 'Empty', 'Stock', 'Consuming', 'Producing', 'Finished', 'Deregistered', 'Hold', 'Defect') DEFAULT 'Generated' COMMENT '팔레트 상태 (9가지)',
+    tag_status ENUM('AVAILABLE', 'IN_USE', 'OUT_OF_USE', 'DAMAGED') DEFAULT 'AVAILABLE' COMMENT 'RFID 태그 상태 (기존 rfid_tags.status 통합)',
     current_process_id BIGINT COMMENT '현재 공정',
     tag_registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'RFID 태그 등록 시각',
     tag_deregistered_at TIMESTAMP NULL COMMENT 'RFID 태그 해제 시각',
@@ -149,6 +149,8 @@ CREATE TABLE pallets (
     INDEX idx_pallet_no (pallet_no),
     INDEX idx_tag_status (tag_status),
     INDEX idx_lot (lot_id)
+    INDEX idx_status (status)
+
 ) COMMENT '팔레트 - RFID 태그 통합 관리 (기존 rfid_tags 흡수)';
 
 -- 7. 팔레트 이력 (불변 로그)
@@ -190,12 +192,12 @@ SET CHARACTER_SET_CONNECTION = utf8mb4;
 SET CHARACTER_SET_RESULTS = utf8mb4;
 
 -- 공정 마스터 데이터
-INSERT INTO processes (process_code, process_name, process_order, production_line) VALUES
-('RECEIVING', '입고', 0, '입고장'),
-('SHEARING', '샤링', 1, '400T'),
-('PRESS', '프레스', 2, '1500T'),
-('ASSEMBLY', '조립', 3, '조립 라인 1'),
-('SHIPPING', '출하', 4, '출하장');
+-- INSERT INTO processes (process_code, process_name, process_order, production_line) VALUES
+-- ('RECEIVING', '입고', 0, '입고장'),
+-- ('SHEARING', '샤링', 1, '400T'),
+-- ('PRESS', '프레스', 2, '1500T'),
+-- ('ASSEMBLY', '조립', 3, '조립 라인 1'),
+-- ('SHIPPING', '출하', 4, '출하장');
 
 -- ============================================
 -- 사용자 테이블 (추가)

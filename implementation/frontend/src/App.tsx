@@ -7,6 +7,7 @@ import { MaterialsPage } from './pages/Materials/MaterialsPage';
 import { MonitoringPage } from './pages/Monitoring/MonitoringPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import { LotPalletsPage } from './pages/LOTs/LotPalletsPage';
+import { LotHistoryPage } from './pages/LOTs/LotHistoryPage';
 import { LotTrackingPage } from './pages/Traceability/LotTrackingPage';
 import { ItemsPage } from './pages/Items/ItemsPage';
 import { ProcessManagementPage } from './pages/Processes/ProcessManagementPage';
@@ -42,6 +43,7 @@ function App() {
             />
             <Route path="processes" element={<ProcessManagementPage />} />
             <Route path="lots/pallets" element={<LotPalletsPage />} />
+            <Route path="lots/history" element={<LotHistoryPage />} />
             <Route
               path="pallets"
               element={<PlaceholderPage title="팔레트 관리" subtitle="팔레트와 RFID 태그를 관리합니다." />}

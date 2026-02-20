@@ -77,6 +77,7 @@ class ReaderPanel(Static):
             yield Button("REG", classes="reader-panel-pallette-btn", id="btn-reg-pallette")
             yield Button("IN", classes="reader-panel-pallette-btn", id="btn-in-pallette")
             yield Button("OUT", classes="reader-panel-pallette-btn", id="btn-out-pallette")
+            yield Button("New Tag", classes="reader-panel-pallette-btn", id="btn-new-tag")
         yield Input(placeholder="RFID Tag Input", id="input-rfid-tag")
 
     def on_mount(self) -> None:
@@ -128,10 +129,20 @@ class ReaderPanel(Static):
             self.reader.stop_process()
         elif message.button.id == "btn-reg-pallette":
             self.reader.send_rfid('R')
+        elif message.button.id == "btn-in_pallette": # main.py logic based
+            self.reader.send_rfid('I')
+        elif message.button.id == "btn-out_pallette":
+            self.reader.send_rfid('O')
         elif message.button.id == "btn-in-pallette":
             self.reader.send_rfid('I')
         elif message.button.id == "btn-out-pallette":
             self.reader.send_rfid('O')
+        elif message.button.id == "btn-new-tag":
+            # 자동 바인딩 테스트용 새 태그 생성 및 OUT 스캔
+            import random
+            new_epc = f"E28011602000{random.randint(0x6000, 0x6FFF):04X}"
+            self.reader.write_input(f"O {new_epc}")
+            self.reader.output.append(f"[@TUI]: Scanned NEW tag {new_epc} (Auto-binding Test)")
         
 class Pallette_Status(Static):
     def __init__(self, manager):
@@ -259,7 +270,7 @@ class TextualApp(App):
     }
     .reader-panel-pallette-btn {
         margin: 1;
-        width: 20%;
+        width: 32.5%;
     }
     .auto-run-btn {
         background: $boost;

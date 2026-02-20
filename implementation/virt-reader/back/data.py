@@ -91,7 +91,22 @@ class Pallette_Manager:
             print(f"Error refreshing pallets: {e}")
 
     def get_latest_status(self, epc):
-        """특정 EPC의 최신 상태를 API에서 조회"""
+        """특정 EPC의 최신 상태를 API에서 조회.
+        우선 `physical-pallets/epc/{epc}`로 상태를 조회하고 불가능하면
+        기존의 `epc_to_id` 매핑을 사용해 `pallets/{id}`를 조회합니다.
+        """
+        # 1) try physical-pallet lookup (returns status directly)
+        try:
+            res = API(f"physical-pallets/epc/{epc}")
+            if res and res.status_code == 200:
+                status = res.json().get("status")
+                if status is not None:
+                    return status
+        except Exception:
+            # ignore and fall back
+            pass
+
+        # 2) fallback: use cached mapping to query pallets/{id}
         pallet_id = self.epc_to_id.get(epc)
         if not pallet_id:
             return None
@@ -108,13 +123,18 @@ class Pallette_Manager:
         return self.pallettes
 
     def get_pallettes_idx_for_status(self, list_index, status):
-        """특정 리스트에서 해당 상태를 가진 팔레트 인덱스 반환"""
+        """특정 리스트에서 해당 상태를 가진 팔레트 인덱스 반환.
+        API 조회 실패시 기존에 캐시된 상태를 보존하도록 변경.
+        """
         if list_index < 0 or list_index >= len(self.pallettes):
             return -1
         
-        for i, (epc, _) in enumerate(self.pallettes[list_index]):
-            current_status = self.get_latest_status(epc)
-            self.pallettes[list_index][i][1] = current_status
+        for i, (epc, stored_status) in enumerate(self.pallettes[list_index]):
+            latest_status = self.get_latest_status(epc)
+            # API에서 상태를 못 받아오면 기존(stored_status)을 사용
+            current_status = latest_status if latest_status is not None else stored_status
+            if latest_status is not None:
+                self.pallettes[list_index][i][1] = latest_status
             if current_status == status:
                 return i
         return -1
@@ -232,6 +252,10 @@ class Reader:
             return "Running"
         return "Stopped"
 
+    def get_process_status(self):
+        """UI 등에서 사용하기 위해 리더의 공정 상태를 반환합니다."""
+        return self.process_status
+
 class ReaderManager:
     def __init__(self, config, pallette_manager=None):
         self.auto_run_active = False
@@ -301,7 +325,17 @@ class ReaderManager:
 
     def _auto_run_loop(self):
         from datetime import datetime
+        last_refresh = datetime.min
+        REFRESH_INTERVAL_SECONDS = 5
         while self.auto_run_active:
+            # 주기적으로 서버로부터 팔레트 목록/매핑을 동기화(에러 발생시 무시)
+            try:
+                if (datetime.now() - last_refresh).total_seconds() > REFRESH_INTERVAL_SECONDS and self.readers:
+                    self.readers[0].pallette_manager.refresh_all_pallets()
+                    last_refresh = datetime.now()
+            except Exception:
+                pass
+
             for reader in self.readers:
                 if not self.auto_run_active: break
                 

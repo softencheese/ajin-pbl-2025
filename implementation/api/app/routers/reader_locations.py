@@ -17,12 +17,12 @@ from app.models.user import User
 
 router = APIRouter()
 
-
 @router.get("", response_model=ReaderLocationListResponse)
 async def list_reader_locations(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     is_registered: Optional[bool] = None,
+    process_id: Optional[int] = Query(None, description="필터링할 공정 ID"),
     db: Session = Depends(get_db),
     current_user: User = Depends(PermissionChecker("reader_locations", "read"))
 ):
@@ -32,6 +32,7 @@ async def list_reader_locations(
     - is_registered=true: 공정 매핑된 리더기만
     - is_registered=false: 미등록(공정 미매핑) 리더기만
     - 파라미터 없음: 전체 조회
+    - process_id: 특정 공정에 속한 리더기만 조회
     """
     query = db.query(RFIDReaderLocation)
     
@@ -39,6 +40,9 @@ async def list_reader_locations(
         query = query.filter(RFIDReaderLocation.process_id.isnot(None))
     elif is_registered is False:
         query = query.filter(RFIDReaderLocation.process_id.is_(None))
+    
+    if process_id:
+        query = query.filter(RFIDReaderLocation.process_id == process_id)
     
     total = query.count()
     locations = query.offset((page - 1) * per_page).limit(per_page).all()

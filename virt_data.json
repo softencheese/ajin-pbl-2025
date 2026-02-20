@@ -93,23 +93,6 @@
         },
         {
             "id": 4,
-            "code": "71413",
-            "item_name": "반제품A-조립",
-            "vehicle_model": "JX1",
-            "unit": "EA",
-            "spec_suffix": "LH",
-            "type": "WIP",
-            "pallette-capacity": 10,
-            "child": [
-                {
-                    "id": 3,
-                    "quantity": 1
-                }
-            ],
-            "process_id": 4
-        },
-        {
-            "id": 5,
             "code": "ASSY-76211",
             "item_name": "완제품A",
             "vehicle_model": "JX1",
@@ -119,22 +102,16 @@
             "pallette-capacity": 10,
             "child": [
                 {
-                    "id": 4,
+                    "id": 3,
                     "quantity": 1
                 }
             ],
-            "process_id": 5
+            "process_id": 4
         }
     ],
     "reader": {
         "num-reader": 4,
         "reader-info": [
-            {
-                "prot-name": "COM00",
-                "process-id": 1,
-                "cycle-time": 0,
-                "inner": []
-            },
             {
                 "prot-name": "COM01",
                 "process-id": 2,
@@ -183,31 +160,12 @@
                         "description": "조립라인 배출"
                     }
                 ]
-            },
-            {
-                "prot-name": "COM04",
-                "process-id": 5,
-                "cycle-time": 3,
-                "inner": [
-                    {
-                        "prefix-name": "REG",
-                        "description": "출하 임시 등록"
-                    },
-                    {
-                        "prefix-name": "IN",
-                        "description": "출하장 투입"
-                    },
-                    {
-                        "prefix-name": "OUT",
-                        "description": "출하장 배출"
-                    }
-                ]
             }
         ]
     },
     "pallette-data": [
         {
-            "item_id": 1,
+            "item_id": 2,
             "pallettes": [
                 [
                     "E2 80 11 60 20 00 50 01",
@@ -224,7 +182,7 @@
             ]
         },
         {
-            "item_id": 2,
+            "item_id": 3,
             "pallettes": [
                 [
                     "E2 80 11 60 20 00 50 04",
@@ -241,7 +199,7 @@
             ]
         },
         {
-            "item_id": 3,
+            "item_id": 4,
             "pallettes": [
                 [
                     "E2 80 11 60 20 00 50 07",
@@ -253,23 +211,6 @@
                 ],
                 [
                     "E2 80 11 60 20 00 50 09",
-                    "Empty"
-                ]
-            ]
-        },
-        {
-            "item_id": 4,
-            "pallettes": [
-                [
-                    "E2 80 11 60 20 00 50 0A",
-                    "Empty"
-                ],
-                [
-                    "E2 80 11 60 20 00 50 0B",
-                    "Empty"
-                ],
-                [
-                    "E2 80 11 60 20 00 50 0C",
                     "Empty"
                 ]
             ]

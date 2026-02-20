@@ -15,14 +15,12 @@ class LotBase(BaseModel):
     notes: Optional[str] = Field(None, description="비고")
 
 
-class LotReceiving(BaseModel):
+class LotReceiving(LotBase):
     """원자재 입고 LOT 생성 요청"""
     item_id: int = Field(..., description="품목 ID (RAW 타입이어야 함)")
     quantity: int = Field(..., description="입고 수량")
     production_date: date = Field(..., description="입고일")
     supplier: Optional[str] = Field(None, description="공급사 (기본 공급사와 다를 경우)")
-    barcode: Optional[str] = Field(None, description="실물 바코드 번호 (라벨 스캔용)")
-    notes: Optional[str] = Field(None, description="비고")
 
 
 class LotCreate(LotBase):
@@ -42,9 +40,12 @@ class InputLotInfo(BaseModel):
 class LotUpdate(BaseModel):
     """LOT 수정 요청"""
     quantity: Optional[int] = None
+    production_date: Optional[date] = None
     status: Optional[str] = None
+    supplier: Optional[str] = None
     worker_name: Optional[str] = None
     qc_passed: Optional[bool] = None
+    barcode: Optional[str] = None
     notes: Optional[str] = None
 
 
@@ -72,6 +73,7 @@ class LotResponse(BaseModel):
     item_id: int
     quantity: int
     initial_quantity: int
+    produced_quantity: int
     status: str
     production_date: date
     process_id: Optional[int] = None

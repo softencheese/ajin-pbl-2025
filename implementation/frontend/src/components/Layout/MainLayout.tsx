@@ -27,6 +27,7 @@ export function MainLayout() {
     if (path.startsWith('/parts')) return 'parts';
     if (path.startsWith('/processes')) return 'processes';
     if (path.startsWith('/lots/pallets')) return 'lots-pallets';
+    if (path.startsWith('/lots/history')) return 'lots-history';
     if (path.startsWith('/pallets')) return 'pallets';
     if (path.startsWith('/monitoring')) return 'monitoring';
     if (path.startsWith('/fifo')) return 'fifo';
@@ -61,6 +62,10 @@ export function MainLayout() {
         {
           key: 'lots-pallets',
           label: <Link to="/lots/pallets">LOT-팔레트-RFID</Link>,
+        },
+        {
+          key: 'lots-history',
+          label: <Link to="/lots/history">LOT 히스토리</Link>,
         },
       ],
     },
