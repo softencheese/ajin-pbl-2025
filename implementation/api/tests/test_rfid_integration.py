@@ -36,10 +36,14 @@ def test_wrong_part_validation(client, db_session):
     db_session.add(lot_raw)
     db_session.commit()
     
-    # Pallet 생성 및 매핑
+    # Pallet 생성 및 매핑 (PhysicalPallet + Pallet)
+    from app.models.physical_pallet import PhysicalPallet
+    pp_raw = PhysicalPallet(epc="EPC-TEST-FAIL", pallet_code="PLT-TEST-FAIL", status="Stock")
+    db_session.add(pp_raw)
+    db_session.flush()
     pallet_raw = Pallet(
         pallet_no="PLT-TEST-FAIL",
-        rfid_epc="EPC-TEST-FAIL",
+        physical_pallet_id=pp_raw.id,
         status="Stock",
         lot_id=lot_raw.id
     )
@@ -72,9 +76,12 @@ def test_wrong_part_validation(client, db_session):
     db_session.add(lot_wip)
     db_session.commit()
     
+    pp_wip = PhysicalPallet(epc="EPC-TEST-OK", pallet_code="PLT-TEST-OK", status="Stock")
+    db_session.add(pp_wip)
+    db_session.flush()
     pallet_wip = Pallet(
         pallet_no="PLT-TEST-OK",
-        rfid_epc="EPC-TEST-OK",
+        physical_pallet_id=pp_wip.id,
         status="Stock",
         lot_id=lot_wip.id
     )

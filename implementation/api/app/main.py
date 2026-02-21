@@ -11,7 +11,8 @@ from app.routers import (
     rfid_router, 
     auth_router,
     users_router,
-    pallets_router, 
+    pallets_router,
+    physical_pallets_router,
     trace_router,
     items_router,
     processes_router,
@@ -62,6 +63,7 @@ app.include_router(auth_router, prefix="/api/v1/auth", tags=["Auth"])
 app.include_router(users_router, prefix="/api/v1/users", tags=["Users"])
 app.include_router(rfid_router, prefix="/api/v1/rfid", tags=["RFID"])
 app.include_router(pallets_router, prefix="/api/v1/pallets", tags=["Pallets"])
+app.include_router(physical_pallets_router, prefix="/api/v1/physical-pallets", tags=["Physical Pallets"])
 app.include_router(trace_router, prefix="/api/v1/trace", tags=["Traceability"])
 app.include_router(items_router, prefix="/api/v1/items", tags=["Items"])
 app.include_router(processes_router, prefix="/api/v1/processes", tags=["Processes"])

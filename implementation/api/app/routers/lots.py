@@ -24,6 +24,9 @@ from app.models.user import User
 router = APIRouter()
 
 
+from app.services.lot_service import sync_lot_status_and_quantity
+
+
 def generate_lot_number(process_order: int, production_date: date, db: Session) -> str:
     """LOT 번호 자동 생성 (12자리 숫자)
     
@@ -103,6 +106,7 @@ async def list_lots(
             "item_id": lot.item_id,
             "quantity": lot.quantity,
             "initial_quantity": lot.initial_quantity,
+            "produced_quantity": lot.produced_quantity,
             "status": lot.status,
             "production_date": lot.production_date,
             "process_id": lot.process_id,
@@ -152,6 +156,7 @@ async def get_lot(
         item_id=lot.item_id,
         quantity=lot.quantity,
         initial_quantity=lot.initial_quantity,
+        produced_quantity=lot.produced_quantity,
         status=lot.status,
         production_date=lot.production_date,
         process_id=lot.process_id,
@@ -199,14 +204,21 @@ async def create_receiving_lot(
         item_id=data.item_id,
         quantity=data.quantity,
         initial_quantity=data.quantity,
-        status="STOCK",  # 원자재 입고는 바로 STOCK
+        produced_quantity=data.quantity,
+        status="STOCK",  # 원자재 입고는 바로 재고(STOCK)
         production_date=data.production_date,
         process_id=receiving_process.id if receiving_process else None,
         supplier=data.supplier or item.default_supplier,
+        worker_name=data.worker_name,
+        qc_passed=data.qc_passed,
         barcode=data.barcode or lot_number,
         notes=data.notes
     )
     
+    db.add(lot)
+    db.commit()
+    db.refresh(lot)
+
     db.add(lot)
     db.commit()
     db.refresh(lot)
@@ -218,6 +230,7 @@ async def create_receiving_lot(
         item_id=lot.item_id,
         quantity=lot.quantity,
         initial_quantity=lot.initial_quantity,
+        produced_quantity=lot.produced_quantity,
         status=lot.status,
         production_date=lot.production_date,
         process_id=lot.process_id,
@@ -233,7 +246,7 @@ async def create_receiving_lot(
             "item_name": item.item_name,
             "item_type": item.item_type
         },
-        process_name=None
+        process_name=receiving_process.process_name if receiving_process else None
     )
 
 
@@ -254,18 +267,41 @@ async def create_lot(
     if not process:
         raise HTTPException(status_code=404, detail="공정을 찾을 수 없습니다")
     
+    # 공정 - 품목 타입 검증 (AI_README 1)
+    if process.allowed_item_types:
+        allowed_types = [t.strip() for t in process.allowed_item_types.split(",")]
+        if item.item_type not in allowed_types:
+            raise HTTPException(
+                status_code=422, 
+                detail=f"공정 {process.process_name}({process.process_code})에서는 {item.item_type} 타입 품목을 다룰 수 없습니다. (허용: {process.allowed_item_types})"
+            )
+    
     # LOT 번호 자동 생성
     lot_number = generate_lot_number(process.process_order, data.production_date, db)
     
+    # 품목 타입에 따라 초기 상태 및 수량 결정 (AI_README 3)
+    # 3.1 item type == RAW
+    #     status = STOCK, quantity = data->quantity
+    # 3.2 ITEM_TYPE != RAW
+    #     status = WAIT, quantity = 0
+    if item.item_type == "RAW":
+        initial_status = "STOCK"
+        current_quantity = data.quantity
+    else:
+        initial_status = "WAIT"
+        current_quantity = 0
+
+    initial_quantity = data.quantity
     lot = Lot(
         lot_number=lot_number,
         item_id=data.item_id,
-        quantity=data.quantity,
-        initial_quantity=data.quantity,
-        status="STOCK",
+        quantity=current_quantity,
+        initial_quantity=initial_quantity,
+        produced_quantity=initial_quantity if item.item_type == "RAW" else 0,
+        status=initial_status,
         production_date=data.production_date,
         process_id=data.process_id,
-        supplier=data.supplier,
+        supplier=data.supplier or item.default_supplier,
         worker_name=data.worker_name,
         qc_passed=data.qc_passed,
         barcode=data.barcode or lot_number,
@@ -309,15 +345,18 @@ async def create_lot(
         
         db.commit()
     
-    # 팔레트 자동 생성 (palette_capacity가 제공된 경우)
-    if data.palette_capacity and data.palette_capacity > 0:
+    # 팔레트 자동 생성 (pallet_capacity 결정: 요청값 또는 품목 기본값)
+    # RAW 타입은 팔레트 생성 생략 (AI_README.md 및 사용자 요청 사항)
+    pallet_capacity = data.pallet_capacity or item.pallet_capacity
+    if item.item_type != "RAW" and pallet_capacity and pallet_capacity > 0:
         from app.models.pallet import Pallet
         import logging
         logger = logging.getLogger(__name__)
 
         # 필요한 팔레트 수 계산
-        num_pallets = (lot.quantity + data.palette_capacity - 1) // data.palette_capacity
-        logger.info(f"🎯 Creating {num_pallets} pallets for LOT {lot.lot_number} (qty: {lot.quantity}, capacity: {data.palette_capacity})")
+        num_pallets = (lot.initial_quantity + pallet_capacity - 1) // pallet_capacity
+        logger.info(f"🛠️ Checking pallet creation for LOT {lot.lot_number} with pallet_capacity={pallet_capacity}")
+        logger.info(f"🎯 Creating {num_pallets} pallets for LOT {lot.lot_number} (qty: {lot.quantity}, capacity: {pallet_capacity})")
 
         # 팔레트 번호 카운터 조회 (오늘 생성된 팔레트 수)
         today_str = lot.production_date.strftime("%y%m%d")
@@ -341,22 +380,33 @@ async def create_lot(
 
         # 팔레트 생성
         created_pallets = []
+        remaining_qty = lot.quantity
+        
         for i in range(num_pallets):
-            pallet_quantity = min(data.palette_capacity, lot.quantity - i * data.palette_capacity)
             pallet_no = f"PLT-{today_str}-{pallet_seq:04d}"
+            
+            # 이 팔레트에 할당할 수량 계산 (마지막 팔레트는 남은 수량 모두 할당)
+            if i == num_pallets - 1:
+                pallet_qty = remaining_qty
+            else:
+                pallet_qty = min(pallet_capacity, remaining_qty)
+            
+            remaining_qty -= pallet_qty
 
+            # 가상 팔레트 생성 (실물 팔레트는 나중에 연결)
             pallet = Pallet(
                 pallet_no=pallet_no,
-                rfid_epc=None,  # RFID는 실제 태그 등록 시에만 설정
+                physical_pallet_id=None,  # 실물 팔레트는 RFID 스캔 시 연결
                 lot_id=lot.id,
-                quantity=pallet_quantity,
-                status="Stock",
-                tag_status="AVAILABLE"
+                quantity=pallet_qty,
+                status="Stock" if item.item_type == "RAW" else "Empty",
+                tag_status="AVAILABLE",
+                current_process_id=data.process_id
             )
             db.add(pallet)
             created_pallets.append(pallet_no)
             pallet_seq += 1
-            logger.info(f"  ✅ Created pallet {pallet_no} with quantity {pallet_quantity}")
+            logger.info(f"  ✅ Created pallet {pallet_no} for LOT {lot.lot_number} (qty: {pallet_qty})")
 
         db.commit()
         logger.info(f"💾 Committed {len(created_pallets)} pallets to database: {created_pallets}")
@@ -368,6 +418,7 @@ async def create_lot(
         item_id=lot.item_id,
         quantity=lot.quantity,
         initial_quantity=lot.initial_quantity,
+        produced_quantity=lot.produced_quantity,
         status=lot.status,
         production_date=lot.production_date,
         process_id=lot.process_id,
@@ -449,6 +500,7 @@ async def update_lot(
         item_id=lot.item_id,
         quantity=lot.quantity,
         initial_quantity=lot.initial_quantity,
+        produced_quantity=lot.produced_quantity,
         status=lot.status,
         production_date=lot.production_date,
         process_id=lot.process_id,

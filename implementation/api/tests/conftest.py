@@ -17,7 +17,21 @@ from app.core.config import settings
 import logging
 
 # Use MySQL Test Database
-SQLALCHEMY_DATABASE_URL = "mysql+pymysql://ajin_user:ajin_password@db:3306/ajin_rfid_test?charset=utf8mb4"
+# When running inside Docker container, use 'db' hostname
+# When running from host machine, use 'localhost'
+import socket
+
+def _get_db_host():
+    """Determine correct DB host based on environment."""
+    # Check if we're inside Docker by trying to resolve 'db' hostname
+    try:
+        socket.gethostbyname('db')
+        return 'db'
+    except socket.gaierror:
+        return 'localhost'
+
+DB_HOST = _get_db_host()
+SQLALCHEMY_DATABASE_URL = f"mysql+pymysql://ajin_user:ajin_password@{DB_HOST}:3306/ajin_rfid_test?charset=utf8mb4"
 
 # Disable echo for cleaner output, use NullPool to avoid connection holding issues in tests
 engine = create_engine(

@@ -15,3 +15,4 @@ class Item(BaseModel):
     vehicle_model = Column(String(50), comment='적용 차종 (JX1, NE)')
     default_supplier = Column(String(100), comment='기본 공급사 (원자재인 경우)')
     is_active = Column(Boolean, default=True, comment='사용 여부')
+    pallet_capacity = Column(Integer, default=10, comment='권장 팔레트 적재 용량')

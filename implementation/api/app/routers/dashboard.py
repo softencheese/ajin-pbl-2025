@@ -7,6 +7,7 @@ from datetime import date, datetime, timedelta
 from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.models.pallet import Pallet, PalletHistory
+from app.models.physical_pallet import PhysicalPallet
 from app.models.lot import Lot
 from app.models.item import Item
 from app.models.process import Process
@@ -42,13 +43,20 @@ async def get_dashboard_summary(
     - 리더기 연결 상태
     """
     # 활성 팔레트 수 (Deregistered, Defect 제외)
-    active_pallets = db.query(func.count(Pallet.id)).filter(
-        Pallet.status.notin_(["Deregistered", "Defect", "Generated"])
+    active_pallets = db.query(func.count(Pallet.id)).join(
+        PhysicalPallet, Pallet.physical_pallet_id == PhysicalPallet.id, isouter=True
+    ).filter(
+        PhysicalPallet.status.notin_(["Deregistered", "Defect", "Generated"])
     ).scalar()
     
     # 총 재고 수량 (Stock 상태 팔레트의 수량 합계)
-    total_stock = db.query(func.sum(Pallet.quantity)).filter(
-        Pallet.status == "Stock"
+    # Lot의 quantity를 사용 (pallet에는 quantity 필드 없음)
+    total_stock = db.query(func.sum(Lot.quantity)).join(
+        Pallet, Lot.id == Pallet.lot_id
+    ).join(
+        PhysicalPallet, Pallet.physical_pallet_id == PhysicalPallet.id, isouter=True
+    ).filter(
+        PhysicalPallet.status == "Stock"
     ).scalar() or 0
     
     # 금일 생산량 (오늘 생산된 LOT 수량 합계)
@@ -86,14 +94,17 @@ async def get_process_status(
     (N+1 쿼리 최적화: 단일 쿼리로 집계)
     """
     # 단일 쿼리로 모든 공정의 팔레트 상태별 집계
+    # physical_pallet의 status를 사용
     status_data = db.query(
         Pallet.current_process_id,
-        Pallet.status,
+        PhysicalPallet.status,
         func.count(Pallet.id)
+    ).join(
+        PhysicalPallet, Pallet.physical_pallet_id == PhysicalPallet.id, isouter=True
     ).filter(
         Pallet.current_process_id.isnot(None),
-        Pallet.status.notin_(["Deregistered", "Defect", "Generated"])
-    ).group_by(Pallet.current_process_id, Pallet.status).all()
+        PhysicalPallet.status.notin_(["Deregistered", "Defect", "Generated"])
+    ).group_by(Pallet.current_process_id, PhysicalPallet.status).all()
     
     # 공정별로 데이터 정리
     process_map = {}
@@ -171,7 +182,10 @@ async def get_stock_inventory(
     경과일에 따른 긴급도 표시 포함.
     """
     # Stock 상태 팔레트 조회
-    query = db.query(Pallet).filter(Pallet.status == "Stock")
+    # physical_pallet의 status를 사용
+    query = db.query(Pallet).join(
+        PhysicalPallet, Pallet.physical_pallet_id == PhysicalPallet.id, isouter=True
+    ).filter(PhysicalPallet.status == "Stock")
     
     # LOT와 조인
     query = query.join(Lot, Pallet.lot_id == Lot.id, isouter=True)
@@ -220,12 +234,17 @@ async def get_stock_inventory(
         else:
             urgency = "normal"
         
+        # quantity는 lot.quantity 사용, 없으면 item.pallet_capacity, 그것도 없으면 0
+        quantity = pallet.lot.quantity if pallet.lot.quantity else (
+            item.pallet_capacity if item.pallet_capacity else 0
+        )
+        
         stock_by_item[key]["lots"].append({
             "lot_no": pallet.lot.lot_number,
             "pallet_no": pallet.pallet_no,
             "production_date": pallet.lot.production_date,
             "days_old": days_old,
-            "quantity": pallet.quantity or pallet.lot.quantity,
+            "quantity": quantity,
             "status": urgency
         })
     

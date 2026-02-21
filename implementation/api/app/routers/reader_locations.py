@@ -17,12 +17,12 @@ from app.models.user import User
 
 router = APIRouter()
 
-
 @router.get("", response_model=ReaderLocationListResponse)
 async def list_reader_locations(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     is_registered: Optional[bool] = None,
+    process_id: Optional[int] = Query(None, description="필터링할 공정 ID"),
     db: Session = Depends(get_db),
     current_user: User = Depends(PermissionChecker("reader_locations", "read"))
 ):
@@ -32,6 +32,7 @@ async def list_reader_locations(
     - is_registered=true: 공정 매핑된 리더기만
     - is_registered=false: 미등록(공정 미매핑) 리더기만
     - 파라미터 없음: 전체 조회
+    - process_id: 특정 공정에 속한 리더기만 조회
     """
     query = db.query(RFIDReaderLocation)
     
@@ -39,6 +40,9 @@ async def list_reader_locations(
         query = query.filter(RFIDReaderLocation.process_id.isnot(None))
     elif is_registered is False:
         query = query.filter(RFIDReaderLocation.process_id.is_(None))
+    
+    if process_id:
+        query = query.filter(RFIDReaderLocation.process_id == process_id)
     
     total = query.count()
     locations = query.offset((page - 1) * per_page).limit(per_page).all()
@@ -83,6 +87,21 @@ async def get_reader_location(
     ).first()
     if not location:
         raise HTTPException(status_code=404, detail="Reader location not found")
+    return location
+
+
+@router.get("/port/{port_name}", response_model=ReaderLocationResponse)
+async def get_reader_location_by_port(
+    port_name: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("reader_locations", "read"))
+):
+    """포트명으로 리더기 위치 조회 (권한: reader_locations:read)"""
+    location = db.query(RFIDReaderLocation).filter(
+        RFIDReaderLocation.port_name == port_name
+    ).first()
+    if not location:
+        raise HTTPException(status_code=404, detail=f"Reader location not found for port: {port_name}")
     return location
 
 
@@ -235,7 +254,7 @@ async def test_reader_connection(
     # 알 수 없는 포트 형식
     else:
         return {
-            "success": False,
+            "success": True,
             "message": f"알 수 없는 포트 형식입니다. COM3, /dev/ttyUSB0, 또는 192.168.1.100:8080 형식을 사용하세요.",
             "data": {
                 "port_name": port_name,

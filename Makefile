@@ -1,6 +1,6 @@
 # Makefile for RFID Logistics Tracking System
 
-.PHONY: help up down clean fclean test seed
+.PHONY: help up down clean fclean test seed virt
 
 # ============================================
 # 도움말
@@ -30,6 +30,9 @@ up:
 down:
 	docker-compose down
 
+build:
+	docker-compose build
+
 logs:
 	docker-compose logs -f
 
@@ -48,12 +51,17 @@ clean:
 fclean: clean
 	@echo "Performing deep clean (removing data and environments)..."
 	@docker-compose down -v 2>/dev/null || true
-	@rm -rf implementation/data
-	@rm -rf implementation/api/venv
-	@rm -rf implementation/frontend/node_modules
-	@rm -rf implementation/api/logs
-	@rm -rf implementation/backups
+	@sudo rm -rf implementation/data
+	@sudo rm -rf implementation/api/venv
+	@sudo rm -rf implementation/frontend/node_modules
+	@sudo rm -rf implementation/api/logs
+	@sudo rm -rf implementation/backups
 	@echo "Deep clean complete. System is factory reset."
+
+db_clean:
+	@echo "Cleaning database data..."
+	docker exec ajin_rfid_api python scripts/clean_db.py
+	@echo "Database data cleaned."
 
 # ============================================
 # 테스트
@@ -66,3 +74,10 @@ seed:
 	@echo "Inserting test data..."
 	docker exec ajin_rfid_api python scripts/init_db.py
 	@echo "Test data seeding complete."
+
+virt:
+	@echo "Inserting test data..."
+	@docker cp virt_data.json ajin_rfid_api:/app/scripts/virt_data.json	
+	@docker exec ajin_rfid_api python scripts/init_db2.py
+	@echo "Test data seeding complete."
+

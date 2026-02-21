@@ -5,6 +5,7 @@ from app.models.lot_genealogy import LotGenealogy
 from app.models.process import Process
 from app.models.rfid import RFIDReaderLocation
 from app.models.pallet import Pallet, PalletHistory
+from app.models.physical_pallet import PhysicalPallet
 from app.models.user import User
 
 __all__ = [
@@ -16,5 +17,6 @@ __all__ = [
     "RFIDReaderLocation",
     "Pallet",
     "PalletHistory",
+    "PhysicalPallet",
     "User",
 ]
