@@ -13,6 +13,7 @@ import { ItemsPage } from './pages/Items/ItemsPage';
 import { ProcessManagementPage } from './pages/Processes/ProcessManagementPage';
 import { FIFOMonitoringPage } from './pages/FIFO/FIFOMonitoringPage';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { NotFoundPage } from './pages/NotFoundPage';
 import { ErrorPage } from './pages/ErrorPage';
 
 const queryClient = new QueryClient({
