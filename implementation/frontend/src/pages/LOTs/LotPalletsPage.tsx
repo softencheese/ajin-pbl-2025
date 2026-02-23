@@ -17,6 +17,7 @@ import {
     Col,
     Progress,
     Descriptions,
+    Spin,
 } from 'antd';
 import {
     PlusOutlined,
@@ -25,7 +26,7 @@ import {
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { itemApi } from '../../api/items';
 import { lotApi } from '../../api/lots';
 import { palletApi } from '../../api/pallets';
@@ -200,6 +201,36 @@ export function LotPalletsPage() {
         paletteId: string;
     }>({ visible: false, lotNumber: '', paletteId: '' });
 
+    const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+
+    const updateStatusMutation = useMutation({
+        mutationFn: async ({ palletNo, status }: { palletNo: string; status: string }) => {
+            const pallet = palletsApiData?.items.find((p: Pallet) => p.pallet_no === palletNo);
+            if (!pallet) throw new Error('팔레트를 찾을 수 없습니다');
+            return palletApi.updateStatus(pallet.id, status);
+        },
+        onMutate: ({ palletNo }) => {
+            setUpdatingStatus(palletNo);
+        },
+        onSuccess: (_, { palletNo, status }) => {
+            setUpdatingStatus(null);
+            setLotData(prev => prev.map(lot => ({
+                ...lot,
+                palettes: lot.palettes.map(p => p.id === palletNo ? { ...p, status } : p),
+            })));
+            setPaletteDetailModal(prev =>
+                prev.palette?.id === palletNo
+                    ? { ...prev, palette: prev.palette ? { ...prev.palette, status } : null }
+                    : prev
+            );
+            message.success('상태가 업데이트되었습니다.');
+        },
+        onError: () => {
+            setUpdatingStatus(null);
+            message.error('상태 업데이트에 실패했습니다.');
+        },
+    });
+
     const [bulkRfidModal, setBulkRfidModal] = useState<{
         visible: boolean;
         items: BulkRfidItem[];
@@ -372,6 +403,11 @@ export function LotPalletsPage() {
     };
 
     // Register RFID
+    // TODO: 롤백 API 구현 후 채울 것 (협업자에게 API 수령 필요)
+    const handleRollbackStatus = (_palletNo: string) => {
+        // 구현 예정
+    };
+
     const handleRegisterRfid = (rfidEpc: string) => {
         const { lotNumber, paletteId } = rfidModal;
 
@@ -661,6 +697,7 @@ export function LotPalletsPage() {
                     Deregistered: { color: 'default', label: '해제됨' },
                     Hold: { color: 'gold', label: '보류' },
                     Defect: { color: 'red', label: '불량' },
+                    scrap: { color: 'volcano', label: '폐기' },
                 };
                 const info = statusMap[status] || { color: 'default', label: status };
                 return <Tag color={info.color}>{info.label}</Tag>;
@@ -1001,7 +1038,10 @@ export function LotPalletsPage() {
                             <Descriptions.Item label="팔레트 번호">#{paletteDetailModal.palette.paletteNumber}</Descriptions.Item>
                             <Descriptions.Item label="소속 LOT">{paletteDetailModal.lot.lotNumber}</Descriptions.Item>
                             <Descriptions.Item label="수량">{paletteDetailModal.palette.quantity}개</Descriptions.Item>
-                            <Descriptions.Item label="팔레트 상태">
+                        </Descriptions>
+
+                        <Descriptions title="팔레트 상태 변경" column={1} bordered size="small" style={{ marginTop: 16 }}>
+                            <Descriptions.Item label="현재 상태">
                                 {(() => {
                                     const statusMap: Record<string, { color: string; label: string }> = {
                                         Generated: { color: 'default', label: '생성됨' },
@@ -1013,10 +1053,50 @@ export function LotPalletsPage() {
                                         Deregistered: { color: 'default', label: '해제됨' },
                                         Hold: { color: 'gold', label: '보류' },
                                         Defect: { color: 'red', label: '불량' },
+                                        scrap: { color: 'volcano', label: '폐기' },
                                     };
-                                    const info = statusMap[paletteDetailModal.palette.status] || { color: 'default', label: paletteDetailModal.palette.status };
+                                    const info = statusMap[paletteDetailModal.palette!.status] || { color: 'default', label: paletteDetailModal.palette!.status };
                                     return <Tag color={info.color}>{info.label}</Tag>;
                                 })()}
+                            </Descriptions.Item>
+                            <Descriptions.Item label="상태 변경">
+                                <Space>
+                                    <Select
+                                        value={paletteDetailModal.palette.status}
+                                        onChange={(newStatus: string) => {
+                                            updateStatusMutation.mutate({
+                                                palletNo: paletteDetailModal.palette!.id,
+                                                status: newStatus,
+                                            });
+                                        }}
+                                        disabled={updatingStatus === paletteDetailModal.palette.id}
+                                        style={{ width: 160 }}
+                                        optionLabelProp="label"
+                                    >
+                                        <Option value="Hold" label={<Tag color="gold">보류</Tag>}>
+                                            <Tag color="gold">보류</Tag> Hold
+                                        </Option>
+                                        <Option value="Defect" label={<Tag color="red">불량</Tag>}>
+                                            <Tag color="red">불량</Tag> Defect
+                                        </Option>
+                                        <Option value="scrap" label={<Tag color="volcano">폐기</Tag>}>
+                                            <Tag color="volcano">폐기</Tag> Scrap
+                                        </Option>
+                                    </Select>
+                                    {updatingStatus === paletteDetailModal.palette.id && (
+                                        <Spin size="small" />
+                                    )}
+                                    {['Hold', 'Defect', 'scrap'].includes(paletteDetailModal.palette.status) && (
+                                        <Button
+                                            size="small"
+                                            danger
+                                            disabled={updatingStatus === paletteDetailModal.palette.id}
+                                            onClick={() => handleRollbackStatus(paletteDetailModal.palette!.id)}
+                                        >
+                                            상태롤백
+                                        </Button>
+                                    )}
+                                </Space>
                             </Descriptions.Item>
                         </Descriptions>
 
