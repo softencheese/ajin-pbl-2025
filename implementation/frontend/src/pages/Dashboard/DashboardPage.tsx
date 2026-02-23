@@ -3,18 +3,23 @@ import {
   InboxOutlined,
   CheckCircleOutlined,
   SyncOutlined,
-  StopOutlined,
-  WarningOutlined,
-  ExperimentOutlined,
 } from '@ant-design/icons';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { useDashboardStats, useProcessSummary, useRecentActivity } from '../../hooks/useDashboard';
+import { useDashboardStats, useProcessStatus, useRecentActivities } from '../../hooks/useDashboard';
+import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 
 export function DashboardPage() {
+  const navigate = useNavigate();
   const { data: stats, isLoading: statsLoading, error: statsError } = useDashboardStats();
-  const { data: processSummary = [], isLoading: processLoading } = useProcessSummary();
-  const { data: recentActivity = [], isLoading: activityLoading } = useRecentActivity();
+  const { data: processStatus, isLoading: processLoading } = useProcessStatus();
+  const { data: recentActivities, isLoading: activityLoading } = useRecentActivities();
+
+  // 클릭 가능한 카드 스타일
+  const clickableCardStyle = {
+    cursor: 'pointer',
+    transition: 'box-shadow 0.3s',
+  };
 
   if (statsError) {
     return (
@@ -40,9 +45,9 @@ export function DashboardPage() {
   const activityColumns = [
     {
       title: '시간',
-      dataIndex: 'timestamp',
-      key: 'timestamp',
-      render: (timestamp: string) => dayjs(timestamp).format('YYYY-MM-DD HH:mm:ss'),
+      dataIndex: 'scan_time',
+      key: 'scan_time',
+      render: (time: string) => time ? dayjs(time).format('YYYY-MM-DD HH:mm:ss') : '-',
       width: 180,
     },
     {
@@ -59,11 +64,18 @@ export function DashboardPage() {
       title: '공정',
       dataIndex: 'process_name',
       key: 'process_name',
+      render: (name: string) => name || '-',
     },
     {
-      title: '상태',
-      dataIndex: 'status',
-      key: 'status',
+      title: '이전 상태',
+      dataIndex: 'previous_status',
+      key: 'previous_status',
+      render: (status: string) => status || '-',
+    },
+    {
+      title: '새 상태',
+      dataIndex: 'new_status',
+      key: 'new_status',
       render: (status: string) => {
         const colorMap: Record<string, string> = {
           Stock: 'green',
@@ -77,11 +89,19 @@ export function DashboardPage() {
       },
     },
     {
-      title: '설명',
-      dataIndex: 'description',
-      key: 'description',
+      title: '작업자',
+      dataIndex: 'worker_name',
+      key: 'worker_name',
+      render: (name: string) => name || '-',
     },
   ];
+
+  // 공정별 차트 데이터 변환
+  const processChartData = processStatus?.processes?.map(p => ({
+    process_name: p.process_name,
+    active_pallets: p.active_pallets,
+    ...p.status_breakdown,
+  })) || [];
 
   return (
     <div>
@@ -95,83 +115,56 @@ export function DashboardPage() {
         <>
           <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
             <Col xs={24} sm={12} lg={6}>
-              <Card>
+              <Card
+                hoverable
+                style={clickableCardStyle}
+                onClick={() => navigate('/lots/pallets')}
+              >
                 <Statistic
-                  title="총 팔레트"
-                  value={stats?.total_pallets || 0}
+                  title="활성 팔레트"
+                  value={stats?.active_pallets || 0}
                   prefix={<InboxOutlined />}
                   valueStyle={{ color: '#1890ff' }}
                 />
               </Card>
             </Col>
             <Col xs={24} sm={12} lg={6}>
-              <Card>
+              <Card
+                hoverable
+                style={clickableCardStyle}
+                onClick={() => navigate('/fifo')}
+              >
                 <Statistic
-                  title="재고"
-                  value={stats?.stock_pallets || 0}
+                  title="총 재고 수량"
+                  value={stats?.total_stock || 0}
                   prefix={<CheckCircleOutlined />}
                   valueStyle={{ color: '#52c41a' }}
                 />
               </Card>
             </Col>
             <Col xs={24} sm={12} lg={6}>
-              <Card>
+              <Card
+                hoverable
+                style={clickableCardStyle}
+                onClick={() => navigate('/lots/pallets')}
+              >
                 <Statistic
-                  title="생산 중"
-                  value={stats?.producing_pallets || 0}
-                  prefix={<SyncOutlined spin />}
-                  valueStyle={{ color: '#1890ff' }}
-                />
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} lg={6}>
-              <Card>
-                <Statistic
-                  title="완료"
-                  value={stats?.finished_pallets || 0}
-                  prefix={<CheckCircleOutlined />}
+                  title="금일 생산량"
+                  value={stats?.today_production || 0}
+                  prefix={<SyncOutlined />}
                   valueStyle={{ color: '#722ed1' }}
                 />
               </Card>
             </Col>
-          </Row>
-
-          <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
             <Col xs={24} sm={12} lg={6}>
-              <Card>
+              <Card
+                hoverable
+                style={clickableCardStyle}
+                onClick={() => navigate('/monitoring')}
+              >
                 <Statistic
-                  title="투입 대기"
-                  value={stats?.consuming_pallets || 0}
-                  prefix={<ExperimentOutlined />}
-                  valueStyle={{ color: '#fa8c16' }}
-                />
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} lg={6}>
-              <Card>
-                <Statistic
-                  title="보류"
-                  value={stats?.hold_pallets || 0}
-                  prefix={<StopOutlined />}
-                  valueStyle={{ color: '#faad14' }}
-                />
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} lg={6}>
-              <Card>
-                <Statistic
-                  title="불량"
-                  value={stats?.defect_pallets || 0}
-                  prefix={<WarningOutlined />}
-                  valueStyle={{ color: '#ff4d4f' }}
-                />
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} lg={6}>
-              <Card>
-                <Statistic
-                  title="총 LOT"
-                  value={(stats?.total_lots || 0) + (stats?.total_assembly_lots || 0)}
+                  title="리더기 연결"
+                  value={`${stats?.reader_status?.connected || 0} / ${stats?.reader_status?.total || 0}`}
                   valueStyle={{ color: '#13c2c2' }}
                 />
               </Card>
@@ -180,17 +173,25 @@ export function DashboardPage() {
 
           <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
             <Col xs={24} lg={12}>
-              <Card title="공정별 현황" loading={processLoading}>
-                {processSummary && processSummary.length > 0 ? (
+              <Card
+                title="공정별 활성 팔레트"
+                loading={processLoading}
+                hoverable
+                style={clickableCardStyle}
+                onClick={() => navigate('/processes')}
+              >
+                {processChartData.length > 0 ? (
                   <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={processSummary}>
+                    <BarChart data={processChartData}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="process_name" />
                       <YAxis />
                       <Tooltip />
                       <Legend />
-                      <Bar dataKey="pallet_count" name="팔레트 수" fill="#1890ff" />
-                      <Bar dataKey="lot_count" name="LOT 수" fill="#52c41a" />
+                      <Bar dataKey="active_pallets" name="활성 팔레트" fill="#1890ff" />
+                      <Bar dataKey="Stock" name="재고" fill="#52c41a" />
+                      <Bar dataKey="Consuming" name="소비중" fill="#fa8c16" />
+                      <Bar dataKey="Producing" name="생산중" fill="#722ed1" />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
@@ -202,38 +203,37 @@ export function DashboardPage() {
             </Col>
 
             <Col xs={24} lg={12}>
-              <Card title="팔레트 상태 분포">
-                {stats ? (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart
-                      data={[
-                        { name: '재고', value: stats.stock_pallets },
-                        { name: '투입', value: stats.consuming_pallets },
-                        { name: '생산', value: stats.producing_pallets },
-                        { name: '완료', value: stats.finished_pallets },
-                        { name: '보류', value: stats.hold_pallets },
-                        { name: '불량', value: stats.defect_pallets },
-                      ]}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Bar dataKey="value" name="수량" fill="#8884d8" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div style={{ textAlign: 'center', padding: 40, color: '#999' }}>
-                    데이터가 없습니다
-                  </div>
-                )}
+              <Card
+                title="공정별 현황 요약"
+                loading={processLoading}
+                hoverable
+                style={clickableCardStyle}
+                onClick={() => navigate('/processes')}
+              >
+                <Table
+                  dataSource={processStatus?.processes || []}
+                  columns={[
+                    { title: '공정', dataIndex: 'process_name', key: 'process_name' },
+                    { title: '라인', dataIndex: 'production_line', key: 'production_line' },
+                    { title: '활성 팔레트', dataIndex: 'active_pallets', key: 'active_pallets' },
+                  ]}
+                  rowKey="process_id"
+                  pagination={false}
+                  size="small"
+                />
               </Card>
             </Col>
           </Row>
 
-          <Card title="최근 활동" loading={activityLoading}>
+          <Card
+            title="최근 활동"
+            loading={activityLoading}
+            hoverable
+            style={clickableCardStyle}
+            onClick={() => navigate('/traceability')}
+          >
             <Table
-              dataSource={Array.isArray(recentActivity) ? recentActivity : []}
+              dataSource={recentActivities?.activities || []}
               columns={activityColumns}
               rowKey="id"
               pagination={{ pageSize: 10 }}

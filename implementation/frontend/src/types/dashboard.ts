@@ -1,28 +1,43 @@
+// /dashboard/summary 응답
 export interface DashboardStats {
-  total_pallets: number;
-  stock_pallets: number;
-  producing_pallets: number;
-  consuming_pallets: number;
-  finished_pallets: number;
-  hold_pallets: number;
-  defect_pallets: number;
-  total_lots: number;
-  total_assembly_lots: number;
+  active_pallets: number;
+  total_stock: number;
+  today_production: number;
+  reader_status: {
+    connected: number;
+    total: number;
+  };
 }
 
-export interface ProcessSummary {
+// /dashboard/process-status 응답
+export interface ProcessStatus {
   process_id: number;
   process_name: string;
-  pallet_count: number;
-  lot_count: number;
+  production_line?: string;
+  active_pallets: number;
+  status_breakdown: Record<string, number>;
 }
 
+export interface ProcessStatusList {
+  processes: ProcessStatus[];
+  total_active_pallets: number;
+  last_updated: string;
+}
+
+// /dashboard/recent-activities 응답
 export interface RecentActivity {
   id: number;
-  timestamp: string;
   pallet_no: string;
   event_type: string;
+  previous_status?: string;
+  new_status: string;
   process_name?: string;
-  status?: string;
-  description: string;
+  scan_time: string;
+  worker_name?: string;
+  notes?: string;
+}
+
+export interface RecentActivityResponse {
+  activities: RecentActivity[];
+  total: number;
 }
