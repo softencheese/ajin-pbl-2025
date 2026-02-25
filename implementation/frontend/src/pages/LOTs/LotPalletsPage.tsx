@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
     Form,
     Input,
@@ -191,9 +191,17 @@ export function LotPalletsPage() {
     // Modals
     const [paletteDetailModal, setPaletteDetailModal] = useState<{
         visible: boolean;
-        lot: LotData | null;
-        palette: Palette | null;
-    }>({ visible: false, lot: null, palette: null });
+        lotNumber: string | null;
+        paletteId: string | null;
+    }>({ visible: false, lotNumber: null, paletteId: null });
+
+    const activeLot = useMemo(() =>
+        paletteDetailModal.lotNumber ? lotData.find((l: LotData) => l.lotNumber === paletteDetailModal.lotNumber) : null
+        , [lotData, paletteDetailModal.lotNumber]);
+
+    const activePalette = useMemo(() =>
+        activeLot && paletteDetailModal.paletteId ? activeLot.palettes.find((p: Palette) => p.id === paletteDetailModal.paletteId) : null
+        , [activeLot, paletteDetailModal.paletteId]);
 
     const [rfidModal, setRfidModal] = useState<{
         visible: boolean;
@@ -212,22 +220,30 @@ export function LotPalletsPage() {
         onMutate: ({ palletNo }) => {
             setUpdatingStatus(palletNo);
         },
-        onSuccess: (_, { palletNo, status }) => {
+        onSuccess: async (_, { palletNo }) => {
             setUpdatingStatus(null);
-            setLotData(prev => prev.map(lot => ({
-                ...lot,
-                palettes: lot.palettes.map(p => p.id === palletNo ? { ...p, status } : p),
-            })));
-            setPaletteDetailModal(prev =>
-                prev.palette?.id === palletNo
-                    ? { ...prev, palette: prev.palette ? { ...prev.palette, status } : null }
-                    : prev
-            );
+            // onSuccess에서 refetch만 하면 activePalette가 useMemo에 의해 자동으로 갱신됩니다.
+            await Promise.all([refetchLots(), refetchPallets()]);
             message.success('상태가 업데이트되었습니다.');
         },
         onError: () => {
             setUpdatingStatus(null);
             message.error('상태 업데이트에 실패했습니다.');
+        },
+    });
+
+    const unlinkTagMutation = useMutation({
+        mutationFn: async (palletNo: string) => {
+            const pallet = palletsApiData?.items.find((p: Pallet) => p.pallet_no === palletNo);
+            if (!pallet) throw new Error('팔레트를 찾을 수 없습니다');
+            return palletApi.unlinkTag(pallet.id);
+        },
+        onSuccess: async () => {
+            await Promise.all([refetchLots(), refetchPallets()]);
+            message.success('RFID 태그 연결이 해제되었습니다.');
+        },
+        onError: () => {
+            message.error('연결 해제에 실패했습니다.');
         },
     });
 
@@ -403,9 +419,11 @@ export function LotPalletsPage() {
     };
 
     // Register RFID
-    // TODO: 롤백 API 구현 후 채울 것 (협업자에게 API 수령 필요)
-    const handleRollbackStatus = (_palletNo: string) => {
-        // 구현 예정
+    const handleRollbackStatus = (palletNo: string) => {
+        updateStatusMutation.mutate({
+            palletNo: palletNo,
+            status: 'Rollback',
+        });
     };
 
     const handleRegisterRfid = (rfidEpc: string) => {
@@ -638,7 +656,7 @@ export function LotPalletsPage() {
             render: (text: string, record: Palette) => (
                 <Button
                     type="link"
-                    onClick={() => setPaletteDetailModal({ visible: true, lot, palette: record })}
+                    onClick={() => setPaletteDetailModal({ visible: true, lotNumber: lot.lotNumber, paletteId: record.id })}
                 >
                     {text}
                 </Button>
@@ -653,8 +671,12 @@ export function LotPalletsPage() {
         {
             title: 'RFID 상태',
             key: 'rfidStatus',
-            render: (_, record: Palette) =>
-                record.rfidEpc ? (
+            render: (_, record: Palette) => {
+                if (['Scrap', 'Finished', 'Deregistered'].includes(record.status)) {
+                    return <Tag color="default">연결해제</Tag>;
+                }
+
+                return record.rfidEpc ? (
                     <Tag color="success">등록완료</Tag>
                 ) : (
                     <Button
@@ -668,7 +690,8 @@ export function LotPalletsPage() {
                     >
                         RFID 등록
                     </Button>
-                ),
+                );
+            },
         },
         {
             title: '태그 등록 시각',
@@ -709,7 +732,7 @@ export function LotPalletsPage() {
             render: (_, record: Palette) => (
                 <Button
                     size="small"
-                    onClick={() => setPaletteDetailModal({ visible: true, lot, palette: record })}
+                    onClick={() => setPaletteDetailModal({ visible: true, lotNumber: lot.lotNumber, paletteId: record.id })}
                 >
                     상세 정보
                 </Button>
@@ -1027,17 +1050,17 @@ export function LotPalletsPage() {
             <Modal
                 title="팔레트 상세 정보"
                 open={paletteDetailModal.visible}
-                onCancel={() => setPaletteDetailModal({ visible: false, lot: null, palette: null })}
+                onCancel={() => setPaletteDetailModal({ visible: false, lotNumber: null, paletteId: null })}
                 footer={null}
                 width={600}
             >
-                {paletteDetailModal.palette && paletteDetailModal.lot && (
+                {activePalette && activeLot && (
                     <div>
                         <Descriptions column={1} bordered size="small">
-                            <Descriptions.Item label="팔레트 ID">{paletteDetailModal.palette.id}</Descriptions.Item>
-                            <Descriptions.Item label="팔레트 번호">#{paletteDetailModal.palette.paletteNumber}</Descriptions.Item>
-                            <Descriptions.Item label="소속 LOT">{paletteDetailModal.lot.lotNumber}</Descriptions.Item>
-                            <Descriptions.Item label="수량">{paletteDetailModal.palette.quantity}개</Descriptions.Item>
+                            <Descriptions.Item label="팔레트 ID">{activePalette.id}</Descriptions.Item>
+                            <Descriptions.Item label="팔레트 번호">#{activePalette.paletteNumber}</Descriptions.Item>
+                            <Descriptions.Item label="소속 LOT">{activeLot.lotNumber}</Descriptions.Item>
+                            <Descriptions.Item label="수량">{activePalette.quantity}개</Descriptions.Item>
                         </Descriptions>
 
                         <Descriptions title="팔레트 상태 변경" column={1} bordered size="small" style={{ marginTop: 16 }}>
@@ -1053,48 +1076,70 @@ export function LotPalletsPage() {
                                         Deregistered: { color: 'default', label: '해제됨' },
                                         Hold: { color: 'gold', label: '보류' },
                                         Defect: { color: 'red', label: '불량' },
-                                        scrap: { color: 'volcano', label: '폐기' },
+                                        Scrap: { color: 'volcano', label: '폐기' },
                                     };
-                                    const info = statusMap[paletteDetailModal.palette!.status] || { color: 'default', label: paletteDetailModal.palette!.status };
+                                    const info = statusMap[activePalette.status] || { color: 'default', label: activePalette.status };
                                     return <Tag color={info.color}>{info.label}</Tag>;
                                 })()}
                             </Descriptions.Item>
                             <Descriptions.Item label="상태 변경">
                                 <Space>
-                                    <Select
-                                        value={paletteDetailModal.palette.status}
-                                        onChange={(newStatus: string) => {
-                                            updateStatusMutation.mutate({
-                                                palletNo: paletteDetailModal.palette!.id,
-                                                status: newStatus,
-                                            });
-                                        }}
-                                        disabled={updatingStatus === paletteDetailModal.palette.id}
-                                        style={{ width: 160 }}
-                                        optionLabelProp="label"
-                                    >
-                                        <Option value="Hold" label={<Tag color="gold">보류</Tag>}>
-                                            <Tag color="gold">보류</Tag> Hold
-                                        </Option>
-                                        <Option value="Defect" label={<Tag color="red">불량</Tag>}>
-                                            <Tag color="red">불량</Tag> Defect
-                                        </Option>
-                                        <Option value="scrap" label={<Tag color="volcano">폐기</Tag>}>
-                                            <Tag color="volcano">폐기</Tag> Scrap
-                                        </Option>
-                                    </Select>
-                                    {updatingStatus === paletteDetailModal.palette.id && (
-                                        <Spin size="small" />
-                                    )}
-                                    {['Hold', 'Defect', 'scrap'].includes(paletteDetailModal.palette.status) && (
-                                        <Button
-                                            size="small"
-                                            danger
-                                            disabled={updatingStatus === paletteDetailModal.palette.id}
-                                            onClick={() => handleRollbackStatus(paletteDetailModal.palette!.id)}
-                                        >
-                                            상태롤백
-                                        </Button>
+                                    {activePalette.status !== 'Scrap' ? (
+                                        <>
+                                            <Select
+                                                value={activePalette.status}
+                                                onChange={(newStatus: string) => {
+                                                    updateStatusMutation.mutate({
+                                                        palletNo: activePalette.id,
+                                                        status: newStatus,
+                                                    });
+                                                }}
+                                                disabled={
+                                                    updatingStatus === activePalette.id ||
+                                                    activePalette.status === 'Hold' ||
+                                                    (activePalette.status !== 'Stock' && activePalette.status !== 'Defect')
+                                                }
+                                                style={{ width: 160 }}
+                                                optionLabelProp="label"
+                                                placeholder="상태 변경 선택"
+                                            >
+                                                {/* Stock 상태일 때만 보류/불량 전환 가능 */}
+                                                {activePalette.status === 'Stock' && (
+                                                    <>
+                                                        <Option value="Hold" label={<Tag color="gold">보류</Tag>}>
+                                                            <Tag color="gold">보류</Tag> Hold
+                                                        </Option>
+                                                        <Option value="Defect" label={<Tag color="red">불량</Tag>}>
+                                                            <Tag color="red">불량</Tag> Defect
+                                                        </Option>
+                                                    </>
+                                                )}
+                                                {/* Defect 상태일 때만 폐기 전환 가능 */}
+                                                {activePalette.status === 'Defect' && (
+                                                    <Option value="Scrap" label={<Tag color="volcano">폐기</Tag>}>
+                                                        <Tag color="volcano">폐기</Tag> Scrap
+                                                    </Option>
+                                                )}
+                                            </Select>
+
+                                            {updatingStatus === activePalette.id && (
+                                                <Spin size="small" />
+                                            )}
+
+                                            {/* 보류(Hold) 또는 불량(Defect) 상태에서만 복구 버튼 노출 */}
+                                            {['Hold', 'Defect'].includes(activePalette.status) && (
+                                                <Button
+                                                    size="small"
+                                                    danger
+                                                    disabled={updatingStatus === activePalette.id}
+                                                    onClick={() => handleRollbackStatus(activePalette.id)}
+                                                >
+                                                    상태롤백
+                                                </Button>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <span style={{ color: '#999' }}>폐기된 팔레트는 상태를 변경할 수 없습니다.</span>
                                     )}
                                 </Space>
                             </Descriptions.Item>
@@ -1102,22 +1147,27 @@ export function LotPalletsPage() {
 
                         <Descriptions title="RFID 정보" column={1} bordered size="small" style={{ marginTop: 16 }}>
                             <Descriptions.Item label="RFID 상태">
-                                {paletteDetailModal.palette.rfidEpc ? (
-                                    <Tag color="success">등록완료</Tag>
-                                ) : (
-                                    <Tag color="default">미등록</Tag>
-                                )}
+                                {(() => {
+                                    if (['Scrap', 'Finished', 'Deregistered'].includes(activePalette.status)) {
+                                        return <Tag color="default">연결해제</Tag>;
+                                    }
+                                    return activePalette.rfidEpc ? (
+                                        <Tag color="success">등록완료</Tag>
+                                    ) : (
+                                        <Tag color="default">미등록</Tag>
+                                    );
+                                })()}
                             </Descriptions.Item>
-                            {paletteDetailModal.palette.rfidEpc && (
+                            {activePalette.rfidEpc && (
                                 <>
-                                    <Descriptions.Item label="RFID EPC">{paletteDetailModal.palette.rfidEpc}</Descriptions.Item>
-                                    <Descriptions.Item label="태그 등록 시각">{paletteDetailModal.palette.rfidRegisteredAt || '-'}</Descriptions.Item>
-                                    <Descriptions.Item label="태그 해제 시각">{paletteDetailModal.palette.rfidDeregisteredAt || '-'}</Descriptions.Item>
+                                    <Descriptions.Item label="RFID EPC">{activePalette.rfidEpc}</Descriptions.Item>
+                                    <Descriptions.Item label="태그 등록 시각">{activePalette.rfidRegisteredAt || '-'}</Descriptions.Item>
+                                    <Descriptions.Item label="태그 해제 시각">{activePalette.rfidDeregisteredAt || '-'}</Descriptions.Item>
                                 </>
                             )}
                         </Descriptions>
 
-                        {!paletteDetailModal.palette.rfidEpc && (
+                        {!activePalette.rfidEpc && (
                             <Alert
                                 message="RFID 매칭 필요"
                                 description="이 팔레트에 RFID가 등록되지 않았습니다."
@@ -1129,11 +1179,11 @@ export function LotPalletsPage() {
                                         size="small"
                                         type="primary"
                                         onClick={() => {
-                                            setPaletteDetailModal({ visible: false, lot: null, palette: null });
+                                            setPaletteDetailModal({ visible: false, lotNumber: null, paletteId: null });
                                             setRfidModal({
                                                 visible: true,
-                                                lotNumber: paletteDetailModal.lot!.lotNumber,
-                                                paletteId: paletteDetailModal.palette!.id,
+                                                lotNumber: activeLot.lotNumber,
+                                                paletteId: activePalette.id,
                                             });
                                         }}
                                     >

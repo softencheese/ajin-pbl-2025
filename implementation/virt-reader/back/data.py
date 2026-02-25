@@ -232,7 +232,18 @@ class Reader:
         else:
             return "Unknown"
 
-        if target_list_id == -1: return "No target list"
+        if target_list_id == -1: 
+            # For Defect/Hold/Scrap (COM05, COM06, COM07), pick any Producing or Stock pallet
+            for list_id in range(len(self.pallette_manager.pallettes)):
+                idx = self.pallette_manager.get_pallettes_idx_for_status(list_id, PALLETTE_STATUS_PRODUCING)
+                if idx == -1:
+                    idx = self.pallette_manager.get_pallettes_idx_for_status(list_id, PALLETTE_STATUS_STOCK)
+                if idx != -1:
+                    epc = self.pallette_manager.get_pallettes(list_id, idx)[0]
+                    command = f"{type} {epc}"
+                    self.write_input(command)
+                    return f"TEST_TRIGGER ({epc})"
+            return "No target list"
 
         idx = self.pallette_manager.get_pallettes_idx_for_status(target_list_id, target_status)
         if idx != -1:

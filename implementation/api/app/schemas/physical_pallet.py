@@ -5,17 +5,7 @@ from datetime import datetime
 from enum import Enum
 
 
-class PhysicalPalletStatus(str, Enum):
-    """팔레트 상태"""
-    GENERATED = 'Generated'
-    EMPTY = 'Empty'
-    STOCK = 'Stock'
-    CONSUMING = 'Consuming'
-    PRODUCING = 'Producing'
-    FINISHED = 'Finished'
-    DEREGISTERED = 'Deregistered'
-    HOLD = 'Hold'
-    DEFECT = 'Defect'
+
 
 
 class PhysicalPalletBase(BaseModel):
@@ -23,7 +13,6 @@ class PhysicalPalletBase(BaseModel):
     epc: str = Field(..., description="RFID EPC 코드", max_length=100)
     pallet_code: str = Field(..., description="팔레트 실물 코드", max_length=50)
     item_id: Optional[int] = Field(None, description="기본 적재 품목 ID")
-    status: PhysicalPalletStatus = Field(default=PhysicalPalletStatus.GENERATED, description="팔레트 상태")
     description: Optional[str] = Field(None, description="팔레트 설명", max_length=200)
 
 
@@ -36,7 +25,6 @@ class PhysicalPalletUpdate(BaseModel):
     """실물 팔레트 수정 요청"""
     pallet_code: Optional[str] = Field(None, description="팔레트 실물 코드", max_length=50)
     item_id: Optional[int] = Field(None, description="기본 적재 품목 ID")
-    status: Optional[PhysicalPalletStatus] = Field(None, description="팔레트 상태")
     description: Optional[str] = Field(None, description="팔레트 설명", max_length=200)
 
 
@@ -46,7 +34,6 @@ class PhysicalPalletResponse(BaseModel):
     epc: str
     pallet_code: str
     item_id: Optional[int] = None
-    status: str
     description: Optional[str] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
@@ -67,6 +54,3 @@ class PhysicalPalletListResponse(BaseModel):
     pages: int
 
 
-class PhysicalPalletStatusUpdate(BaseModel):
-    """실물 팔레트 상태 변경 요청"""
-    status: PhysicalPalletStatus = Field(..., description="팔레트 상태")

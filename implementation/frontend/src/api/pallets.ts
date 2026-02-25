@@ -47,4 +47,9 @@ export const palletApi = {
         }>('/pallets/fifo-queue');
         return data;
     },
+
+    async unlinkTag(id: string | number) {
+        const { data } = await apiClient.post<Pallet>(`/pallets/${id}/unlink-tag`);
+        return data;
+    },
 };

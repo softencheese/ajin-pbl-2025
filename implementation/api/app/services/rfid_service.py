@@ -36,7 +36,8 @@ class RFIDService:
             await self._emit_scan_error('UNKNOWN_PORT', event.port_name, event.barcode, location.error.message)
             return location
 
-        if location.process_id is None or location.location_type is None:
+        is_global_reader = location.location_type in ["DEFECT", "DEFECT_OUT", "HOLD", "HOLD_OUT", "SCRAP"]
+        if location.location_type is None or (location.process_id is None and not is_global_reader):
             error_response = self._create_error_response('READER_NOT_CONFIGURED', f"리더기 설정 오류: {event.port_name}")
             await self._emit_scan_error('READER_NOT_CONFIGURED', event.port_name, event.barcode, error_response.error.message)
             return error_response
@@ -52,10 +53,18 @@ class RFIDService:
              return await self._handle_pallet_not_found(event.port_name, event.barcode, "BARCODE_NOT_FOUND")
 
         # 2.2 Pallet 조회 (Locking)
-        # 최신 팔레트부터 조회 (과거 Deregistered 레코드를 피하기 위해)
+        # 1) 현재 비어있는(Empty/Generated) 팔레트 중 가장 오래된 것 먼저 (생산 시작용)
+        # 2) 만약 없으면, 이미 생산 중이거나 재고인 것 중 가장 최신 것 (상태 전이용)
         pallet = self.db.query(Pallet).filter(
-            Pallet.lot_id == lot.id
-        ).order_by(Pallet.id.desc()).with_for_update().first()
+            Pallet.lot_id == lot.id,
+            Pallet.status.in_(["Empty", "Generated"])
+        ).order_by(Pallet.id.asc()).with_for_update().first()
+        
+        if not pallet:
+            pallet = self.db.query(Pallet).filter(
+                Pallet.lot_id == lot.id,
+                Pallet.status != "Deregistered"
+            ).order_by(Pallet.id.desc()).with_for_update().first()
         
         if not pallet:
              return await self._handle_pallet_not_found(event.port_name, event.barcode, "PALLET_NOT_LINKED")
@@ -73,7 +82,8 @@ class RFIDService:
             return location
         
         # 1.1 공정 매핑 확인
-        if location.process_id is None or location.location_type is None:
+        is_global_reader = location.location_type in ["DEFECT", "DEFECT_OUT", "HOLD", "HOLD_OUT", "SCRAP"]
+        if location.location_type is None or (location.process_id is None and not is_global_reader):
             error_response = self._create_error_response('READER_NOT_CONFIGURED', f"리더기 설정 오류: {event.port_name}")
             await self._emit_scan_error('READER_NOT_CONFIGURED', event.port_name, event.epc, error_response.error.message)
             return error_response
@@ -108,20 +118,13 @@ class RFIDService:
             ).first()
             
             if not physical_pallet:
-                # physical_pallet.py의 status는 Enum이지만 rfid_service에서는 문자열 사용 추세
-                # 모델 정의에 맞춰 문자열 보냄 (SQLAlchemy가 Enum으로 변환 처리)
                 physical_pallet = PhysicalPallet(
                     epc=epc,
-                    pallet_code=f"P-{epc[-6:]}" if len(epc) >= 6 else epc,
-                    status="Empty"
+                    pallet_code=f"P-{epc[-6:]}" if len(epc) >= 6 else epc
                 )
                 self.db.add(physical_pallet)
                 self.db.flush() # ID 획득을 위해 flush
                 print(f"  [AUTO_BIND] Created new PhysicalPallet for EPC: {epc}")
-            elif physical_pallet.status == "Stock":
-                 # 이미 생산 완료되어 재고인 팔레트가 미연결 상태로 돌아다니는 경우 (드문 케이스)
-                 # 여기서는 무시하거나 에러 처리 가능. 현재는 그냥 생성 로직으로 간다.
-                 pass
 
             # 2. 해당 공정에 할당된 가상 팔레트 중 실물이 아직 연결되지 않은 것 찾기
             # status가 'Generated' 또는 'Empty'인 것 중 가장 오래된 것 (ID순)
@@ -137,8 +140,6 @@ class RFIDService:
                 pallet.physical_pallet_id = physical_pallet.id
                 pallet.tag_status = 'IN_USE'
                 pallet.tag_registered_at = datetime.now()
-                # physical_pallet 상태도 Producing으로 변경 (이후 _process_pallet_event에서도 변경되지만 미리 선언)
-                physical_pallet.status = "Producing"
                 
                 print(f"  [AUTO_BIND] Bound EPC {epc} to Pallet {pallet.pallet_no} (LOT: {pallet.lot_id})")
                 return pallet
@@ -153,7 +154,25 @@ class RFIDService:
         """팔레트 이벤트 처리 공통 로직 (RFID/Barcode)"""
         try:
             # 3. 검증 로직 실행
-            # 3.1 오투입 검증 (IN 위치에서만)
+            # 3.1 IN 위치: 현재 공정에서 생산 중(Producing)인 팔레트가 있고,
+            #     새로운 Stock 팔레트를 투입하려는 경우에만 IN 거부
+            #     (이미 Consuming 상태인 팔레트의 회수(Deregistered)는 허용)
+            if location.location_type == "IN" and location.process_id and pallet.status == "Stock":
+                producing_count = self.db.query(Pallet).filter(
+                    Pallet.current_process_id == location.process_id,
+                    Pallet.status == "Producing"
+                ).count()
+                if producing_count > 0:
+                    return ScanResponse(
+                        success=False,
+                        error=ScanError(
+                            type="PROCESS_BUSY",
+                            message=f"현재 공정에서 생산 중인 팔레트가 있습니다. OUT 적재 완료 후 다시 투입하세요."
+                        ),
+                        feedback=Feedback(action="BUZZER", pattern="ERROR", count=2, led_color="YELLOW")
+                    )
+
+            # 3.2 오투입 검증 (IN 위치에서만)
             if location.location_type == "IN":
                 wrong_part_error = self._validate_wrong_part(pallet, location)
                 if wrong_part_error:
@@ -163,19 +182,23 @@ class RFIDService:
                         feedback=Feedback(action="BUZZER", pattern="ERROR", count=3, led_color="RED")
                     )
                 
-                # 3.2 FIFO 검증
+                # 3.3 FIFO 검증
                 fifo_warning = self._validate_fifo(pallet, location)
             else:
                 fifo_warning = None
             
             # 4. 상태 전이 결정
             previous_status = pallet.status
+            
+            process_code = location.process.process_code if location.process else None
+            is_first_process = getattr(location.process, 'is_first_process', False) if location.process else False
+            
             transition_result = self.state_machine.get_next_state(
                 current_status=previous_status,
-                process_code=location.process.process_code,
+                process_code=process_code,
                 location_type=location.location_type,
                 is_final_product=self._is_final_product(pallet),
-                is_first_process=getattr(location.process, 'is_first_process', False)
+                is_first_process=is_first_process
             )
             
             # [Added] 4.1 생산 공정 투입(Consuming) LOT 검증
@@ -222,11 +245,16 @@ class RFIDService:
             
             next_status = transition_result["next_status"]
             
-            # Hold 해제 시 이전 상태 복구
-            if next_status == "__RESTORE_PRE_HOLD__":
-                next_status = self._get_pre_hold_status(pallet.id)
+            # Rollback 처리 (Defect/Hold 해제 시 이전 상태 복구)
+            if next_status == "Rollback":
+                if pallet.previous_status:
+                    next_status = pallet.previous_status
+                else:
+                    next_status = "Stock" # 기본값
 
-            # Deregistered로 상태 전이 시 LOT 연결 해제는 트랜잭션 마지막에 수행
+            # 상태가 변경될 때 이전 상태를 저장
+            if previous_status != next_status and next_status not in ["Rollback", "Scrap"]:
+                pallet.previous_status = previous_status
             # (LOT 상태 연동 로직에서 현재 LOT의 다른 팔레트들을 조회해야 하므로)
             if next_status == "Deregistered":
                 # pallet.lot_id = None  <-- 이 시점에는 유지
@@ -250,23 +278,28 @@ class RFIDService:
             # 5. 트랜잭션 처리
             # 상태 업데이트 (pallet.status가 상태 전이 기준이 됨, physical_pallet도 동기화)
             pallet.status = next_status
-            pallet.current_process_id = location.process_id
+            if location.process_id is not None:
+                pallet.current_process_id = location.process_id
             
             # [Added] 생산 수량 누적
             if previous_status == "Producing" and next_status in ["Stock", "Finished"]:
                 if pallet.lot:
                     pallet.lot.produced_quantity += (pallet.quantity or 0)
                     self.db.add(pallet.lot)
+
+            # [Added] 소비 완료 시 수량 0 처리
+            if previous_status == "Consuming":
+                pallet.quantity = 0
             
-            # AI_README: 팔레트가 Deregistered 시 tag_status 및 실물 상태 변경
-            if next_status == "Deregistered":
+            # AI_README: 팔레트가 Deregistered 또는 Scrap 시 tag_status 및 실물 상태 업데이트
+            elif next_status == "Scrap":
+                # AI_README: 폐기 시 생산 수량(produced_quantity)에서 차감하여 Net 생산량을 유지
+                if pallet.lot and previous_status in ["Stock", "Finished", "Defect", "Hold"]:
+                    pallet.lot.produced_quantity = max(0, pallet.lot.produced_quantity - (pallet.quantity or 0))
+                    self.db.add(pallet.lot)
+                
                 pallet.tag_status = "OUT_OF_USE"
-                pallet.tag_deregistered_at = datetime.now()
-                pallet.quantity = 0 # 등록 해제 시 수량 초기화 (실물 없음)
-                if pallet.physical_pallet:
-                    pallet.physical_pallet.status = "Empty"
-            elif pallet.physical_pallet:
-                pallet.physical_pallet.status = next_status
+                pallet.quantity = 0 # 폐기 시 수량 0
 
             # LOT 상태 및 수량 연동 (AI_README 기준)
             if pallet.lot:
@@ -371,7 +404,8 @@ class RFIDService:
 
             for pp in producing_pallets:
                 if pp.lot_id:
-                    self._record_genealogy_link(pallet.lot_id, pp.lot_id, location.process_id, pallet.quantity)
+                    # 투입된 팔레트의 수량이 아닌, 생산 중인 팔레트의 수량만큼 소비된 것으로 기록 (1:1 대응 원칙)
+                    self._record_genealogy_link(pallet.lot_id, pp.lot_id, location.process_id, pp.quantity, accumulate=True)
             self.db.flush()
         except Exception as e:
             print(f"  [CONSUME_GENEALOGY_ERROR] {e}")
@@ -382,7 +416,7 @@ class RFIDService:
             
         raw_lot = self.db.query(Lot).join(Item, Lot.item_id == Item.id).filter(
             Item.item_type == "RAW",
-            Lot.status.in_(["STOCK", "PROCESS"]),
+            Lot.status.in_(["STOCK", "PROCESS", "WAIT"]),
             Lot.quantity > 0
         ).order_by(Lot.created_at.asc()).with_for_update().first()
         
@@ -435,13 +469,18 @@ class RFIDService:
 
                 for cp in consuming_pallets:
                     if cp.lot_id:
-                        self._record_genealogy_link(cp.lot_id, pallet.lot_id, location.process_id, cp.quantity)
+                        # 현재 생산 시작하는 팔레트의 수량만큼 족보에 누적 (cp.quantity는 투입 팔레트 전체 수량이므로 부적절)
+                        self._record_genealogy_link(cp.lot_id, pallet.lot_id, location.process_id, pallet.quantity, accumulate=True)
                 self.db.flush()
         except Exception as e:
             print(f"  [PROD_GENEALOGY_ERROR] {e}")
 
-    def _record_genealogy_link(self, input_lot_id, output_lot_id, process_id, qty, accumulate=False):
+    def _record_genealogy_link(self, input_lot_id, output_lot_id, process_id, qty_consumed, qty_produced=None, accumulate=False):
         """중복 확인 후 Genealogy 링크 기록 (누적 가능)"""
+        # 별도로 지정하지 않으면 소비 수량과 생산 수량을 동일하게 간주 (1:1 공정)
+        if qty_produced is None:
+            qty_produced = qty_consumed
+            
         existing = self.db.query(LotGenealogy).filter(
             LotGenealogy.input_lot_id == input_lot_id,
             LotGenealogy.output_lot_id == output_lot_id,
@@ -450,18 +489,20 @@ class RFIDService:
 
         if existing:
             if accumulate:
-                existing.quantity_consumed = (existing.quantity_consumed or 0) + (qty or 0)
+                existing.quantity_consumed = (existing.quantity_consumed or 0) + (qty_consumed or 0)
+                existing.quantity_produced = (existing.quantity_produced or 0) + (qty_produced or 0)
                 self.db.add(existing)
-                print(f"  [GENEALOGY] Updated Lot {input_lot_id} -> Lot {output_lot_id} qty to {existing.quantity_consumed}")
+                print(f"  [GENEALOGY] Updated Lot {input_lot_id} -> Lot {output_lot_id} (Cons: {existing.quantity_consumed}, Prod: {existing.quantity_produced})")
         else:
             genealogy = LotGenealogy(
                 input_lot_id=input_lot_id,
                 output_lot_id=output_lot_id,
                 process_id=process_id,
-                quantity_consumed=qty or 0
+                quantity_consumed=qty_consumed or 0,
+                quantity_produced=qty_produced or 0
             )
             self.db.add(genealogy)
-            print(f"  [GENEALOGY] Linked Lot {input_lot_id} -> Lot {output_lot_id} at process {process_id}")
+            print(f"  [GENEALOGY] Linked Lot {input_lot_id} -> Lot {output_lot_id} at process {process_id} (Cons: {qty_consumed}, Prod: {qty_produced})")
 
     def _get_reader_location(self, port_name: str) -> RFIDReaderLocation | ScanResponse:
         location = self.db.query(RFIDReaderLocation).filter(

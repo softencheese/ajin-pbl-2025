@@ -12,6 +12,7 @@ class LotGenealogy(BaseModel):
     output_lot_id = Column(BigInteger, ForeignKey("lots.id"), nullable=False, index=True, comment='생성 LOT ID (자식)')
     process_id = Column(BigInteger, ForeignKey("processes.id"), nullable=False, index=True, comment='발생 공정 ID')
     quantity_consumed = Column(Integer, nullable=False, comment='투입 수량')
+    quantity_produced = Column(Integer, nullable=False, comment='생산 수량')
 
     # Relationships
     input_lot = relationship("Lot", foreign_keys=[input_lot_id], backref="children_genealogy")

@@ -399,7 +399,7 @@ async def create_lot(
                 physical_pallet_id=None,  # 실물 팔레트는 RFID 스캔 시 연결
                 lot_id=lot.id,
                 quantity=pallet_qty,
-                status="Stock" if item.item_type == "RAW" else "Empty",
+                status="Stock" if item.item_type == "RAW" else "Generated",
                 tag_status="AVAILABLE",
                 current_process_id=data.process_id
             )

@@ -51,7 +51,7 @@ CREATE TABLE rfid_reader_locations (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     port_name VARCHAR(50) UNIQUE NOT NULL COMMENT '포트 이름 (COM3, READER_01 등)',
     process_id BIGINT COMMENT '공정 ID (미등록 시 NULL)',
-    location_type ENUM('IN', 'OUT', 'HOLD', 'REG', 'DEFECT', 'FINISH', 'RETURN') COMMENT '위치 타입',
+    location_type ENUM('IN', 'OUT', 'HOLD', 'HOLD_OUT', 'REG', 'DEFECT', 'DEFECT_OUT', 'SCRAP', 'FINISH', 'RETURN') COMMENT '위치 타입',
     description VARCHAR(200) COMMENT '리더기 설명',
     is_active BOOLEAN DEFAULT TRUE COMMENT '활성 여부',
     last_scan_time DATETIME COMMENT '마지막 스캔 시간',
@@ -99,6 +99,7 @@ CREATE TABLE lot_genealogy (
     output_lot_id BIGINT NOT NULL COMMENT '생성 LOT ID (자식)',
     process_id BIGINT NOT NULL COMMENT '발생 공정 ID',
     quantity_consumed INT NOT NULL COMMENT '투입 수량',
+    quantity_produced INT NOT NULL COMMENT '생산 수량',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (input_lot_id) REFERENCES lots(id),
@@ -125,7 +126,7 @@ CREATE TABLE physical_pallets (
     FOREIGN KEY (item_id) REFERENCES items(id),
     INDEX idx_item_id (item_id),
     INDEX idx_epc (rfid_epc),
-    INDEX idx_pallet_code (pallet_code),
+    INDEX idx_pallet_code (pallet_code)
 ) COMMENT '실물 팔레트 정보';
 
 -- 6-1. 가상 팔레트 (RFID 태그 통합 - 기존 rfid_tags 테이블 흡수)
@@ -135,7 +136,8 @@ CREATE TABLE pallets (
     physical_pallet_id BIGINT COMMENT '실물 팔레트 ID',
     lot_id BIGINT COMMENT '연결된 LOT ID',
     quantity INT DEFAULT 0 COMMENT '현재 적재 수량',
-    status ENUM('Generated', 'Empty', 'Stock', 'Consuming', 'Producing', 'Finished', 'Deregistered', 'Hold', 'Defect') DEFAULT 'Generated' COMMENT '팔레트 상태 (9가지)',
+    status ENUM('Generated', 'Empty', 'Stock', 'Consuming', 'Producing', 'Finished', 'Deregistered', 'Hold', 'Defect', 'Scrap') DEFAULT 'Generated' COMMENT '팔레트 상태 (10가지)',
+    previous_status VARCHAR(20) COMMENT '이전 상태',
     tag_status ENUM('AVAILABLE', 'IN_USE', 'OUT_OF_USE', 'DAMAGED') DEFAULT 'AVAILABLE' COMMENT 'RFID 태그 상태 (기존 rfid_tags.status 통합)',
     current_process_id BIGINT COMMENT '현재 공정',
     tag_registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'RFID 태그 등록 시각',
@@ -148,7 +150,7 @@ CREATE TABLE pallets (
     INDEX idx_physical_pallet_id (physical_pallet_id),
     INDEX idx_pallet_no (pallet_no),
     INDEX idx_tag_status (tag_status),
-    INDEX idx_lot (lot_id)
+    INDEX idx_lot (lot_id),
     INDEX idx_status (status)
 
 ) COMMENT '팔레트 - RFID 태그 통합 관리 (기존 rfid_tags 흡수)';
@@ -263,7 +265,7 @@ LEFT JOIN physical_pallets pp ON p.physical_pallet_id = pp.id
 JOIN lots l ON p.lot_id = l.id
 JOIN items i ON l.item_id = i.id
 LEFT JOIN processes pr ON l.process_id = pr.id
-WHERE pp.status = 'Stock'
+WHERE p.status = 'Stock'
 GROUP BY i.item_code, i.item_name, i.item_type, pr.process_name, l.lot_number, l.production_date
 ORDER BY l.production_date;
 

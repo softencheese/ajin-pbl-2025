@@ -29,23 +29,32 @@ class StateMachine:
         if current_status == "Hold" and location_type not in ["HOLD"]:
             return self.next_status(False, current_status, "Hold 상태는 관리자 권한으로 명시적 해제가 필요합니다.")
         
-        # 불량/보류 처리 우선
-        if location_type == "DEFECT":
-            if current_status == "Defect":
-                # Defect 상태에서 다시 불량 리더기 태깅 시 해제
-                # Deregistered 상태로 복귀
-                return self.next_status(True, "Deregistered", "불량 해제되었습니다. (태그 회수)")
-            return self.next_status(True, "Defect", "불량 처리되었습니다.")
-        
-        # HOLD 처리
-        if location_type == "HOLD":
-            # Hold 상태에서 다시 HOLD 리더기 태깅 시 해제
-            # Hold 이전 상태로 복귀 (get_pre_hold_status 로 조회 필요)
-            # 기본값: Stock (조회 실패 시)
-            if current_status == "Hold":
-                return self.next_status(True, "__RESTORE_PRE_HOLD__", "보류 해제되었습니다. (이전 상태로 복귀)")
-            return self.next_status(True, "Hold", "보류 처리되었습니다.")
+        # Scrap 처리
+        if location_type == "SCRAP":
+            if current_status != "Defect":
+                return self.next_status(False, current_status, "Defect 상태에서만 Scrap 상태로 전환할 수 있습니다.")
+            return self.next_status(True, "Scrap", "Scrap 처리되었습니다.")
 
+        # 불량 처리
+        if location_type == "DEFECT":
+            if current_status != "Stock":
+                return self.next_status(False, current_status, "적재(Stock) 상태의 팔레트만 불량 처리할 수 있습니다.")
+            return self.next_status(True, "Defect", "불량 처리되었습니다.")
+        elif location_type == "DEFECT_OUT":
+            if current_status == "Defect":
+                return self.next_status(True, "Rollback", "불량 해제되었습니다. (이전 상태로 복귀)")
+            return self.next_status(False, current_status, "불량 상태가 아닙니다.")
+
+        # 보류 처리
+        if location_type == "HOLD":
+            if current_status != "Stock":
+                return self.next_status(False, current_status, "적재(Stock) 상태의 팔레트만 보류 처리할 수 있습니다.")
+            return self.next_status(True, "Hold", "보류 처리되었습니다.")
+        elif location_type == "HOLD_OUT":
+            if current_status == "Hold":
+                return self.next_status(True, "Rollback", "보류 해제되었습니다. (이전 상태로 복귀)")
+            return self.next_status(False, current_status, "보류 상태가 아닙니다.")
+        
         return None  # Hold/Defect 처리 아님
     
     # IN 리더기 (공정 투입)
@@ -83,13 +92,8 @@ class StateMachine:
             # 첫 공정 생산 완료 → Stock
             elif current_status == "Producing":
                 return self.next_status(True, "Stock", f"{process_code} 생산 완료 (재고 적재)")
-            # 이미 재고 상태 (수동 LOT 연결 후 OUT 스캔한 경우 idempotent)
-            elif current_status == "Stock":
-                return self.next_status(True, "Stock", "이미 재고 상태입니다. (생산 완료 확인)")
 
-        # 이미 재고 상태 (수동으로 LOT 연결 후 스캔한 경우 idempotent 처리)
-        elif current_status == "Stock":
-                return self.next_status(True, "Stock", "이미 재고 상태입니다. (생산 완료 확인)")
+
 
         # 생산 완료
         if current_status == "Producing":

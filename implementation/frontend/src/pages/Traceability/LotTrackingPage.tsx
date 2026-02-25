@@ -35,6 +35,12 @@ import type { Pallet } from '../../types/pallet';
 const { Option } = Select;
 const { Text } = Typography;
 
+interface ChildRelation {
+    lotNumber: string;
+    quantityConsumed: number;
+    quantityProduced: number;
+}
+
 interface LotTraceData {
     id: number;
     lotNumber: string;
@@ -52,7 +58,7 @@ interface LotTraceData {
     barcode?: string;
     qcPassed?: boolean;
     parents?: string[];
-    childLotNumbers?: string[];
+    childRelations?: ChildRelation[];
     pallets?: Pallet[];
 }
 
@@ -148,7 +154,11 @@ export function LotTrackingPage() {
                     barcode: lot.barcode,
                     qcPassed: lot.qc_passed,
                     parents: genealogy?.parents?.map(p => p.lot_number) || [],
-                    childLotNumbers: genealogy?.children?.map(c => c.lot_number) || [],
+                    childRelations: genealogy?.children?.map(c => ({
+                        lotNumber: c.lot_number,
+                        quantityConsumed: c.quantity_consumed || 0,
+                        quantityProduced: c.quantity_produced || 0
+                    })) || [],
                     pallets: pallets,
                 };
             };
@@ -163,11 +173,12 @@ export function LotTrackingPage() {
 
             // Fetch all child LOTs recursively
             const fetchChildLots = async (parentLot: LotTraceData) => {
-                if (!parentLot.childLotNumbers || parentLot.childLotNumbers.length === 0) {
+                if (!parentLot.childRelations || parentLot.childRelations.length === 0) {
                     return;
                 }
 
-                for (const childLotNumber of parentLot.childLotNumbers) {
+                for (const relation of parentLot.childRelations) {
+                    const childLotNumber = relation.lotNumber;
                     // Skip if already processed
                     if (lotMap.has(childLotNumber)) {
                         continue;
@@ -237,7 +248,7 @@ export function LotTrackingPage() {
     // Expand all
     const handleExpandAll = () => {
         const allKeys = topLevelLots
-            .filter(lot => lot.childLotNumbers && lot.childLotNumbers.length > 0)
+            .filter(lot => lot.childRelations && lot.childRelations.length > 0)
             .map(lot => lot.lotNumber);
         setExpandedRowKeys(allKeys);
     };
@@ -293,53 +304,15 @@ export function LotTrackingPage() {
 
     // Render child rows recursively
     const renderChildRows = (parentLot: LotTraceData, depth: number = 1): React.ReactNode => {
-        if (!parentLot.childLotNumbers || parentLot.childLotNumbers.length === 0) {
+        if (!parentLot.childRelations || parentLot.childRelations.length === 0) {
             return null;
         }
 
         // Find child lots from all lots (not just top-level)
-        const childLots = allLots.filter(lot =>
-            parentLot.childLotNumbers?.includes(lot.lotNumber)
-        );
+        const childElements = (parentLot.childRelations || []).map((relation: ChildRelation) => {
+            const childLot = allLots.find((l: LotTraceData) => l.lotNumber === relation.lotNumber);
+            if (!childLot) return null;
 
-        // If no child lots found, return null
-        if (childLots.length === 0) {
-            return null;
-        }
-
-        // Filter out invalid lots before mapping - more strict validation
-        const validChildLots = childLots.filter(childLot => {
-            const isValid = childLot &&
-                childLot.lotNumber &&
-                childLot.itemName &&
-                childLot.itemCode &&
-                typeof childLot.quantity === 'number' &&
-                typeof childLot.initialQuantity === 'number' &&
-                childLot.status &&
-                childLot.productionDate;
-
-            // Debug invalid lots
-            if (!isValid) {
-                console.warn('Invalid child lot filtered out:', {
-                    lotNumber: childLot?.lotNumber,
-                    itemName: childLot?.itemName,
-                    itemCode: childLot?.itemCode,
-                    quantity: childLot?.quantity,
-                    initialQuantity: childLot?.initialQuantity,
-                    status: childLot?.status,
-                    productionDate: childLot?.productionDate,
-                });
-            }
-
-            return isValid;
-        });
-
-        if (validChildLots.length === 0) {
-            console.warn(`No valid child lots for parent ${parentLot.lotNumber}`);
-            return null;
-        }
-
-        const childElements = validChildLots.map(childLot => {
             const isExpanded = expandedRowKeys.includes(childLot.lotNumber);
 
             return (
@@ -357,7 +330,7 @@ export function LotTrackingPage() {
                                 {childLot.itemName || '-'}
                             </Col>
                             <Col span={4}>
-                                {childLot.childLotNumbers && childLot.childLotNumbers.length > 0 && (
+                                {childLot.childRelations && childLot.childRelations.length > 0 && (
                                     <span
                                         style={{ cursor: 'pointer', marginRight: 8, color: '#667eea' }}
                                         onClick={() => {
@@ -388,7 +361,13 @@ export function LotTrackingPage() {
                                 </Tag>
                             </Col>
                             <Col span={2}>
-                                {childLot.producedQuantity ?? 0}/{childLot.quantity ?? 0}/{childLot.initialQuantity ?? 0}
+                                <Space direction="vertical" size={0}>
+                                    <Text strong style={{ color: '#1890ff' }}>C: {relation.quantityConsumed}</Text>
+                                    <Text strong style={{ color: '#52c41a' }}>P: {relation.quantityProduced}</Text>
+                                    <Text type="secondary" style={{ fontSize: '0.8em' }}>
+                                        {childLot.producedQuantity ?? 0}/{childLot.quantity ?? 0}/{childLot.initialQuantity ?? 0}
+                                    </Text>
+                                </Space>
                             </Col>
                             <Col span={3}>
                                 {childLot.pallets && childLot.pallets.length > 0 && (
@@ -428,7 +407,7 @@ export function LotTrackingPage() {
             width: 200,
             render: (_, record) => (
                 <Space>
-                    {record.childLotNumbers && record.childLotNumbers.length > 0 && (
+                    {record.childRelations && record.childRelations.length > 0 && (
                         <span
                             style={{ cursor: 'pointer', color: '#667eea' }}
                             onClick={() => {
@@ -499,19 +478,19 @@ export function LotTrackingPage() {
                 </Space>
             ),
         },
-        {
-            title: '팔레트 상태',
-            key: 'palletStatus',
-            width: 120,
-            render: (_, record) =>
-                record.pallets && record.pallets.length > 0 ? (
-                    <Tag color={getPalletStatusColor(record.pallets[0].status)}>
-                        {record.pallets[0].status}
-                    </Tag>
-                ) : (
-                    '-'
-                ),
-        },
+        // {
+        //     title: '팔레트 상태',
+        //     key: 'palletStatus',
+        //     width: 120,
+        //     render: (_, record) =>
+        //         record.pallets && record.pallets.length > 0 ? (
+        //             <Tag color={getPalletStatusColor(record.pallets[0].status)}>
+        //                 {record.pallets[0].status}
+        //             </Tag>
+        //         ) : (
+        //             '-'
+        //         ),
+        // },
         {
             title: '생산일',
             dataIndex: 'productionDate',
@@ -666,16 +645,19 @@ export function LotTrackingPage() {
                         },
                         rowExpandable: (record) => {
                             // More strict check for expandable rows
-                            const hasValidChildren = Boolean(
-                                record &&
-                                record.childLotNumbers &&
-                                Array.isArray(record.childLotNumbers) &&
-                                record.childLotNumbers.length > 0 &&
-                                record.childLotNumbers.some(childLotNumber =>
-                                    allLots.some(lot => lot.lotNumber === childLotNumber)
-                                )
-                            );
-                            return hasValidChildren;
+                            if (!record || !record.lotNumber || !record.childRelations || record.childRelations.length === 0) {
+                                return false;
+                            }
+
+                            // Ensure record has childRelations and it's an array with at least one element
+                            const hasChildren =
+                                record.childRelations &&
+                                Array.isArray(record.childRelations) &&
+                                record.childRelations.length > 0 &&
+                                record.childRelations.some(relation =>
+                                    allLots.some(lot => lot.lotNumber === relation.lotNumber)
+                                );
+                            return hasChildren;
                         },
                         showExpandColumn: false,
                     }}
@@ -880,7 +862,7 @@ function getStatusLabel(status: string): string {
         WAIT: '대기',
         PROCESS: '공정중',
         STOCK: '재고',
-        CONSUMED: '소비완료',
+        FINISHED: '소비완료',
         SHIPPED: '출하완료',
         HOLD: '보류',
         DEFECT: '불량',
@@ -893,7 +875,7 @@ function getStatusColor(status: string): string {
         WAIT: 'default',
         PROCESS: 'processing',
         STOCK: 'success',
-        CONSUMED: 'default',
+        FINISHED: 'default',
         SHIPPED: 'cyan',
         HOLD: 'warning',
         DEFECT: 'error',

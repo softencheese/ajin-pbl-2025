@@ -114,35 +114,39 @@ class Pallette_Manager:
         """주어진 item_id(들)와 target_statuses 중 하나에 해당하는
         첫 번째 팔레트의 (epc, status)를 반환. 없으면 None.
         item_ids는 int 또는 list[int] 모두 허용.
-        1) API로 최신 상태 조회 시도
+        1) API로 최신 상태 조회 시도 (가상 팔레트 API 사용)
         2) API 조회 실패 시 로컬 캐시 status로 폴백
         """
         if not isinstance(item_ids, list):
             item_ids = [item_ids]
         log_lines = [f"[find_pallette] item_ids={item_ids}, target={target_statuses}, pallettes keys={list(self.pallettes.keys())}"]
+
+        # API로 전체 가상 팔레트 목록을 한 번만 조회하여 EPC->status 매핑 구성
+        api_status_map = {}
+        try:
+            res = API("pallets?per_page=100", is_print=False)
+            if res is not None and res.status_code == 200:
+                for p in res.json().get("items", []):
+                    epc = p.get("rfid_epc")
+                    status = p.get("status")
+                    if epc and status:
+                        api_status_map[epc] = status
+        except Exception as e:
+            log_lines.append(f"  pallets API 조회 실패: {e}")
+
         result = None
         for item_id in item_ids:
             pallettes = self.pallettes.get(item_id, [])
             if not pallettes:
-                log_lines.append(f"  item_id={item_id} -> 로컈 팔레트 없음")
+                log_lines.append(f"  item_id={item_id} -> 로컬 팔레트 없음")
                 continue
             for pallette in pallettes:
-                current_status = pallette.status  # 로컈 캐시 기본값
+                current_status = pallette.status  # 로컬 캐시 기본값
                 api_note = "(local)"
-                try:
-                    res = API(f"physical-pallets/epc/{pallette.epc}", is_print=False)
-                    if res is not None and res.status_code == 200:
-                        api_status = res.json().get("status")
-                        if api_status:
-                            current_status = api_status
-                            pallette.status = api_status  # 캐시 갱신
-                            api_note = "(api)"
-                    elif res is None:
-                        api_note = "(api_fail->local)"
-                    else:
-                        api_note = f"(api_{res.status_code}->local)"
-                except Exception as e:
-                    api_note = f"(api_exc->local: {e})"
+                if pallette.epc in api_status_map:
+                    current_status = api_status_map[pallette.epc]
+                    pallette.status = current_status  # 캐시 갱신
+                    api_note = "(api)"
                 log_lines.append(f"  epc={pallette.epc}, status={current_status} {api_note}")
                 if current_status in target_statuses:
                     result = (pallette.epc, current_status)
@@ -168,14 +172,16 @@ PALLETTE_STATUS_FINISHED = "Finished"
 PALLETTE_STATUS_DEREGISTERED = "Deregistered"
 
 class Reader:
-    def __init__(self, prot_name, process_code, in_item_id, out_item_id, cycle_time=0, pallette_manager=None):
+    def __init__(self, prot_name, process_code, process_id, in_item_id, out_item_id, cycle_time=0, pallette_manager=None, capabilities=None):
         self.process_status = "WAIT"
         self.prot_name = prot_name
         self.process_code = process_code
+        self.process_id = process_id
         self.in_item_id = in_item_id
         self.out_item_id = out_item_id
         self.cycle_time = cycle_time
         self.pallette_manager = pallette_manager
+        self.capabilities = capabilities if capabilities is not None else []
         self.process = None
         self.output = []
     
@@ -220,12 +226,13 @@ class Reader:
                     self.process.stdin.write(input_str + '\n')
                     self.process.stdin.flush()
                 print(f"[{self.prot_name} FEEDBACK]: {input_str}")
+                return True
             except (IOError, BrokenPipeError) as e:
                 print(f"Error writing to {self.prot_name}: {e}")
                 self.output.append(f"[{self.prot_name} ERROR]: Could not write to process: {e}")
-                # Optionally, try to stop/restart the process
                 self.stop_process()
-                self.start_process()
+                return False
+        return False
 
     def send_rfid(self, type):
         """RFID 스캔 명령 생성 및 전송.
@@ -242,10 +249,27 @@ class Reader:
           2. status == Consuming -> Deregistered 으로 변경  (투입/소비 완료)
         """
         if type == 'O':
+            # OUT 리더기가 설정에 있는지 확인
+            if "OUT" not in self.capabilities:
+                return "No OUT scanner"
+
             # OUT 리더기: out_item_id 팔레트를 대상으로 함
             target_id = self.out_item_id
             if target_id == -1:
+                # For Defect/Hold (COM05, COM06 OUT), pick any pallet with status Defect or Hold
+                # Or just pick any pallet that can be rolled back? 
+                # Actually, for these scanners, we just want to pick a pallet that is CURRENTLY in that state.
+                target_statuses = {PALLETTE_STATUS_PRODUCING, PALLETTE_STATUS_STOCK, "Hold", "Defect"}
+                for item_id in self.pallette_manager.pallettes.keys():
+                    result = self.pallette_manager.find_pallette_with_status(item_id, target_statuses)
+                    if result:
+                        epc, _ = result
+                        self.write_input(f"O {epc}")
+                        return f"TEST_TRIGGER_O ({epc})"
                 return "No out target"
+
+            if self.get_status() != "Running":
+                return "Reader NOT Running"
 
             # 우선순위 1: Producing 상태 → 생산 완료 처리
             result = self.pallette_manager.find_pallette_with_status(
@@ -254,18 +278,47 @@ class Reader:
             if result:
                 epc, _ = result
                 self.write_input(f"O {epc}")
+                self.process_status = "WAIT" # End of production
                 with open("log.txt", "a") as f:
                     f.write(f"[send_rfid O] END: Producing->Stock/Finished epc={epc}\n")
                 return f"OUT END (Producing->Stock/Finished) ({epc})"
 
             # 우선순위 2: Empty 또는 Generated 상태 → 생산 시작 처리
-            # (SHEARING 등 첫 공정은 LOT 생성 시 Generated 상태로 시작됨)
+            # 생산 시작 전, 해당 공정에 대기 중이거나 진행 중인 LOT가 있는지 확인
+            # (계속해서 빈 팔레트를 스캔하여 에러가 발생하는 것을 방지)
+            try:
+                # WAIT 상태인 LOT 확인
+                res_wait = API(f"lots?process_id={self.process_id}&status=WAIT", is_print=False)
+                wait_count = res_wait.json().get("total", 0) if res_wait and res_wait.status_code == 200 else 0
+                
+                # PROCESS 상태인 LOT 확인
+                res_proc = API(f"lots?process_id={self.process_id}&status=PROCESS", is_print=False)
+                proc_count = res_proc.json().get("total", 0) if res_proc and res_proc.status_code == 200 else 0
+                
+                if wait_count == 0 and proc_count == 0:
+                    with open("log.txt", "a") as f:
+                        f.write(f"[send_rfid O] Skip: No pending/processing LOTs for process {self.process_id}\n")
+                    return "NO_PENDING_LOTS"
+            except Exception as e:
+                with open("log.txt", "a") as f:
+                    f.write(f"[send_rfid O] LOT check failed: {e}\n")
+                # 에러 시에는 일단 진행 (기존 로직 유지)
+
+            # 중간 공정은 Consuming 상태의 투입 팔레트가 있을 때만 생산 시작 가능
+            if self.process_code not in ["RECEIVING", "SHEARING"]:
+                input_check = self.pallette_manager.find_pallette_with_status(
+                    self.in_item_id, {PALLETTE_STATUS_CONSUMING}
+                )
+                if not input_check:
+                    return "WAITING_INPUT"
+
             result = self.pallette_manager.find_pallette_with_status(
                 target_id, {PALLETTE_STATUS_EMPTY, PALLETTE_STATUS_GENERATED}
             )
             if result:
                 epc, status = result
                 self.write_input(f"O {epc}")
+                self.process_status = "PRODUCING" # Start of production
                 with open("log.txt", "a") as f:
                     f.write(f"[send_rfid O] START: {status}->Producing epc={epc}\n")
                 return f"OUT START ({status}->Producing) ({epc})"
@@ -276,10 +329,25 @@ class Reader:
 
 
         elif type == 'I':
+            # IN 리더기가 설정에 있는지 확인
+            if "IN" not in self.capabilities:
+                return "No IN scanner"
+
             # IN 리더기: in_item_id(들) 팔레트를 대상으로 함
             target_ids = self.in_item_id
             if target_ids == -1 or target_ids == [] or target_ids is None:
+                # For Defect/Hold/Scrap (COM05, COM06, COM07 IN), pick any Producing or Stock pallet
+                target_statuses = {PALLETTE_STATUS_PRODUCING, PALLETTE_STATUS_STOCK}
+                for item_id in self.pallette_manager.pallettes.keys():
+                    result = self.pallette_manager.find_pallette_with_status(item_id, target_statuses)
+                    if result:
+                        epc, _ = result
+                        self.write_input(f"I {epc}")
+                        return f"TEST_TRIGGER_I ({epc})"
                 return "No in target"
+
+            if self.get_status() != "Running":
+                return "Reader NOT Running"
 
             # 우선순위 1: Consuming 상태 → 소비 완료 처리
             result = self.pallette_manager.find_pallette_with_status(
@@ -288,6 +356,7 @@ class Reader:
             if result:
                 epc, _ = result
                 self.write_input(f"I {epc}")
+                self.process_status = "WAIT" # End of consumption
                 return f"IN END (Consuming->Deregistered) ({epc})"
 
             # 우선순위 2: Stock 상태 → 투입 시작 처리
@@ -297,6 +366,7 @@ class Reader:
             if result:
                 epc, _ = result
                 self.write_input(f"I {epc}")
+                self.process_status = "CONSUMING" # Start of consumption
                 return f"IN START (Stock->Consuming) ({epc})"
 
             return "No candidate (I)"
@@ -319,14 +389,34 @@ class ReaderManager:
         self.readers = []
         self.auto_run_logs = []
         for info in config.reader_info:
-            p_id = info['process-id']
+            p_id = info.get('process-id')
+            if p_id is not None:
+                process_code = config.processes[p_id]['process_code']
+                out_item_id = config.items[p_id]['id']
+                in_item_id = [x['id'] for x in config.items[p_id]['child']]
+            else:
+                p_name = info.get('prot-name', '').upper()
+                if "COM05" in p_name:
+                    process_code = "DEFECT"
+                elif "COM06" in p_name:
+                    process_code = "HOLD"
+                elif "COM07" in p_name:
+                    process_code = "SCRAP"
+                else:
+                    process_code = "SYSTEM"
+                
+                out_item_id = -1
+                in_item_id = -1
+
             reader = Reader(
                 prot_name = info.get('prot-name', ''),
-                process_code = config.processes[p_id]['process_code'],
-                out_item_id = config.items[p_id]['id'],
-                in_item_id = [x['id'] for x in config.items[p_id]['child']],
+                process_code = process_code,
+                process_id = p_id,
+                out_item_id = out_item_id,
+                in_item_id = in_item_id,
                 cycle_time = info.get('cycle-time', 0),
-                pallette_manager = pallette_manager 
+                pallette_manager = pallette_manager,
+                capabilities = [x['prefix-name'] for x in info.get('inner', [])]
             )
             self.readers.append(reader)
 
@@ -340,73 +430,74 @@ class ReaderManager:
     def stop_all(self):
         for r in self.readers: r.stop_process()
 
+    def _add_auto_run_log(self, message):
+        """메모리 리스트와 파일 모두에 로그 기록"""
+        self.auto_run_logs.append(message)
+        try:
+            with open("auto_run.log", "a", encoding="utf-8") as f:
+                f.write(message + "\n")
+        except Exception as e:
+            # 파일 기록 실패 시 내역 출력 (stderr 등)
+            print(f"Failed to write to auto_run.log: {e}", file=sys.stderr)
+
     def start_auto_run(self):
-        # if self.auto_run_active: return
-        # self.auto_run_active = True
-        # self.auto_run_logs.append("🚀 Auto Run Started")
-        # threading.Thread(target=self._auto_run_loop, daemon=True).start()
-        pass
+        if self.auto_run_active: return
+        self.auto_run_active = True
+        self._add_auto_run_log("🚀 Auto Run Started")
+        threading.Thread(target=self._auto_run_loop, daemon=True).start()
     
     def stop_auto_run(self):
         self.auto_run_active = False
-        self.auto_run_logs.append("⏸️ Auto Run Stopped")
+        self._add_auto_run_log("⏸️ Auto Run Stopped")
 
     def get_auto_run_status(self):
         return "실행 중" if self.auto_run_active else "중지됨"
 
     def _auto_run_loop(self):
-        # from datetime import datetime
-        # last_refresh = datetime.min
-        # REFRESH_INTERVAL_SECONDS = 5
-        # while self.auto_run_active:
-        #     # 주기적으로 서버로부터 팔레트 목록/매핑을 동기화(에러 발생시 무시)
-        #     try:
-        #         if (datetime.now() - last_refresh).total_seconds() > REFRESH_INTERVAL_SECONDS and self.readers:
-        #             self.readers[0].pallette_manager.refresh_all_pallets()
-        #             last_refresh = datetime.now()
-        #     except Exception:
-        #         pass
+        from datetime import datetime
+        last_refresh = datetime.min
+        REFRESH_INTERVAL_SECONDS = 5
+        
+        while self.auto_run_active:
+            # 1. Refresh all pallets periodically from API
+            try:
+                if (datetime.now() - last_refresh).total_seconds() > REFRESH_INTERVAL_SECONDS:
+                    if self.readers and self.readers[0].pallette_manager:
+                        self.readers[0].pallette_manager.refresh_all_pallets()
+                    last_refresh = datetime.now()
+            except Exception as e:
+                self._add_auto_run_log(f"⚠️ Refresh Error: {e}")
 
-        #     for reader in self.readers:
-        #         if not self.auto_run_active: break
+            # 2. Iterate through readers and perform automated actions
+            for reader in self.readers:
+                if not self.auto_run_active:
+                    break
+
+                # DEFECT/HOLD/SCRAP 리더기는 자동 실행에서 제외 (수동 전용)
+                if reader.process_code in ["DEFECT", "HOLD", "SCRAP"]:
+                    continue
                 
-        #         timestamp = datetime.now().strftime("%H:%M:%S")
+                # Ensure reader is running during auto run
+                if reader.get_status() != "Running":
+                    reader.start_process()
+                    sleep(0.2)
                 
-        #         # 1. 생산 완료 처리 (PRODUCING -> STOCK)
-        #         idx = reader.pallette_manager.get_pallettes_idx_for_status(reader.out_pallette_id, PALLETTE_STATUS_PRODUCING)
-        #         if idx != -1:
-        #             res = reader.send_rfid('O')
-        #             self.auto_run_logs.append(f"[{timestamp}] {reader.prot_name} 생산완료: {res}")
-        #             sleep(0.5)
-        #             continue
+                timestamp = datetime.now().strftime("%H:%M:%S")
+                
+                # 1. IN (소비/투입) 먼저 시도하여 생산재료를 Consuming 상태로 만듦
+                res_i = reader.send_rfid('I')
+                if all(x not in res_i for x in ["No candidate", "No in target", "Running", "No IN scanner"]):
+                    self._add_auto_run_log(f"[{timestamp}] {reader.prot_name} IN: {res_i}")
+                    sleep(0.2)
 
-        #         # 2. 생산 시작 처리 (EMPTY/GENERATED -> PRODUCING)
-        #         st = PALLETTE_STATUS_EMPTY if reader.process_code != "SHEARING" else PALLETTE_STATUS_GENERATED
-        #         idx = reader.pallette_manager.get_pallettes_idx_for_status(reader.out_pallette_id, st)
-        #         if idx != -1:
-        #             res = reader.send_rfid('O')
-        #             self.auto_run_logs.append(f"[{timestamp}] {reader.prot_name} 생산시작: {res}")
-        #             sleep(0.5)
-        #             continue
-
-        #         # 3. 투입/소비 완료 처리 (CONSUMING -> DEREGISTERED)
-        #         idx = reader.pallette_manager.get_pallettes_idx_for_status(reader.in_pallette_id, PALLETTE_STATUS_CONSUMING)
-        #         if idx != -1:
-        #             res = reader.send_rfid('I')
-        #             self.auto_run_logs.append(f"[{timestamp}] {reader.prot_name} 소비완료: {res}")
-        #             sleep(0.5)
-        #             continue
-
-        #         # 4. 투입 시작 처리 (STOCK -> CONSUMING)
-        #         idx = reader.pallette_manager.get_pallettes_idx_for_status(reader.in_pallette_id, PALLETTE_STATUS_STOCK)
-        #         if idx != -1:
-        #             res = reader.send_rfid('I')
-        #             self.auto_run_logs.append(f"[{timestamp}] {reader.prot_name} 투입시작: {res}")
-        #             sleep(0.5)
-        #             continue
+                # 2. OUT (생산) 시도 (이제 바로 위에서 시작한 투입재료를 인식 가능)
+                res_o = reader.send_rfid('O')
+                if all(x not in res_o for x in ["No candidate", "No out target", "Running", "WAITING_INPUT", "NO_PENDING_LOTS", "No OUT scanner"]):
+                    self._add_auto_run_log(f"[{timestamp}] {reader.prot_name} OUT: {res_o}")
+                    sleep(0.2)
             
-        #     sleep(1.5)
-        pass
+            # 사이클 간 대기 시간 단축 (0.5초 정도로 더 민감하게 반응)
+            sleep(0.5)
 
 if __name__ == "__main__":
     config = ConfigData('./virt_data.json')

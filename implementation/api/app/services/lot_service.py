@@ -14,8 +14,9 @@ def sync_lot_status_and_quantity(lot_id: int, db: Session):
 
     # 1. 수량 동기화 (WIP, PRODUCT만 대상. RAW는 직접 수량 차감됨)
     if item and item.item_type != "RAW":
-        # Stock, Finished, Deregistered 상태 팔레트의 수량 합
-        countable_statuses = ["Stock", "Finished", "Deregistered"]
+        # Stock, Finished, Deregistered, Hold, Defect 상태 팔레트의 수량 합
+        # (Scrap은 제외하여 실제 가용/보유 수량에서 제외됨을 명시)
+        countable_statuses = ["Stock", "Finished", "Deregistered", "Hold", "Defect"]
         lot.quantity = sum(p.quantity or 0 for p in all_pallets if p.status in countable_statuses)
 
     # 2. 상태 결정

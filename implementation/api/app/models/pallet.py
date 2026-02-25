@@ -13,6 +13,7 @@ class Pallet(BaseModel):
     lot_id = Column(BigInteger, ForeignKey("lots.id"), comment='연결된 LOT ID')
     quantity = Column(Integer, default=0, comment='현재 적재 수량')
     status = Column(String(20), default='Empty', comment='팔레트 상태 (Empty, Producing, Stock, Consuming, etc.)')
+    previous_status = Column(String(20), nullable=True, comment='이전 상태')
     tag_status = Column(String(20), default='AVAILABLE', comment='RFID 태그 상태 (AVAILABLE, IN_USE, DAMAGED)')
     current_process_id = Column(BigInteger, ForeignKey("processes.id"), comment='현재 공정')
     tag_registered_at = Column(DateTime, comment='RFID 태그 등록 시각')

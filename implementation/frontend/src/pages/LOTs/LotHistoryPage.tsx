@@ -145,12 +145,16 @@ export function LotHistoryPage() {
             render: (name: string) => <Tag color="blue">{name || 'N/A'}</Tag>,
         },
         {
-            title: '수량',
-            dataIndex: 'quantity_consumed',
-            key: 'quantity_consumed',
-            width: 100,
+            title: '수량(소비/생산)',
+            key: 'quantity',
+            width: 120,
             align: 'right',
-            render: (qty: number) => <Text strong>{(qty || 0).toLocaleString()}</Text>,
+            render: (_: unknown, record: LotGenealogyWithDetails) => (
+                <Space direction="vertical" size={0} style={{ width: '100%', alignItems: 'flex-end' }}>
+                    <Text type="secondary" style={{ fontSize: '0.85em' }}>소비: {(record.quantity_consumed || 0).toLocaleString()}</Text>
+                    <Text strong style={{ color: '#52c41a' }}>생산: {(record.quantity_produced || 0).toLocaleString()}</Text>
+                </Space>
+            ),
         },
         {
             title: '상세',

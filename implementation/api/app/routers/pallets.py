@@ -6,7 +6,7 @@ from datetime import datetime
 from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.models.pallet import Pallet, PalletHistory
-from app.models.physical_pallet import PhysicalPallet, PalletStatus
+from app.models.physical_pallet import PhysicalPallet
 from app.core.socket import sio_server
 from app.models.lot import Lot
 from app.models.item import Item
@@ -48,11 +48,9 @@ def _build_pallet_response(pallet: Pallet, db: Session) -> dict:
     # 실물 팔레트 정보 및 status
     if pallet.physical_pallet:
         response_data["rfid_epc"] = pallet.physical_pallet.epc
-        pp_status = pallet.physical_pallet.status.value if hasattr(pallet.physical_pallet.status, 'value') else pallet.physical_pallet.status
-        response_data["pallet_status"] = pp_status
-        response_data["status"] = pp_status
-    else:
-        response_data["status"] = getattr(pallet, 'status', None)
+        
+    response_data["pallet_status"] = getattr(pallet, 'status', None)
+    response_data["status"] = getattr(pallet, 'status', None)
 
     # LOT 정보
     if pallet.lot_id:
@@ -86,13 +84,7 @@ async def create_pallet(
     if getattr(data, 'rfid_epc', None):
         pp = db.query(PhysicalPallet).filter(PhysicalPallet.epc == data.rfid_epc).first()
         if not pp:
-            status_enum = PalletStatus.EMPTY
-            if getattr(data, 'status', None):
-                try:
-                    status_enum = PalletStatus(data.status) if data.status in [e.value for e in PalletStatus] else PalletStatus.EMPTY
-                except (ValueError, TypeError):
-                    pass
-            pp = PhysicalPallet(epc=data.rfid_epc, pallet_code=data.pallet_no, status=status_enum)
+            pp = PhysicalPallet(epc=data.rfid_epc, pallet_code=data.pallet_no)
             db.add(pp)
             db.flush()
         physical_pallet_id = pp.id
@@ -108,10 +100,8 @@ async def create_pallet(
     db.commit()
     db.refresh(pallet)
     
-    # physical_pallet 상태 가져오기
-    pallet_status = None
-    if pallet.physical_pallet:
-        pallet_status = pallet.physical_pallet.status.value if hasattr(pallet.physical_pallet.status, 'value') else pallet.physical_pallet.status
+    # pallet 상태 가져오기
+    pallet_status = pallet.status
     
     await sio_server.emit('pallet_updated', {
         'pallet_id': pallet.id,
@@ -168,7 +158,7 @@ async def get_fifo_queue(
     stock_pallets = db.query(Pallet).join(
         PhysicalPallet, Pallet.physical_pallet_id == PhysicalPallet.id, isouter=True
     ).filter(
-        PhysicalPallet.status == "Stock"
+        Pallet.status == "Stock"
     ).order_by(Pallet.created_at.asc()).all()
 
     fifo_items = []
@@ -225,6 +215,28 @@ async def get_pallet(
     return _build_pallet_response(pallet, db)
 
 
+@router.post("/{id}/unlink-tag", response_model=PalletResponse)
+async def unlink_pallet_tag(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(PermissionChecker("pallets", "write"))
+):
+    """팔레트 RFID 태그 연결 해제 (권한: pallets:write)"""
+    pallet = db.query(Pallet).filter(Pallet.id == id).first()
+    if not pallet:
+        raise HTTPException(status_code=404, detail="팔레트를 찾을 수 없습니다")
+    
+    if pallet.physical_pallet:
+        # 가상 팔레트와 실물 팔레트 연결 해제
+        pallet.physical_pallet_id = None
+        pallet.tag_status = "AVAILABLE"
+        pallet.tag_deregistered_at = datetime.now()
+        
+    db.commit()
+    db.refresh(pallet)
+    return _build_pallet_response(pallet, db)
+
+
 @router.put("/{id}", response_model=PalletResponse)
 async def update_pallet(
     id: int,
@@ -239,7 +251,7 @@ async def update_pallet(
     if getattr(data, "rfid_epc", None):
         pp = db.query(PhysicalPallet).filter(PhysicalPallet.epc == data.rfid_epc).first()
         if not pp:
-            pp = PhysicalPallet(epc=data.rfid_epc, pallet_code=pallet.pallet_no or data.rfid_epc, status=PalletStatus.EMPTY)
+            pp = PhysicalPallet(epc=data.rfid_epc, pallet_code=pallet.pallet_no or data.rfid_epc)
             db.add(pp)
             db.flush()
         pallet.physical_pallet_id = pp.id
@@ -262,10 +274,7 @@ async def update_tag_status(
     
     pallet.tag_status = data.tag_status
     
-    # physical_pallet 상태 가져오기
-    current_status = "Unknown"
-    if pallet.physical_pallet:
-        current_status = pallet.physical_pallet.status.value if hasattr(pallet.physical_pallet.status, 'value') else pallet.physical_pallet.status
+    current_status = pallet.status
     
     history = PalletHistory(
         pallet_id=pallet.id,
@@ -283,10 +292,7 @@ async def update_tag_status(
     db.commit()
     db.refresh(pallet)
     
-    # physical_pallet 상태 다시 가져오기
-    pallet_status = None
-    if pallet.physical_pallet:
-        pallet_status = pallet.physical_pallet.status.value if hasattr(pallet.physical_pallet.status, 'value') else pallet.physical_pallet.status
+    pallet_status = pallet.status
     
     await sio_server.emit('pallet_updated', {
         'pallet_id': pallet.id,
@@ -319,8 +325,6 @@ async def link_lot(
 
     # 상태 전이 로직이 pallet.status를 사용하므로 둘 다 Stock으로 설정
     pallet.status = "Stock"
-    if pallet.physical_pallet:
-        pallet.physical_pallet.status = "Stock"
 
     # LOT 동기화 (AI_README 규칙 적용)
     sync_lot_status_and_quantity(pallet.lot_id, db)
@@ -353,10 +357,8 @@ async def link_lot(
     db.commit()
     db.refresh(pallet)
     
-    # physical_pallet 상태 가져오기
-    pallet_status = None
-    if pallet.physical_pallet:
-        pallet_status = pallet.physical_pallet.status.value if hasattr(pallet.physical_pallet.status, 'value') else pallet.physical_pallet.status
+    # pallet 상태 가져오기
+    pallet_status = pallet.status
     
     await sio_server.emit('pallet_updated', {
         'pallet_id': pallet.id,
@@ -383,13 +385,41 @@ async def update_pallet_status(
     if not pallet.physical_pallet:
         raise HTTPException(status_code=400, detail="실물 팔레트가 연결되지 않았습니다")
 
-    # physical_pallet의 status 변경 (문자열 -> Enum)
-    previous_status = pallet.physical_pallet.status.value if hasattr(pallet.physical_pallet.status, 'value') else pallet.physical_pallet.status
+    previous_status_str = getattr(pallet, 'status', 'Unknown')
+    target_status = data.status
+
+    if target_status.lower() == 'rollback':
+        if not pallet.previous_status:
+            raise HTTPException(status_code=400, detail="이전 상태가 존재하지 않아 Rollback할 수 없습니다")
+        # Rollback인 경우 실제 목표 상태를 previous_status로 설정
+        target_status = pallet.previous_status
+        data.reason = f"Rollback to {pallet.previous_status}" + (f" ({data.reason})" if data.reason else "")
+    elif target_status.lower() == 'scrap':
+        if previous_status_str.lower() != 'defect':
+            raise HTTPException(status_code=400, detail="Defect 상태에서만 Scrap 상태로 전환할 수 있습니다")
+        target_status = 'Scrap'
+
     try:
-        new_status_enum = PalletStatus(data.status) if data.status in [e.value for e in PalletStatus] else pallet.physical_pallet.status
-        pallet.physical_pallet.status = new_status_enum
+        # 실제 상태가 변경될 때만 history 기록 및 sync
+        if previous_status_str != target_status:
+            pallet.previous_status = previous_status_str
+            
         # virtual pallet 상태도 동기화
-        pallet.status = data.status
+        pallet.status = target_status
+
+        # AI_README: 팔레트가 Deregistered 또는 Scrap 시 tag_status 업데이트
+        if target_status == "Deregistered":
+            pallet.tag_status = "OUT_OF_USE"
+            pallet.tag_deregistered_at = datetime.now()
+            pallet.quantity = 0 # 등록 해제 시 수량 초기화 (실물 없음)
+        elif target_status == "Scrap":
+            # AI_README: 폐기 시 생산 수량(produced_quantity)에서 차감하여 Net 생산량을 유지
+            if pallet.lot and previous_status_str in ["Stock", "Finished", "Defect", "Hold"]:
+                pallet.lot.produced_quantity = max(0, pallet.lot.produced_quantity - (pallet.quantity or 0))
+                db.add(pallet.lot)
+            
+            pallet.tag_status = "OUT_OF_USE"
+            pallet.quantity = 0 # 폐기 시 수량 0
     except (ValueError, TypeError):
         pass
 
@@ -397,12 +427,12 @@ async def update_pallet_status(
         pallet_id=pallet.id,
         lot_id=pallet.lot_id,
         process_id=pallet.current_process_id,
-        previous_status=previous_status,
-        new_status=data.status,
+        previous_status=previous_status_str,
+        new_status=target_status,
         event_type="FORCE_STATUS_CHANGE",
         scan_time=datetime.now(),
         worker_name="Admin",
-        notes=f"Status changed to {data.status}. Reason: {data.reason}"
+        notes=f"Status changed to {target_status}. Reason: {data.reason}"
     )
 
     db.add(history)
@@ -413,9 +443,10 @@ async def update_pallet_status(
 
     db.commit()
     db.refresh(pallet)
+    if pallet.physical_pallet:
+        db.refresh(pallet.physical_pallet)
 
-    # physical_pallet 상태 가져오기
-    pallet_status = pallet.physical_pallet.status.value if hasattr(pallet.physical_pallet.status, 'value') else pallet.physical_pallet.status
+    pallet_status = pallet.status
 
     await sio_server.emit('pallet_updated', {
         'pallet_id': pallet.id,

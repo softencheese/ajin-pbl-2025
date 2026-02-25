@@ -5,6 +5,7 @@ export interface LotGenealogyItem {
     item_code: string;
     item_type: string;
     quantity_consumed?: number;
+    quantity_produced?: number;
     process_name?: string;
 }
 
@@ -28,6 +29,7 @@ export interface LotGenealogyWithDetails {
     output_item_type: 'RAW' | 'WIP' | 'PRODUCT';
     process_name: string;
     quantity_consumed: number;
+    quantity_produced: number;
     created_at: string;
 }
 
@@ -37,6 +39,7 @@ export interface LotGenealogyRaw {
     output_lot_id: number;
     process_id: number;
     quantity_consumed: number;
+    quantity_produced: number;
     created_at: string;
 }
 

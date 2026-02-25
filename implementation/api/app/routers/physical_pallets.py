@@ -13,8 +13,7 @@ from app.schemas.physical_pallet import (
     PhysicalPalletCreate,
     PhysicalPalletUpdate,
     PhysicalPalletResponse,
-    PhysicalPalletListResponse,
-    PhysicalPalletStatusUpdate
+    PhysicalPalletListResponse
 )
 import math
 
@@ -28,7 +27,6 @@ def _build_physical_pallet_response(pallet: PhysicalPallet, db: Session) -> dict
         "epc": pallet.epc,
         "pallet_code": pallet.pallet_code,
         "item_id": pallet.item_id,
-        "status": pallet.status.value if hasattr(pallet.status, 'value') else pallet.status,
         "description": pallet.description,
         "created_at": pallet.created_at,
         "updated_at": getattr(pallet, 'updated_at', None),
@@ -73,7 +71,6 @@ async def create_physical_pallet(
         epc=data.epc,
         pallet_code=data.pallet_code,
         item_id=data.item_id,
-        status=data.status,
         description=data.description
     )
     
@@ -99,8 +96,6 @@ async def list_physical_pallets(
     query = db.query(PhysicalPallet)
     
     # 필터 적용
-    if status:
-        query = query.filter(PhysicalPallet.status == status)
     
     if item_id:
         query = query.filter(PhysicalPallet.item_id == item_id)
@@ -216,21 +211,6 @@ async def update_physical_pallet(
     return _build_physical_pallet_response(pallet, db)
 
 
-@router.patch("/{pallet_id}/status", response_model=PhysicalPalletResponse)
-async def update_physical_pallet_status(
-    pallet_id: int,
-    data: PhysicalPalletStatusUpdate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(PermissionChecker("physical_pallets", "write"))
-):
-    """실물 팔레트 상태 변경 (권한: physical_pallets:write)"""
-    
-    pallet = db.query(PhysicalPallet).filter(PhysicalPallet.id == pallet_id).first()
-    if not pallet:
-        raise HTTPException(status_code=404, detail=f"실물 팔레트를 찾을 수 없습니다: {pallet_id}")
-    
-    pallet.status = data.status
-    db.commit()
     db.refresh(pallet)
     
     return _build_physical_pallet_response(pallet, db)
@@ -264,24 +244,18 @@ async def get_physical_pallet_statistics(
     # 전체 팔레트 수
     total_count = db.query(func.count(PhysicalPallet.id)).scalar()
     
-    # 상태별 통계
-    status_stats = db.query(
-        PhysicalPallet.status,
-        func.count(PhysicalPallet.id).label("count")
-    ).group_by(PhysicalPallet.status).all()
-    
-    status_breakdown = {stat.status: stat.count for stat in status_stats}
+    status_breakdown = {}
     
     return {
         "total_count": total_count,
         "status_breakdown": status_breakdown,
-        "generated_pallets": status_breakdown.get("Generated", 0),
-        "empty_pallets": status_breakdown.get("Empty", 0),
-        "stock_pallets": status_breakdown.get("Stock", 0),
-        "consuming_pallets": status_breakdown.get("Consuming", 0),
-        "producing_pallets": status_breakdown.get("Producing", 0),
-        "finished_pallets": status_breakdown.get("Finished", 0),
-        "deregistered_pallets": status_breakdown.get("Deregistered", 0),
-        "hold_pallets": status_breakdown.get("Hold", 0),
-        "defect_pallets": status_breakdown.get("Defect", 0)
+        "generated_pallets": 0,
+        "empty_pallets": 0,
+        "stock_pallets": 0,
+        "consuming_pallets": 0,
+        "producing_pallets": 0,
+        "finished_pallets": 0,
+        "deregistered_pallets": 0,
+        "hold_pallets": 0,
+        "defect_pallets": 0
     }

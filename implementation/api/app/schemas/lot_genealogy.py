@@ -9,6 +9,7 @@ class LotGenealogyBase(BaseModel):
     output_lot_id: int = Field(..., description="생성 LOT ID (자식)")
     process_id: int = Field(..., description="발생 공정 ID")
     quantity_consumed: int = Field(..., description="투입 수량")
+    quantity_produced: int = Field(..., description="생산 수량")
 
 
 class LotGenealogyCreate(LotGenealogyBase):
@@ -34,6 +35,7 @@ class LotGenealogyWithDetails(BaseModel):
     output_item_type: str
     process_name: str
     quantity_consumed: int
+    quantity_produced: int
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

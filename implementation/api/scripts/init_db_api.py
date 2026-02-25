@@ -242,8 +242,9 @@ def create_reader_locations(client: APIClient, data: dict):
         
         for inner in r.get("inner", []):
             port_name = f"{r['prot-name']}-{inner['prefix-name']}"
-            location_type = inner["prefix-name"] if inner["prefix-name"] in [
-                "IN", "OUT", "HOLD", "DEFECT", "FINISH", "RETURN"
+            location_type_raw = inner.get("location-type", inner["prefix-name"])
+            location_type = location_type_raw if location_type_raw in [
+                "IN", "OUT", "HOLD", "HOLD_OUT", "DEFECT", "DEFECT_OUT", "SCRAP", "FINISH", "RETURN", "REG"
             ] else None
             desc = inner.get("description", "")
             
@@ -426,7 +427,6 @@ def create_physical_pallets(client: APIClient, data: dict):
             pallet_data = {
                 "epc": epc_clean,
                 "pallet_code": pallet_code,
-                "status": "Generated",
                 "description": f"초기 시딩 데이터 - {status}"
             }
             

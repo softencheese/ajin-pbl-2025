@@ -41,6 +41,7 @@ def get_genealogy_history(
         ItemOut.item_type.label("output_item_type"),
         Process.process_name.label("process_name"),
         LotGenealogy.quantity_consumed.label("quantity_consumed"),
+        LotGenealogy.quantity_produced.label("quantity_produced"),
         LotGenealogy.created_at.label("created_at")
     ).outerjoin(LotIn, LotGenealogy.input_lot_id == LotIn.id) \
      .outerjoin(ItemIn, LotIn.item_id == ItemIn.id) \
@@ -86,6 +87,7 @@ def get_lot_genealogy(
                 "item_code": parent_item.item_code,
                 "item_type": parent_item.item_type,
                 "quantity_consumed": g.quantity_consumed,
+                "quantity_produced": g.quantity_produced,
                 "process_name": g.process.process_name if g.process else "Unknown"
             })
     
@@ -101,6 +103,7 @@ def get_lot_genealogy(
                 "item_code": child_item.item_code,
                 "item_type": child_item.item_type,
                 "quantity_consumed": g.quantity_consumed,
+                "quantity_produced": g.quantity_produced,
                 "process_name": g.process.process_name if g.process else "Unknown"
             })
     

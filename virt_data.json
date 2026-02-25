@@ -130,7 +130,7 @@
                 "inner": [
                     {
                         "prefix-name": "REG",
-                        "description": "프레스 임시 등록"
+                        "description": "프레스 팔레트 등록"
                     },
                     {
                         "prefix-name": "IN",
@@ -149,7 +149,7 @@
                 "inner": [
                     {
                         "prefix-name": "REG",
-                        "description": "조립 임시 등록"
+                        "description": "조립 팔레트 등록"
                     },
                     {
                         "prefix-name": "IN",
@@ -158,6 +158,52 @@
                     {
                         "prefix-name": "OUT",
                         "description": "조립라인 배출"
+                    }
+                ]
+            },
+            {
+                "prot-name": "COM05",
+                "process-id": null,
+                "cycle-time": 2,
+                "inner": [
+                    {
+                        "prefix-name": "IN",
+                        "location-type": "DEFECT",
+                        "description": "불량 등록"
+                    },
+                    {
+                        "prefix-name": "OUT",
+                        "location-type": "DEFECT_OUT",
+                        "description": "불량 해제"
+                    }
+                ]
+            },
+            {
+                "prot-name": "COM06",
+                "process-id": null,
+                "cycle-time": 2,
+                "inner": [
+                    {
+                        "prefix-name": "IN",
+                        "location-type": "HOLD",
+                        "description": "보류 등록"
+                    },
+                    {
+                        "prefix-name": "OUT",
+                        "location-type": "HOLD_OUT",
+                        "description": "보류 해제"
+                    }
+                ]
+            },
+            {
+                "prot-name": "COM07",
+                "process-id": null,
+                "cycle-time": 2,
+                "inner": [
+                    {
+                        "prefix-name": "IN",
+                        "location-type": "SCRAP",
+                        "description": "Scrap 등록"
                     }
                 ]
             }
