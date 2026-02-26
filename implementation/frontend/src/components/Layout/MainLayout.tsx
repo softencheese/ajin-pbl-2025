@@ -54,9 +54,82 @@ export function MainLayout() {
             }
         };
 
+        const handleScanError = (data: any) => {
+            if (data.type === 'FIFO_VIOLATION') {
+                Modal.error({
+                    title: '🚨 FIFO 위반 알림',
+                    content: (
+                        <div style={{ marginTop: '16px' }}>
+                            <p><b>위치:</b> {data.port_name}</p>
+                            <p><b>RFID/바코드:</b> {data.identifier}</p>
+                            <p style={{ color: 'red', marginTop: '12px', fontWeight: 'bold' }}>
+                                선입선출(FIFO) 위반!
+                            </p>
+                            <p>
+                                {data.message}
+                            </p>
+                        </div>
+                    ),
+                    okText: '확인',
+                    centered: true,
+                });
+            } else {
+                Modal.error({
+                    title: '스캔 에러',
+                    content: `[${data.port_name}] ${data.message}`,
+                    centered: true,
+                });
+            }
+        };
+
+        const handleFifoScan = (data: any) => {
+            if (data.status === 'BLOCKED') {
+                Modal.error({
+                    title: '🚨 FIFO 위반 (진입 차단)',
+                    content: (
+                        <div style={{ marginTop: '16px' }}>
+                            <p><b>팔레트:</b> {data.pallet_no}</p>
+                            <p style={{ color: 'red', marginTop: '12px', fontWeight: 'bold' }}>
+                                선입선출 위반! 투입이 차단되었습니다.
+                            </p>
+                            <p>
+                                먼저 생산된 재고를 확인하세요. <br />
+                                <b>정말 투입해야 한다면 한 번 더 스캔하세요.</b>
+                            </p>
+                        </div>
+                    ),
+                    okText: '확인',
+                    centered: true,
+                });
+            } else if (data.status === 'FORCED_PASS') {
+                Modal.warning({
+                    title: '⚠️ FIFO 예외 투입 진행',
+                    content: (
+                        <div style={{ marginTop: '16px' }}>
+                            <p><b>팔레트:</b> {data.pallet_no}</p>
+                            <p style={{ color: '#faad14', marginTop: '12px', fontWeight: 'bold' }}>
+                                예외 투입 승인!
+                            </p>
+                            <p>
+                                순서가 맞지 않지만 작업자 판단에 의해 투입을 진행합니다.
+                                (이력에 기록됨)
+                            </p>
+                        </div>
+                    ),
+                    okText: '확인',
+                    centered: true,
+                });
+            }
+        };
+
         on('scan_event', handleScanEvent);
+        on('scan_error', handleScanError);
+        on('fifo_scan', handleFifoScan);
+
         return () => {
             off('scan_event', handleScanEvent);
+            off('scan_error', handleScanError);
+            off('fifo_scan', handleFifoScan);
         };
     }, [on, off]);
 

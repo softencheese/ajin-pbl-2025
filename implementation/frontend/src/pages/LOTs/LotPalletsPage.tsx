@@ -18,6 +18,7 @@ import {
     Progress,
     Descriptions,
     Spin,
+    Checkbox,
 } from 'antd';
 import {
     PlusOutlined,
@@ -259,6 +260,7 @@ export function LotPalletsPage() {
     const [filterItemCode, setFilterItemCode] = useState<string>('');
     const [filterDate, setFilterDate] = useState<string>('');
     const [pageSize, setPageSize] = useState<number>(10);
+    const [filterBoundOnly, setFilterBoundOnly] = useState<boolean>(true);
 
     // Get filtered items based on process type
     const getFilteredItems = (): Item[] => {
@@ -530,7 +532,8 @@ export function LotPalletsPage() {
         const matchItemType = !filterItemType || lot.itemType === filterItemType;
         const matchItemCode = !filterItemCode || lot.itemCode.toLowerCase().includes(filterItemCode.toLowerCase());
         const matchDate = !filterDate || lot.productionDate === filterDate;
-        return matchLotNumber && matchItemType && matchItemCode && matchDate;
+        const matchBound = !filterBoundOnly || lot.itemType === 'RAW' || lot.rfidRegistered > 0;
+        return matchLotNumber && matchItemType && matchItemCode && matchDate && matchBound;
     });
 
     const hasUnregisteredRfid = lotData.some(
@@ -1003,6 +1006,17 @@ export function LotPalletsPage() {
                             />
                         </Col>
                     </Row>
+                    <Row>
+                        <Col span={24}>
+                            <Checkbox
+                                checked={filterBoundOnly}
+                                onChange={(e) => setFilterBoundOnly(e.target.checked)}
+                                style={{ marginTop: 16 }}
+                            >
+                                바인딩된 팔레트만 보기
+                            </Checkbox>
+                        </Col>
+                    </Row>
                 </Card>
             )}
 
@@ -1020,14 +1034,14 @@ export function LotPalletsPage() {
                     },
                     expandedRowRender: (record) => (
                         <Table
-                            dataSource={record.palettes}
+                            dataSource={filterBoundOnly ? record.palettes.filter(p => p.rfidEpc) : record.palettes}
                             columns={getPaletteColumns(record)}
                             rowKey="id"
                             pagination={false}
                             size="small"
                         />
                     ),
-                    rowExpandable: (record) => record.palettes.length > 0,
+                    rowExpandable: (record) => (filterBoundOnly ? record.rfidRegistered > 0 : record.palettes.length > 0),
                 }}
                 pagination={{
                     pageSize,

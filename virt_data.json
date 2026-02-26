@@ -162,6 +162,18 @@
                 ]
             },
             {
+                "prot-name": "COM04",
+                "process-id": 5,
+                "cycle-time": 2,
+                "inner": [
+                    {
+                        "prefix-name": "OUT",
+                        "location-type": "SHIPPING",
+                        "description": "출하장 출고"
+                    }
+                ]
+            },
+            {
                 "prot-name": "COM05",
                 "process-id": null,
                 "cycle-time": 2,

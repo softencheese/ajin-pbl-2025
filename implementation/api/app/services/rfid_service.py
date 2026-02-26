@@ -82,7 +82,7 @@ class RFIDService:
             return location
         
         # 1.1 공정 매핑 확인
-        is_global_reader = location.location_type in ["DEFECT", "DEFECT_OUT", "HOLD", "HOLD_OUT", "SCRAP"]
+        is_global_reader = location.location_type in ["DEFECT", "DEFECT_OUT", "HOLD", "HOLD_OUT", "SCRAP", "SHIPPING"]
         if location.location_type is None or (location.process_id is None and not is_global_reader):
             error_response = self._create_error_response('READER_NOT_CONFIGURED', f"리더기 설정 오류: {event.port_name}")
             await self._emit_scan_error('READER_NOT_CONFIGURED', event.port_name, event.epc, error_response.error.message)
@@ -182,8 +182,69 @@ class RFIDService:
                         feedback=Feedback(action="BUZZER", pattern="ERROR", count=3, led_color="RED")
                     )
                 
-                # 3.3 FIFO 검증
-                fifo_warning = self._validate_fifo(pallet, location)
+                # 3.3 FIFO 검증 (1회 차단, 2회째 통과)
+                raw_fifo_warning = self._validate_fifo(pallet, location)
+                fifo_warning = None
+                
+                if raw_fifo_warning:
+                    # 해당 팔레트가 현재 위치에서 이미 FIFO 위반으로 차단된 기록이 있는지 확인
+                    recent_violation = self.db.query(PalletHistory).filter(
+                        PalletHistory.pallet_id == pallet.id,
+                        PalletHistory.location_type == location.location_type,
+                        PalletHistory.event_type == "FIFO_VIOLATION_ATTEMPT"
+                    ).order_by(PalletHistory.scan_time.desc()).first()
+
+                    if recent_violation:
+                        # 이미 한 번 차단되었으므로 이번에는 통과 (경고 내용은 유지)
+                        fifo_warning = raw_fifo_warning
+                        # 2회차 통과 알림 발송
+                        await sio_server.emit('fifo_scan', {
+                            'pallet_id': pallet.id,
+                            'pallet_no': pallet.pallet_no,
+                            'lot_no': pallet.lot.lot_number if pallet.lot else None,
+                            'scan_time': scan_time.isoformat(),
+                            'is_violation': True,
+                            'status': 'FORCED_PASS'
+                        })
+                    else:
+                        error_msg = raw_fifo_warning.message
+                        
+                        # FIFO 모니터링 페이지용 이벤트 발송 및 글로벌 알림 트리거
+                        await sio_server.emit('fifo_scan', {
+                            'pallet_id': pallet.id,
+                            'pallet_no': pallet.pallet_no,
+                            'lot_no': pallet.lot.lot_number if pallet.lot else None,
+                            'scan_time': scan_time.isoformat(),
+                            'is_violation': True,
+                            'status': 'BLOCKED'
+                        })
+                        
+                        # 차단 이력 기록
+                        history = PalletHistory(
+                            pallet_id=pallet.id,
+                            lot_id=pallet.lot_id,
+                            process_id=location.process_id,
+                            location_type=location.location_type,
+                            reader_location_id=location.id,
+                            previous_status=pallet.status,
+                            new_status=pallet.status,
+                            event_type="FIFO_VIOLATION_ATTEMPT",
+                            scan_time=scan_time,
+                            worker_name="System",
+                            notes=error_msg
+                        )
+                        self.db.add(history)
+                        self.db.commit()
+                        
+                        return ScanResponse(
+                            success=False,
+                            error=ScanError(
+                                type="FIFO_VIOLATION",
+                                message=error_msg,
+                                details=raw_fifo_warning.oldest_stock
+                            ),
+                            feedback=Feedback(action="BUZZER", pattern="ERROR", count=3, led_color="RED")
+                        )
             else:
                 fifo_warning = None
             
@@ -203,7 +264,7 @@ class RFIDService:
             
             # [Added] 4.1 생산 공정 투입(Consuming) LOT 검증
             # 첫 공정이 아닌 경우, 생산(Producing/Stock/Finished) 시 반드시 투입된 LOT가 있어야 함
-            if location.location_type == "OUT" and transition_result["allowed"]:
+            if location.location_type in ["OUT", "SHIPPING"] and transition_result["allowed"]:
                 # 첫 공정 여부 판단 (플래그 또는 공정 순번 1 이하)
                 is_first = getattr(location.process, 'is_first_process', False)
                 if location.process and not is_first:
@@ -292,6 +353,10 @@ class RFIDService:
                 pallet.quantity = 0
             
             # AI_README: 팔레트가 Deregistered 또는 Scrap 시 tag_status 및 실물 상태 업데이트
+            elif next_status == "Deregistered":
+                pallet.tag_status = "AVAILABLE"
+                pallet.tag_deregistered_at = datetime.now()
+                pallet.quantity = 0
             elif next_status == "Scrap":
                 # AI_README: 폐기 시 생산 수량(produced_quantity)에서 차감하여 Net 생산량을 유지
                 if pallet.lot and previous_status in ["Stock", "Finished", "Defect", "Hold"]:
@@ -368,8 +433,8 @@ class RFIDService:
                 "success": True
             })
 
-            # FIFO 전용 이벤트 발송 (IN 위치에서만, Stock 팔레트를 스캔한 경우)
-            if location.location_type == "IN" and previous_status == "Stock":
+            # FIFO 전용 이벤트 발송 (IN 위치 스캔 시 항상 발송)
+            if location.location_type == "IN":
                 await sio_server.emit('fifo_scan', {
                     'pallet_id': pallet.id,
                     'pallet_no': pallet.pallet_no,
@@ -378,6 +443,14 @@ class RFIDService:
                     'is_violation': fifo_warning is not None,
                     'status': 'VIOLATION' if fifo_warning else 'OK'
                 })
+
+            # pallet_updated 이벤트 발송 (FIFO 페이지 즉시 갱신용)
+            await sio_server.emit('pallet_updated', {
+                'pallet_id': pallet.id,
+                'pallet_no': pallet.pallet_no,
+                'status': next_status,
+                'tag_status': pallet.tag_status
+            })
 
             return ScanResponse(
                 success=True,
@@ -568,15 +641,15 @@ class RFIDService:
         return None
     
     def _validate_fifo(self, pallet: Pallet, location: RFIDReaderLocation) -> FIFOWarning | None:
-        """FIFO 검증 - 전체 팔레트 기준으로 더 오래된 재고가 있는지 확인"""
-        if pallet.status != "Stock":
+        """FIFO 검증 - 동일 품목의 Stock 팔레트 중 더 일찍 생산된(Stock이 된) 재고가 있는지 확인"""
+        if pallet.status != "Stock" or not pallet.lot:
             return None
 
-        # 전체 Stock 상태 팔레트 중 더 오래된 것 조회 (품목 구분 없음)
-        # created_at이 같으면 ID가 작은 것이 먼저 생성된 것으로 간주
-        older_stock = self.db.query(Pallet).filter(
+        # 동일 품목의 Stock 상태 팔레트 중 더 오래된 것 조회 
+        older_stock = self.db.query(Pallet).join(Lot).filter(
             Pallet.status == "Stock",
-            Pallet.id != pallet.id
+            Pallet.id != pallet.id,
+            Lot.item_id == pallet.lot.item_id
         ).filter(
             (Pallet.created_at < pallet.created_at) |
             ((Pallet.created_at == pallet.created_at) & (Pallet.id < pallet.id))
@@ -586,7 +659,7 @@ class RFIDService:
             days_old = (datetime.now() - older_stock.created_at).days
             return FIFOWarning(
                 type="FIFO_VIOLATION",
-                message="더 오래된 재고가 있습니다. 확인 후 진행하세요.",
+                message=f"FIFO 위반: 동일 품목의 가장 오래된 재고(팔레트: {older_stock.pallet_no})를 먼저 투입해야 합니다.",
                 oldest_stock={
                     "pallet_no": older_stock.pallet_no,
                     "lot_no": older_stock.lot.lot_number if older_stock.lot else None,

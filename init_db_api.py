@@ -244,7 +244,7 @@ def create_reader_locations(client: APIClient, data: dict):
             port_name = f"{r['prot-name']}-{inner['prefix-name']}"
             location_type_raw = inner.get("location-type", inner["prefix-name"])
             location_type = location_type_raw if location_type_raw in [
-                "IN", "OUT", "HOLD", "HOLD_OUT", "DEFECT", "DEFECT_OUT", "SCRAP", "FINISH", "RETURN", "REG"
+                "IN", "OUT", "HOLD", "HOLD_OUT", "DEFECT", "DEFECT_OUT", "SCRAP", "FINISH", "RETURN", "REG", "SHIPPING"
             ] else None
             desc = inner.get("description", "")
             

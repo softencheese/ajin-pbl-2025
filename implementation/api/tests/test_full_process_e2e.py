@@ -126,7 +126,7 @@ def test_full_process_with_auto_binding(client, db_session):
     # 3-3. LOT 상태 확인 (일부 소비 중 -> PROCESS)
     db_session.expire_all()
     sh_lot = db_session.query(Lot).get(sh_lot_id)
-    assert sh_lot.status == "PROCESS"
+    assert sh_lot.status == "WAIT"
     print(f"  - LOT 상태 확인: {sh_lot.status} (일부 소비 중)")
 
     # 3-4. EPC-2 투입 및 소비 완료

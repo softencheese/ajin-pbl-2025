@@ -313,7 +313,7 @@ class Reader:
                     return "WAITING_INPUT"
 
             result = self.pallette_manager.find_pallette_with_status(
-                target_id, {PALLETTE_STATUS_EMPTY, PALLETTE_STATUS_GENERATED}
+                target_id, {PALLETTE_STATUS_EMPTY, PALLETTE_STATUS_GENERATED, PALLETTE_STATUS_DEREGISTERED}
             )
             if result:
                 epc, status = result
@@ -392,8 +392,13 @@ class ReaderManager:
             p_id = info.get('process-id')
             if p_id is not None:
                 process_code = config.processes[p_id]['process_code']
-                out_item_id = config.items[p_id]['id']
-                in_item_id = [x['id'] for x in config.items[p_id]['child']]
+                item_node = config.items.get(p_id)
+                if item_node:
+                    out_item_id = item_node.get('id', -1)
+                    in_item_id = [x['id'] for x in item_node.get('child', [])]
+                else:
+                    out_item_id = -1
+                    in_item_id = -1
             else:
                 p_name = info.get('prot-name', '').upper()
                 if "COM05" in p_name:
@@ -473,8 +478,8 @@ class ReaderManager:
                 if not self.auto_run_active:
                     break
 
-                # DEFECT/HOLD/SCRAP 리더기는 자동 실행에서 제외 (수동 전용)
-                if reader.process_code in ["DEFECT", "HOLD", "SCRAP"]:
+                # DEFECT/HOLD/SCRAP/SHIPPING 리더기는 자동 실행에서 제외 (수동 전용)
+                if reader.process_code in ["DEFECT", "HOLD", "SCRAP", "SHIPPING"]:
                     continue
                 
                 # Ensure reader is running during auto run

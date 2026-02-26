@@ -84,12 +84,13 @@ class FIFOQueueItem(BaseModel):
     queue_position: int = Field(..., description="대기열 순서 (1부터 시작)")
     pallet_id: int
     pallet_no: str
-    rfid_epc: str
+    rfid_epc: Optional[str] = None
+    status: str = Field(..., description="팔레트 상태")
     lot_no: Optional[str] = None
     item_code: Optional[str] = None
     item_name: Optional[str] = None
     created_at: datetime
-    scan_status: str = Field(..., description="스캔 상태 (WAITING, OK, VIOLATION)")
+    scan_status: str = Field(..., description="스캔 상태 (WAITING, OK, VIOLATION, EXCEPTION)")
     scan_time: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)

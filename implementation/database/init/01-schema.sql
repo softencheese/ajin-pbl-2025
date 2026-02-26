@@ -51,7 +51,7 @@ CREATE TABLE rfid_reader_locations (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     port_name VARCHAR(50) UNIQUE NOT NULL COMMENT '포트 이름 (COM3, READER_01 등)',
     process_id BIGINT COMMENT '공정 ID (미등록 시 NULL)',
-    location_type ENUM('IN', 'OUT', 'HOLD', 'HOLD_OUT', 'REG', 'DEFECT', 'DEFECT_OUT', 'SCRAP', 'FINISH', 'RETURN') COMMENT '위치 타입',
+    location_type ENUM('IN', 'OUT', 'HOLD', 'HOLD_OUT', 'REG', 'DEFECT', 'DEFECT_OUT', 'SCRAP', 'FINISH', 'RETURN', 'SHIPPING') COMMENT '위치 타입',
     description VARCHAR(200) COMMENT '리더기 설명',
     is_active BOOLEAN DEFAULT TRUE COMMENT '활성 여부',
     last_scan_time DATETIME COMMENT '마지막 스캔 시간',

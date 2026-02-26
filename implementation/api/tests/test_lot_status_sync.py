@@ -81,20 +81,20 @@ def test_lot_status_sync_on_scan(client: TestClient):
 
     # 3. Test Consuming Flow (STOCK -> PROCESS -> CONSUMED)
     # Step D: Scan 1st pallet at IN (Stock -> Consuming)
-    # LOT status should become PROCESS
+    # LOT status should become WAIT (no longer PROCESS for input pallets)
     client.post("/api/v1/rfid/scan", json={
         "type": "SCAN", "port_name": f"PORT_IN_{uid}", "epc": epc1, "scan_time": datetime.now().isoformat()
     })
     lot_verify = client.get(f"/api/v1/lots/{lot_id}").json()
-    assert lot_verify["status"] == "PROCESS"
+    assert lot_verify["status"] == "WAIT"
 
     # Step E: Scan 1st pallet at IN again (Consuming -> Deregistered)
-    # LOT status should still be PROCESS
+    # LOT status should remain WAIT
     client.post("/api/v1/rfid/scan", json={
         "type": "SCAN", "port_name": f"PORT_IN_{uid}", "epc": epc1, "scan_time": datetime.now().isoformat()
     })
     lot_verify = client.get(f"/api/v1/lots/{lot_id}").json()
-    assert lot_verify["status"] == "PROCESS"
+    assert lot_verify["status"] == "WAIT"
 
     # Step F: Scan 2nd pallet at IN (Stock -> Consuming -> Deregistered)
     # After last pallet is Deregistered, LOT status should become CONSUMED

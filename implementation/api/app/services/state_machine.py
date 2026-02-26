@@ -87,7 +87,7 @@ class StateMachine:
         # 첫 공정 특수 처리 (DB에서 is_first_process로 판단)
         if is_first_process:
             # 첫 공정에서 빈 팔레트 → 바로 생산 시작
-            if current_status in ["Empty", "Generated"]:
+            if current_status in ["Empty", "Generated", "Deregistered"]:
                 return self.next_status(True, "Producing", f"{process_code} 생산 시작")
             # 첫 공정 생산 완료 → Stock
             elif current_status == "Producing":
@@ -98,12 +98,12 @@ class StateMachine:
         # 생산 완료
         if current_status == "Producing":
             if is_final_product:
-                return self.next_status(True, "Finished", "완제품 생산 완료")
+                return self.next_status(True, "Stock", "완제품 생산 완료 (재고 적재)")
             else:
                 return self.next_status(True, "Stock", "중간품 생산 완료 (재고 적재)")
 
         # 빈 팔레트 OUT → 생산 시작
-        elif current_status in ["Empty", "Generated"]:
+        elif current_status in ["Empty", "Generated", "Deregistered"]:
             return self.next_status(True, "Producing", "생산 시작 (적재용 팔레트)")
         else:
             return self.next_status(False, current_status, f"OUT 위치에서 '{current_status}' 상태는 처리할 수 없습니다.")
@@ -113,7 +113,7 @@ class StateMachine:
         if location_type not in ["FINISH", "RETURN"]:
             return   # FINISH/RETURN 처리 아님
 
-        if current_status == "Finished":
+        if current_status in ["Finished", "Stock"]:
             return self.next_status(True, "Deregistered", "완제품 출하 완료 (태그 회수)")
 
         elif current_status in ["Empty", "Generated"]:
@@ -133,6 +133,16 @@ class StateMachine:
 
         else:
             return self.next_status(False, current_status, f"REG 위치에서 '{current_status}' 상태는 처리할 수 없습니다.")
+
+    def handle_shipping_transitions(self, current_status: str, location_type: str) -> Dict:
+        # SHIPPING 리더기 (출하장)
+        if location_type != "SHIPPING":
+            return None
+
+        if current_status == "Stock":
+            return self.next_status(True, "Finished", "완제품 출고 (Finished)")
+        else:
+            return self.next_status(False, current_status, f"SHIPPING 위치에서 '{current_status}' 상태는 처리할 수 없습니다. (Stock 상태만 출하 가능)")
 
     def get_next_state(
         self, 
@@ -178,6 +188,10 @@ class StateMachine:
         if result is not None:
             return result
         
+        # SHIPPING 리더기 처리
+        result = self.handle_shipping_transitions(current_status, location_type)
+        if result is not None:
+            return result
         
         # 매칭되는 규칙이 없음
         return self.next_status(False, current_status, "해당 위치에서 상태 전이가 불가능합니다.")

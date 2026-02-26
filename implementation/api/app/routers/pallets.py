@@ -154,15 +154,33 @@ async def get_fifo_queue(
     Stock 상태 팔레트를 created_at 순서로 정렬하여 반환
     각 팔레트의 스캔 상태 (대기/완료/위반) 포함
     """
-    # Stock 상태 팔레트를 created_at 오름차순으로 조회
-    stock_pallets = db.query(Pallet).join(
+    # Stock 상태 팔레트 및 최근 12시간 내에 투입된(Consuming) 팔레트 조회
+    from datetime import datetime, timedelta
+    recent_limit = datetime.now() - timedelta(hours=12)
+
+    # 제외 조건: Deregistered 상태이면서 tag_deregistered_at이 1시간보다 더 이전인 경우
+    # 즉, (status != Deregistered) OR (status == Deregistered AND tag_deregistered_at > now - 1h)
+    from sqlalchemy import or_, and_
+    one_hour_ago = datetime.now() - timedelta(hours=1)
+    
+    active_pallets = db.query(Pallet).join(
         PhysicalPallet, Pallet.physical_pallet_id == PhysicalPallet.id, isouter=True
     ).filter(
-        Pallet.status == "Stock"
+        Pallet.status != "Generated",
+        or_(
+            Pallet.status != "Deregistered",
+            and_(
+                Pallet.status == "Deregistered",
+                or_(
+                    Pallet.tag_deregistered_at >= one_hour_ago,
+                    and_(Pallet.tag_deregistered_at == None, Pallet.updated_at >= one_hour_ago)
+                )
+            )
+        )
     ).order_by(Pallet.created_at.asc()).all()
 
     fifo_items = []
-    for idx, pallet in enumerate(stock_pallets, start=1):
+    for idx, pallet in enumerate(active_pallets, start=1):
         # 최근 IN 위치 스캔 이력 조회
         recent_scan = db.query(PalletHistory).filter(
             PalletHistory.pallet_id == pallet.id,
@@ -174,11 +192,23 @@ async def get_fifo_queue(
 
         if recent_scan:
             scan_time = recent_scan.scan_time
-            # notes에 "FIFO 위반" 문구가 있으면 VIOLATION
-            if recent_scan.notes and "FIFO 위반" in recent_scan.notes:
-                scan_status = "VIOLATION"
+            # FIFO_VIOLATION_ATTEMPT 기록이 있거나 notes에 "FIFO 위반" 문구가 있으면 위반성 판단
+            is_violated = recent_scan.event_type == "FIFO_VIOLATION_ATTEMPT" or (recent_scan.notes and "FIFO 위반" in recent_scan.notes)
+            
+            if is_violated:
+                if pallet.status == "Consuming":
+                    scan_status = "EXCEPTION"
+                else:
+                    scan_status = "VIOLATION"
             else:
                 scan_status = "OK"
+        elif pallet.status == "Consuming" or pallet.status == "Deregistered":
+            # 과거 위반 시도 이력이 있는지 별도로 확인
+            any_violation = db.query(PalletHistory).filter(
+                PalletHistory.pallet_id == pallet.id,
+                PalletHistory.event_type == "FIFO_VIOLATION_ATTEMPT"
+            ).first()
+            scan_status = "EXCEPTION" if any_violation else "OK"
 
         lot = db.query(Lot).filter(Lot.id == pallet.lot_id).first() if pallet.lot_id else None
         item = db.query(Item).filter(Item.id == lot.item_id).first() if lot else None
@@ -188,6 +218,7 @@ async def get_fifo_queue(
             "pallet_id": pallet.id,
             "pallet_no": pallet.pallet_no,
             "rfid_epc": pallet.physical_pallet.epc if pallet.physical_pallet else None,
+            "status": pallet.status,
             "lot_no": lot.lot_number if lot else None,
             "item_code": item.item_code if item else None,
             "item_name": item.item_name if item else None,

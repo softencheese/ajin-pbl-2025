@@ -31,8 +31,8 @@ def sync_lot_status_and_quantity(lot_id: int, db: Session):
             lot.status = "SHIPPED"
         else:
             lot.status = "CONSUMED"
-    # [Rule] 공정 중(Producing/Consuming 팔레트 존재)일 때는 PROCESS
-    elif any(s in ["Consuming", "Producing"] for s in pallet_statuses):
+    # [Rule] 공정 중(Producing 팔레트 존재)일 때는 PROCESS
+    elif any(s in ["Producing"] for s in pallet_statuses):
         lot.status = "PROCESS"
     # [Rule] 나머지는 WAIT (부분 생산/소비 후 비활성 상태 포함)
     else:
