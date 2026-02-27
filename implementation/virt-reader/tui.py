@@ -16,7 +16,7 @@ except ImportError:
 
 class ReaderButton(Button):
     def __init__(self, reader):
-        super().__init__(f"{reader.prot_name}", classes="list-btn reader-button", id=f"btn-{reader.prot_name}")
+        super().__init__(f"{reader.prot_name}\n{reader.process_code}", classes="list-btn reader-button", id=f"btn-{reader.prot_name}")
         self.reader = reader
 
     def on_button_pressed(self) -> None:

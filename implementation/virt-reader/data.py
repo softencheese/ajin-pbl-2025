@@ -37,7 +37,7 @@ class ConfigData:
     
     def __init__(self, file_path):
         try:
-            with open(file_path, 'r') as file:
+            with open(file_path, 'r', encoding='utf-8') as file:
                 config = json.load(file)
         except Exception as e:
             raise RuntimeError(f"Error loading {file_path}\n - {e}")
