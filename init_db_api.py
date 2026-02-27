@@ -5,6 +5,7 @@ virt_data.json을 읽어서 API 엔드포인트를 호출하여 데이터를 생
 import json
 import os
 import sys
+import time
 import requests
 from datetime import date, timedelta
 from typing import Optional
@@ -24,7 +25,26 @@ class APIClient:
         self.base_url = base_url.rstrip('/')
         self.session = requests.Session()
         self.token = None
+        self._wait_for_api()
         self.login(username, password)
+    
+    def _wait_for_api(self, timeout: int = 60, interval: int = 2):
+        """API 서버가 준비될 때까지 대기"""
+        print(f"⏳ API 서버 준비 대기 중... ({self.base_url})")
+        start = time.time()
+        while time.time() - start < timeout:
+            try:
+                resp = self.session.get(f"{self.base_url}/docs", timeout=3)
+                if resp.status_code < 500:
+                    print("✅ API 서버 준비 완료!")
+                    return
+            except requests.exceptions.ConnectionError:
+                pass
+            except requests.exceptions.Timeout:
+                pass
+            time.sleep(interval)
+        print(f"❌ API 서버가 {timeout}초 내에 응답하지 않았습니다.")
+        sys.exit(1)
     
     def login(self, username: str, password: str):
         """로그인하여 토큰 획득"""
